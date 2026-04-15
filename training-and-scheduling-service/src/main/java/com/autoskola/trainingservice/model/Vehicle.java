@@ -1,18 +1,25 @@
-package com.autoskola.trainingservice.dto;
+package com.autoskola.trainingservice.model;
 
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
-import lombok.Data;
-import jakarta.validation.constraints.*;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-@Data
+@Entity
+@Table(name = "vehicles")
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class VehicleDTO {
+public class Vehicle {
 
-    @NotNull(message = "Vehicle ID je obavezan")
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long vehicleId;
 
     @NotBlank(message = "Marka vozila je obavezna")
@@ -23,8 +30,6 @@ public class VehicleDTO {
 
     @NotBlank(message = "Registracijski broj vozila je obavezan")
     private String registrationNumber;
-
-
 
 
 }

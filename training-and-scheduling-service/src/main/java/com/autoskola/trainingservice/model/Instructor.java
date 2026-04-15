@@ -1,6 +1,7 @@
 package com.autoskola.trainingservice.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
@@ -13,14 +14,8 @@ public class Instructor {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long instructorId;
 
+    @NotNull(message = "User ID je obavezan")
     private Long userId; // povezan sa User
 
-    private String availabilityNote; // npr. “Available Mon-Fri 9-17”
 
-    private LocalDateTime dateCreated;
-
-    @PrePersist
-    protected void onCreate() {
-        dateCreated = LocalDateTime.now();
-    }
 }

@@ -5,6 +5,7 @@ import com.autoskola.trainingservice.model.TrainingPhase;
 import com.autoskola.trainingservice.repository.TrainingPhaseRepository;
 import com.autoskola.trainingservice.service.TrainingPhaseService;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/phases")
@@ -24,7 +25,7 @@ public class TrainingPhaseController {
     }
 
     @PostMapping
-    public TrainingPhase createPhase(@RequestBody TrainingPhase phase) {
-        return phaseRepository.save(phase);
+    public TrainingPhase createPhase(@Valid @RequestBody TrainingPhase phase) {
+        return phaseService.createPhase(phase);
     }
 }

@@ -5,6 +5,7 @@ import com.autoskola.trainingservice.model.Lesson;
 import com.autoskola.trainingservice.repository.LessonRepository;
 import com.autoskola.trainingservice.service.LessonService;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/lessons")
@@ -25,7 +26,7 @@ public class LessonController {
     }
 
     @PostMapping
-    public Lesson scheduleLesson(@RequestBody Lesson lesson) {
+    public Lesson scheduleLesson(@Valid @RequestBody Lesson lesson) {
         return lessonRepository.save(lesson);
     }
 }

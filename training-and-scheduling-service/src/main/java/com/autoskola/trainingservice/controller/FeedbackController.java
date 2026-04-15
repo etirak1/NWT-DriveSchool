@@ -5,6 +5,7 @@ import com.autoskola.trainingservice.model.Feedback;
 import com.autoskola.trainingservice.repository.FeedbackRepository;
 import com.autoskola.trainingservice.service.FeedbackService;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/feedbacks")
@@ -24,7 +25,7 @@ public class FeedbackController {
     }
 
     @PostMapping
-    public Feedback leaveFeedback(@RequestBody Feedback feedback) {
+    public Feedback leaveFeedback(@Valid @RequestBody Feedback feedback) {
         return feedbackRepository.save(feedback);
     }
 }

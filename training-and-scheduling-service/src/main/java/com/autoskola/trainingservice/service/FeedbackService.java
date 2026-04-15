@@ -10,20 +10,31 @@ import org.springframework.stereotype.Service;
 public class FeedbackService {
 
     private final FeedbackRepository feedbackRepository;
-    private final UserClientService userClientService;
+    private final UserService userService;
 
-    public FeedbackService(FeedbackRepository feedbackRepository, UserClientService userClientService) {
+    public FeedbackService(FeedbackRepository feedbackRepository,
+                           UserService userService) {
         this.feedbackRepository = feedbackRepository;
-        this.userClientService = userClientService;
+        this.userService = userService;
     }
 
     public FeedbackWithUsersDTO getFeedbackDetails(Long id) {
         Feedback feedback = feedbackRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Feedback not found"));
 
-        UserDTO instructorUser = userClientService.getUserById(feedback.getInstructor().getUserId());
-        UserDTO candidateUser = userClientService.getUserById(feedback.getCandidate().getUserId());
 
-        return new FeedbackWithUsersDTO(feedback, instructorUser, candidateUser);
+        UserDTO instructorUser = userService.getUserById(
+                feedback.getInstructor().getUserId()
+        );
+
+        UserDTO candidateUser = userService.getUserById(
+                feedback.getCandidate().getUserId()
+        );
+
+        return new FeedbackWithUsersDTO(
+                feedback,
+                instructorUser,
+                candidateUser
+        );
     }
 }

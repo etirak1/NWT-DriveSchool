@@ -5,6 +5,7 @@ import com.autoskola.trainingservice.model.Candidate;
 import com.autoskola.trainingservice.repository.CandidateRepository;
 import com.autoskola.trainingservice.service.CandidateService;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -20,6 +21,8 @@ public class CandidateController {
         this.candidateRepository = candidateRepository;
     }
 
+
+
     // Detaljan prikaz kandidata sa imenom njega i njegovog instruktora
     @GetMapping("/{id}")
     public CandidateResponseDTO getCandidateDetails(@PathVariable Long id) {
@@ -28,8 +31,8 @@ public class CandidateController {
 
     // Osnovno čuvanje kandidata (Input)
     @PostMapping
-    public Candidate createCandidate(@RequestBody Candidate candidate) {
-        return candidateRepository.save(candidate);
+    public Candidate createCandidate(@Valid @RequestBody Candidate candidate) {
+        return candidateService.createCandidate(candidate);
     }
 
     @GetMapping
