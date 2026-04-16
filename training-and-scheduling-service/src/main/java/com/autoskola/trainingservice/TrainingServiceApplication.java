@@ -2,10 +2,13 @@ package com.autoskola.trainingservice;
 
 import com.autoskola.trainingservice.model.*;
 import com.autoskola.trainingservice.repository.*;
+import org.modelmapper.ModelMapper;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Profile;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
@@ -19,14 +22,22 @@ public class TrainingServiceApplication {
         SpringApplication.run(TrainingServiceApplication.class, args);
     }
 
-    // Neophodno za komunikaciju sa drugim servisima
+
+
     @Bean
     public RestTemplate restTemplate() {
         return new RestTemplate();
     }
+    @Bean
+    public ModelMapper modelMapper() {
+        return new ModelMapper();
+    }
 
     @Bean
+    @Profile("!test")
     public CommandLineRunner initData(
+            UserRepository userRepository,
+            VehicleRepository vehicleRepository,
             TrainingRuleRepository ruleRepository,
             InstructorRepository instructorRepository,
             CandidateRepository candidateRepository,
@@ -42,6 +53,17 @@ public class TrainingServiceApplication {
             candidateRepository.deleteAll();
             instructorRepository.deleteAll();
             ruleRepository.deleteAll();
+            userRepository.deleteAll();
+
+            //Unos korisnika(User)
+            User userInst = userRepository.save(new User(
+                    null, "Emina", "Omerović", "INSTRUCTOR"));
+
+            User userCand = userRepository.save(new User(
+                    null, "Tajra", "Ljubović", "CANDIDATE"));
+
+            Vehicle golf = vehicleRepository.save(new Vehicle(
+                    null, "VW", "Golf 7", "A12-K-345"));
 
             // 1. Unos pravila obuke (npr. B Kategorija)
             TrainingRule bCategory = ruleRepository.save(new TrainingRule(
@@ -49,11 +71,11 @@ public class TrainingServiceApplication {
 
             // 2. Unos instruktora
             Instructor instructor1 = instructorRepository.save(new Instructor(
-                    null, 1L, "Dostupan Pon-Pet 08:00-16:00", LocalDateTime.now()));
+                    null, userInst.getUserId()));
 
             // 3. Unos kandidata
             Candidate candidate1 = candidateRepository.save(new Candidate(
-                    null, 4L, LocalDate.now().minusDays(10), new BigDecimal("15.0"), instructor1, bCategory));
+                    null, userCand.getUserId(), LocalDate.now().minusDays(10), new BigDecimal("15.0"), instructor1, bCategory));
 
             // 4. Unos jednog zakazanog časa vožnje
             lessonRepository.save(new Lesson(
@@ -69,7 +91,7 @@ public class TrainingServiceApplication {
 
             // 5. Unos faze obuke (npr. Teorijski dio je u toku)
             phaseRepository.save(new TrainingPhase(
-                    null, candidate1, "TEORIJSKI_DIO", "U_TOKU", null));
+                    null, candidate1, "TEORIJSKI DIO", "U TOKU", null));
 
             // 6. Unos jednog feedbacka (Kandidat ocjenjuje instruktora)
             feedbackRepository.save(new Feedback(

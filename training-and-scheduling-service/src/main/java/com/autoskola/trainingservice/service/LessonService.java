@@ -11,25 +11,40 @@ import org.springframework.stereotype.Service;
 public class LessonService {
 
     private final LessonRepository lessonRepository;
-    private final UserClientService userClientService;
+    private final UserService userService;
+    private final VehicleService vehicleService;
 
-    public LessonService(LessonRepository lessonRepository, UserClientService userClientService) {
+    public LessonService(LessonRepository lessonRepository,
+                         UserService userService,
+                         VehicleService vehicleService) {
         this.lessonRepository = lessonRepository;
-        this.userClientService = userClientService;
+        this.userService = userService;
+        this.vehicleService = vehicleService;
     }
 
     public LessonWithUsersDTO getLessonDetails(Long id) {
         Lesson lesson = lessonRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Lesson not found"));
+                .orElseThrow(() -> new RuntimeException("Čas nije pronađen"));
 
 
-        UserDTO instructorUser = userClientService.getUserById(lesson.getInstructor().getUserId());
-        UserDTO candidateUser = userClientService.getUserById(lesson.getCandidate().getUserId());
+        UserDTO instructorUser = userService.getUserById(
+                lesson.getInstructor().getUserId()
+        );
+
+        UserDTO candidateUser = userService.getUserById(
+                lesson.getCandidate().getUserId()
+        );
 
 
-        VehicleDTO vehicle = userClientService.getVehicleById(lesson.getVehicleId());
+        VehicleDTO vehicle = vehicleService.getVehicleById(
+                lesson.getVehicleId()
+        );
 
-
-        return new LessonWithUsersDTO(lesson, instructorUser, candidateUser, vehicle);
+        return new LessonWithUsersDTO(
+                lesson,
+                instructorUser,
+                candidateUser,
+                vehicle
+        );
     }
 }
