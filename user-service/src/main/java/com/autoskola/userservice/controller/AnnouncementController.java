@@ -5,6 +5,8 @@ import com.autoskola.userservice.model.Announcement;
 import com.autoskola.userservice.service.AnnouncementService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
+
 
 import java.util.List;
 
@@ -21,7 +23,7 @@ public class AnnouncementController {
     }
 
     @PostMapping
-    public AnnouncementDTO create(@RequestBody Announcement announcement) {
+    public AnnouncementDTO create(@Valid @RequestBody Announcement announcement) {
         return announcementService.createAnnouncement(announcement);
     }
 }
