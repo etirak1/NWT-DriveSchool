@@ -24,7 +24,7 @@ public class LessonService {
 
     public LessonWithUsersDTO getLessonDetails(Long id) {
         Lesson lesson = lessonRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Lesson not found"));
+                .orElseThrow(() -> new RuntimeException("Čas nije pronađen"));
 
 
         UserDTO instructorUser = userService.getUserById(

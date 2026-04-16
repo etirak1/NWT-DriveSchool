@@ -34,10 +34,10 @@ public class CandidateService {
 
     public CandidateResponseDTO getCandidateFullDetails(Long id) {
         Candidate candidate = candidateRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Candidate not found"));
+                .orElseThrow(() -> new RuntimeException("Kandidat nije pronađen"));
 
         User user = userRepository.findById(candidate.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("Korisnik nije pronađen"));
 
         UserDTO candidateUser = new UserDTO(
                 user.getUserId(),

@@ -44,7 +44,7 @@ public class InstructorService {
         return instructorRepository.findAll().stream()
                 .map(inst -> {
                     User user = userRepository.findById(inst.getUserId())
-                            .orElseThrow(() -> new RuntimeException("User not found"));
+                            .orElseThrow(() -> new RuntimeException("Korisnik nije pronađen"));
 
                     UserDTO userDTO = new UserDTO(
                             user.getUserId(),

@@ -1,11 +1,13 @@
 import com.autoskola.trainingservice.dto.LessonWithUsersDTO;
 import com.autoskola.trainingservice.dto.UserDTO;
+import com.autoskola.trainingservice.dto.VehicleDTO;
 import com.autoskola.trainingservice.model.Candidate;
 import com.autoskola.trainingservice.model.Instructor;
 import com.autoskola.trainingservice.model.Lesson;
 import com.autoskola.trainingservice.repository.LessonRepository;
 import com.autoskola.trainingservice.service.LessonService;
 import com.autoskola.trainingservice.service.UserService;
+import com.autoskola.trainingservice.service.VehicleService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -27,25 +29,42 @@ class LessonServiceTest {
     @Mock
     private UserService userService;
 
+    @Mock
+    private VehicleService vehicleService;
+
     @InjectMocks
     private LessonService lessonService;
 
     @Test
     void testGetLessonDetails_Success() {
 
-        Instructor instructor = new Instructor(1L, 10L);
-        Candidate candidate = new Candidate(1L, 20L, null, null, instructor, null);
-        Lesson lesson = new Lesson(1L, candidate, instructor, 1L,
-                LocalDateTime.now(), 45, "ZAKAZANO", "Notes");
+        Instructor instructor = new Instructor();
+        instructor.setInstructorId(1L);
+        instructor.setUserId(10L);
+
+        Candidate candidate = new Candidate();
+        candidate.setCandidateId(1L);
+        candidate.setUserId(20L);
+        candidate.setAssignedInstructor(instructor);
+
+        Lesson lesson = new Lesson();
+        lesson.setLessonId(1L);
+        lesson.setCandidate(candidate);
+        lesson.setInstructor(instructor);
+        lesson.setVehicleId(1L);
+        lesson.setDuration(45);
+        lesson.setStatus("ZAKAZANO");
 
         when(lessonRepository.findById(1L)).thenReturn(Optional.of(lesson));
 
-        // ✅ koristi UserService
         when(userService.getUserById(10L))
                 .thenReturn(new UserDTO(10L, "Emina", "Omerović", "INSTRUCTOR"));
 
         when(userService.getUserById(20L))
                 .thenReturn(new UserDTO(20L, "Tajra", "Ljubović", "CANDIDATE"));
+
+        when(vehicleService.getVehicleById(1L))
+                .thenReturn(new VehicleDTO(1L, "VW", "Golf", "123-A-456"));
 
         LessonWithUsersDTO result = lessonService.getLessonDetails(1L);
 

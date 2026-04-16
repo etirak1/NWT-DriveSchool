@@ -20,7 +20,7 @@ public class FeedbackService {
 
     public FeedbackWithUsersDTO getFeedbackDetails(Long id) {
         Feedback feedback = feedbackRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Feedback not found"));
+                .orElseThrow(() -> new RuntimeException("Feedback nije pronađen"));
 
 
         UserDTO instructorUser = userService.getUserById(

@@ -34,7 +34,7 @@ public class UserService {
 
     public UserDTO getUserById(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("Korisnik nije pronađen"));
 
         return new UserDTO(
                 user.getUserId(),

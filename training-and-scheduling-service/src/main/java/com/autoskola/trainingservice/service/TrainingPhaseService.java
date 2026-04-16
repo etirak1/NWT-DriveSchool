@@ -24,7 +24,7 @@ public class TrainingPhaseService {
 
     public TrainingPhaseWithUserDTO getPhaseWithCandidate(Long id) {
         TrainingPhase phase = phaseRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Phase not found"));
+                .orElseThrow(() -> new RuntimeException("Trening faza nije pronađena"));
 
         UserDTO candidateUser = userService.getUserById(
                 phase.getCandidate().getUserId()
@@ -41,7 +41,7 @@ public class TrainingPhaseService {
         Long candidateId = phase.getCandidate().getCandidateId();
 
         Candidate candidate = candidateRepository.findById(candidateId)
-                .orElseThrow(() -> new RuntimeException("Candidate not found"));
+                .orElseThrow(() -> new RuntimeException("Kandidat nije pronađen"));
 
         phase.setCandidate(candidate);
 
