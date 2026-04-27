@@ -1,45 +1,40 @@
 package com.autoskola.financeservice.controller;
 
-import com.autoskola.financeservice.model.CandidateFinanceAccount;
-import com.autoskola.financeservice.model.Payment;
-import com.autoskola.financeservice.repository.CandidateFinanceAccountRepository;
+import com.autoskola.financeservice.dto.CandidateFinanceAccountDTO;
+import com.autoskola.financeservice.service.FinanceService;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal; // OBAVEZAN IMPORT
+import java.math.BigDecimal;
 import java.util.List;
+
 
 @RestController
 @RequestMapping("/accounts")
 public class CandidateFinanceAccountController {
 
-    private final CandidateFinanceAccountRepository accountRepository;
+    private final FinanceService financeService;
 
-    public CandidateFinanceAccountController(CandidateFinanceAccountRepository accountRepository) {
-        this.accountRepository = accountRepository;
+    public CandidateFinanceAccountController(FinanceService financeService) {
+        this.financeService = financeService;
+    }
+
+    @PostMapping("/test-validation")
+    public String test(@jakarta.validation.Valid @RequestBody com.autoskola.financeservice.model.CandidateFinanceAccount account) {
+        return "Podaci su validni!";
     }
 
     @GetMapping
-    public List<CandidateFinanceAccount> getAll() {
-        return accountRepository.findAll();
+    public List<CandidateFinanceAccountDTO> getAll() {
+        return financeService.getAllAccounts();
     }
 
     @GetMapping("/{id}")
-    public CandidateFinanceAccount getById(@PathVariable Integer id) {
-        return accountRepository.findById(id).orElse(null);
+    public CandidateFinanceAccountDTO getById(@PathVariable Integer id) {
+        return financeService.getAccountById(id);
     }
 
     @GetMapping("/{id}/debt")
     public BigDecimal getRemainingDebt(@PathVariable Integer id) {
-        CandidateFinanceAccount account = accountRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
-
-        BigDecimal paidAmount = account.getPayments().stream()
-                .filter(p -> "PAID".equalsIgnoreCase(p.getStatus()))
-                .map(Payment::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        // Ako je totalAmount null (nisi ga unijela), vrati nulu ili postavi default
-        BigDecimal total = account.getTotalAmount() != null ? account.getTotalAmount() : BigDecimal.ZERO;
-        return total.subtract(paidAmount);
+        return financeService.getAccountById(id).getRemainingDebt();
     }
 }

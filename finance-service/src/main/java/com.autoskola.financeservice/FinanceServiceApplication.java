@@ -12,6 +12,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.client.RestTemplate;
 
+import org.modelmapper.ModelMapper;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -28,6 +30,20 @@ public class FinanceServiceApplication {
         return new RestTemplate();
     }
 
+
+
+
+    @Bean
+    public ModelMapper modelMapper() {
+        ModelMapper modelMapper = new ModelMapper();
+
+        modelMapper.getConfiguration()
+                .setFieldMatchingEnabled(true)
+                .setFieldAccessLevel(org.modelmapper.config.Configuration.AccessLevel.PRIVATE);
+        return modelMapper;
+    }
+
+
     @Bean
     public CommandLineRunner start(
             UserRepository userRepository,
@@ -36,26 +52,22 @@ public class FinanceServiceApplication {
     ) {
         return args -> {
 
-            // 1. BRISANJE (Redoslijed je ključan zbog Foreign Key-a)
+
             paymentRepository.deleteAllInBatch();
             accountRepository.deleteAllInBatch();
             userRepository.deleteAllInBatch();
 
-            // 2. UNOS KORISNIKA (User)
-            // id, firstName, lastName, email, password, role, status, dateCreated
+
             User user1 = userRepository.save(new User(null, "Marko", "Marković", "marko@email.com", "123456", "Kandidat", "ACTIVE", LocalDateTime.now()));
             User user2 = userRepository.save(new User(null, "Dina", "Nešković", "dneskovic1@etf.unsa.ba", "123456", "Kandidat", "ACTIVE", LocalDateTime.now()));
 
-            // 3. UNOS NALOGA KANDIDATA (CandidateFinanceAccount)
-            // id, user, enrollmentDate, progressPercentage, assignedInstructorId, ruleId, totalAmount, payments(null)
+
             CandidateFinanceAccount account1 = accountRepository.save(new CandidateFinanceAccount(
                     null, user1, LocalDate.now().minusMonths(2), new BigDecimal("45.00"), 101, 1, new BigDecimal("1200.00"), null));
 
             CandidateFinanceAccount account2 = accountRepository.save(new CandidateFinanceAccount(
                     null, user2, LocalDate.now().minusMonths(1), new BigDecimal("10.00"), 102, 2, new BigDecimal("1500.00"), null));
 
-            // 4. UNOS UPLATA (Payment)
-            // paymentId, amount, dueDate, status, datePaid, candidateAccount
             paymentRepository.save(new Payment(null, new BigDecimal("400.00"), LocalDate.now().minusMonths(1), "PAID", LocalDate.now().minusMonths(1).plusDays(2), account1));
             paymentRepository.save(new Payment(null, new BigDecimal("400.00"), LocalDate.now(), "PENDING", null, account1));
             paymentRepository.save(new Payment(null, new BigDecimal("500.00"), LocalDate.now().minusDays(5), "PAID", LocalDate.now().minusDays(4), account2));
@@ -63,4 +75,8 @@ public class FinanceServiceApplication {
             System.out.println("Svi finansijski podaci su uspješno uneseni!");
         };
     }
+
+
+
 }
+
