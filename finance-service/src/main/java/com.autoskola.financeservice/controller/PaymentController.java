@@ -2,6 +2,8 @@ package com.autoskola.financeservice.controller;
 
 import com.autoskola.financeservice.model.Payment;
 import com.autoskola.financeservice.repository.PaymentRepository;
+import jakarta.validation.Valid; // OBAVEZAN IMPORT ZA VALIDACIJU
+import org.springframework.http.ResponseEntity; // OBAVEZAN IMPORT
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,7 +20,14 @@ public class PaymentController {
 
     @GetMapping("/candidate/{candidateId}")
     public List<Payment> getPaymentsByCandidate(@PathVariable Integer candidateId) {
-        // Koristimo metodu koju smo dodali u PaymentRepository
         return paymentRepository.findByCandidateAccount_Id(candidateId);
+    }
+
+
+    @PostMapping
+    public ResponseEntity<Payment> createPayment(@Valid @RequestBody Payment payment) {
+
+        Payment savedPayment = paymentRepository.save(payment);
+        return ResponseEntity.ok(savedPayment);
     }
 }
