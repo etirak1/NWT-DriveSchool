@@ -3,6 +3,7 @@ package com.autoskola.resourceservice.controller;
 import com.autoskola.resourceservice.model.Vehicle;
 import com.autoskola.resourceservice.repository.VehicleRepository;
 import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -49,7 +50,8 @@ public class VehicleController {
     }
 
     @DeleteMapping("/{id}")
-    public void deleteVehicle(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteVehicle(@PathVariable Long id) {
         vehicleRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 }

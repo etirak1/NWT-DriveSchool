@@ -9,7 +9,7 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.3.5</version>
-        <relativePath/> <!-- lookup parent from repository -->
+        <relativePath/>
     </parent>
 
     <groupId>com.autoskola</groupId>
@@ -48,7 +48,7 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
-        <!-- LOMBOK (Verziju kontroliše spring-boot-parent, biće 1.18.34) -->
+        <!-- LOMBOK  -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -86,7 +86,7 @@
                 </configuration>
             </plugin>
 
-            <!-- Compiler Plugin sa ispravnim redoslijedom procesora -->
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -99,7 +99,7 @@
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
-                            <version>1.18.34</version> <!-- Upiši tačno 1.18.34 -->
+                            <version>1.18.34</version>
                         </path>
                         <!-- 2. Binding koji omogućava saradnju Lomboka i MapStructa -->
                         <path>
