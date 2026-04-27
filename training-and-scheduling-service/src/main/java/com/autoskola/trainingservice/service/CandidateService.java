@@ -1,8 +1,6 @@
 package com.autoskola.trainingservice.service;
 
-import com.autoskola.trainingservice.dto.CandidateResponseDTO;
-import com.autoskola.trainingservice.dto.InstructorWithUserDTO;
-import com.autoskola.trainingservice.dto.UserDTO;
+import com.autoskola.trainingservice.dto.*;
 import com.autoskola.trainingservice.model.Candidate;
 import com.autoskola.trainingservice.model.Instructor;
 import com.autoskola.trainingservice.model.TrainingRule;
@@ -12,6 +10,9 @@ import com.autoskola.trainingservice.repository.InstructorRepository;
 import com.autoskola.trainingservice.repository.TrainingRuleRepository;
 import com.autoskola.trainingservice.repository.UserRepository;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class CandidateService {
@@ -32,42 +33,86 @@ public class CandidateService {
         this.ruleRepository = ruleRepository;
     }
 
-    public CandidateResponseDTO getCandidateFullDetails(Long id) {
+    public CandidateDTO getCandidateFullDetails(Long id) {
         Candidate candidate = candidateRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Kandidat nije pronađen"));
 
         User user = userRepository.findById(candidate.getUserId())
                 .orElseThrow(() -> new RuntimeException("Korisnik nije pronađen"));
 
-        UserDTO candidateUser = new UserDTO(
-                user.getUserId(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getRole()
-        );
+        UserDTO userDTO = new UserDTO(user.getUserId(), user.getFirstName(), user.getLastName(), user.getRole());
 
-        // 2. Dobavi User podatke za njegovog instruktora (koristeći već napravljeni InstructorService)
-        InstructorWithUserDTO instructorDetails = null;
+        InstructorDTO instructorDetails = null;
         if (candidate.getAssignedInstructor() != null) {
-            instructorDetails = instructorService.getInstructorWithUser(candidate.getAssignedInstructor().getInstructorId());
+            instructorDetails = instructorService.getInstructorFullDetails(candidate.getAssignedInstructor().getInstructorId());
         }
 
-        return new CandidateResponseDTO(candidate, candidateUser, instructorDetails);
+        TrainingRuleDTO ruleDTO = null;
+        if (candidate.getRule() != null) {
+            ruleDTO = new TrainingRuleDTO(
+                    candidate.getRule().getRuleId(),
+                    candidate.getRule().getMinTheoryLessons(),
+                    candidate.getRule().getMinPracticalLessons(),
+                    candidate.getRule().getLessonDuration(),
+                    candidate.getRule().getCoursePrice()
+            );
+        }
+
+        return new CandidateDTO(
+                candidate.getCandidateId(),
+                candidate.getEnrollmentDate(),
+                candidate.getProgressPercentage(),
+                userDTO,
+                instructorDetails,
+                ruleDTO
+        );
     }
 
-    public Candidate createCandidate(Candidate candidate) {
-
-        Instructor instructor = instructorRepository.findById(
-                candidate.getAssignedInstructor().getInstructorId()
-        ).orElseThrow(() -> new RuntimeException("Instructor not found"));
-
-        TrainingRule rule = ruleRepository.findById(
-                candidate.getRule().getRuleId()
-        ).orElseThrow(() -> new RuntimeException("Rule not found"));
+    public CandidateDTO createCandidate(Candidate candidate) {
+        Instructor instructor = instructorRepository.findById(candidate.getAssignedInstructor().getInstructorId())
+                .orElseThrow(() -> new RuntimeException("Instruktor nije pronađen"));
+        TrainingRule rule = ruleRepository.findById(candidate.getRule().getRuleId())
+                .orElseThrow(() -> new RuntimeException("Pravilo nije pronađeno"));
 
         candidate.setAssignedInstructor(instructor);
         candidate.setRule(rule);
 
-        return candidateRepository.save(candidate);
+        Candidate savedCandidate = candidateRepository.save(candidate);
+
+        User user = userRepository.findById(savedCandidate.getUserId())
+                .orElseThrow(() -> new RuntimeException("Korisnik nije pronađen"));
+        UserDTO userDTO = new UserDTO(user.getUserId(), user.getFirstName(), user.getLastName(), user.getRole());
+
+        InstructorDTO instructorDetails = instructorService.getInstructorFullDetails(instructor.getInstructorId());
+
+        TrainingRuleDTO ruleDTO = new TrainingRuleDTO(rule.getRuleId(), rule.getMinTheoryLessons(),
+                rule.getMinPracticalLessons(), rule.getLessonDuration(),
+                rule.getCoursePrice());
+
+        return new CandidateDTO(savedCandidate.getCandidateId(), savedCandidate.getEnrollmentDate(),
+                savedCandidate.getProgressPercentage(), userDTO, instructorDetails, ruleDTO);
     }
+
+    public List<CandidateDTO> getAllCandidates() {
+        List<Candidate> candidates = candidateRepository.findAll();
+        List<CandidateDTO> response = new ArrayList<>();
+
+        for (Candidate c : candidates) {
+            User u = userRepository.findById(c.getUserId()).orElse(null);
+            UserDTO uDTO = (u != null) ? new UserDTO(u.getUserId(), u.getFirstName(), u.getLastName(), u.getRole()) : null;
+
+            InstructorDTO iDTO = (c.getAssignedInstructor() != null) ?
+                    instructorService.getInstructorFullDetails(c.getAssignedInstructor().getInstructorId()) : null;
+
+            TrainingRuleDTO rDTO = (c.getRule() != null) ?
+                    new TrainingRuleDTO(c.getRule().getRuleId(), c.getRule().getMinTheoryLessons(),
+                            c.getRule().getMinPracticalLessons(), c.getRule().getLessonDuration(),
+                            c.getRule().getCoursePrice()) : null;
+
+            response.add(new CandidateDTO(c.getCandidateId(), c.getEnrollmentDate(),
+                    c.getProgressPercentage(), uDTO, iDTO, rDTO));
+        }
+        return response;
+    }
+
 }

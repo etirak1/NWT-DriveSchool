@@ -1,7 +1,11 @@
 package com.autoskola.trainingservice.controller;
 
-import com.autoskola.trainingservice.dto.InstructorWithUserDTO;
+import com.autoskola.trainingservice.dto.CandidateDTO;
+import com.autoskola.trainingservice.dto.InstructorDTO;
+import com.autoskola.trainingservice.model.Candidate;
+import com.autoskola.trainingservice.model.Instructor;
 import com.autoskola.trainingservice.service.InstructorService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,12 +21,18 @@ public class InstructorController {
     }
 
     @GetMapping("/{id}")
-    public InstructorWithUserDTO getInstructor(@PathVariable Long id) {
-        return instructorService.getInstructorWithUser(id);
+    public InstructorDTO getInstructor(@PathVariable Long id) {
+        return instructorService.getInstructorFullDetails(id);
+    }
+
+
+    @PostMapping
+    public InstructorDTO createInstructor(@Valid @RequestBody Instructor instructor) {
+        return instructorService.createInstructor(instructor);
     }
 
     @GetMapping
-    public List<InstructorWithUserDTO> getAll() {
+    public List<InstructorDTO> getAllInstructors() {
         return instructorService.getAllInstructors();
     }
 }

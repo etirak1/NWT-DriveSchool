@@ -1,6 +1,8 @@
 package com.autoskola.trainingservice.service;
 
-import com.autoskola.trainingservice.dto.FeedbackWithUsersDTO;
+import com.autoskola.trainingservice.dto.CandidateDTO;
+import com.autoskola.trainingservice.dto.FeedbackDTO;
+import com.autoskola.trainingservice.dto.InstructorDTO;
 import com.autoskola.trainingservice.dto.UserDTO;
 import com.autoskola.trainingservice.model.Candidate;
 import com.autoskola.trainingservice.model.Feedback;
@@ -14,42 +16,48 @@ import org.springframework.stereotype.Service;
 public class FeedbackService {
 
     private final FeedbackRepository feedbackRepository;
-    private final InstructorRepository instructorRepository;
     private final CandidateRepository candidateRepository;
-    private final UserService userService;
+    private final InstructorRepository instructorRepository;
+    private final CandidateService candidateService;
+    private final InstructorService instructorService;
 
-    public FeedbackService(FeedbackRepository feedbackRepository, InstructorRepository instructorRepository, CandidateRepository candidateRepository,
-                           UserService userService) {
+    public FeedbackService(FeedbackRepository feedbackRepository, CandidateRepository candidateRepository, InstructorRepository instructorRepository,
+                           CandidateService candidateService,
+                           InstructorService instructorService) {
         this.feedbackRepository = feedbackRepository;
-        this.instructorRepository = instructorRepository;
         this.candidateRepository = candidateRepository;
-        this.userService = userService;
+        this.instructorRepository = instructorRepository;
+        this.candidateService = candidateService;
+        this.instructorService = instructorService;
     }
 
-    public FeedbackWithUsersDTO getFeedbackDetails(Long id) {
+    public FeedbackDTO getFeedbackDetails(Long id) {
         Feedback feedback = feedbackRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Feedback nije pronađen"));
+                .orElseThrow(() -> new RuntimeException("Ocjena nije pronađena"));
+        CandidateDTO candidateDTO = candidateService.getCandidateFullDetails(feedback.getCandidate().getCandidateId());
+        InstructorDTO instructorDTO = instructorService.getInstructorFullDetails(feedback.getInstructor().getInstructorId());
 
-        Instructor fullInstructor = instructorRepository.findById(feedback.getInstructor().getInstructorId())
-                .orElseThrow(() -> new RuntimeException("Instruktor nije pronađen"));
-
-        Candidate fullCandidate = candidateRepository.findById(feedback.getCandidate().getCandidateId())
-                .orElseThrow(() -> new RuntimeException("Kandidat nije pronađen"));
-
-        feedback.setInstructor(fullInstructor);
-        feedback.setCandidate(fullCandidate);
-
-        UserDTO instructorUser = userService.getUserById(
-                fullInstructor.getUserId()
-        );
-
-        UserDTO candidateUser = userService.getUserById(
-                fullCandidate.getUserId()
-        );
-        return new FeedbackWithUsersDTO(
-                feedback,
-                instructorUser,
-                candidateUser
+        return new FeedbackDTO(
+                feedback.getFeedbackId(),
+                feedback.getRating(),
+                feedback.getComment(),
+                feedback.getDateCreated(),
+                candidateDTO,
+                instructorDTO
         );
     }
+
+    public FeedbackDTO createFeedback(Feedback feedback) {
+        Candidate candidate = candidateRepository.findById(feedback.getCandidate().getCandidateId())
+                .orElseThrow(() -> new RuntimeException("Kandidat sa ID-om " + feedback.getCandidate().getCandidateId() + " nije pronađen"));
+
+        Instructor instructor = instructorRepository.findById(feedback.getInstructor().getInstructorId())
+                .orElseThrow(() -> new RuntimeException("Instruktor sa ID-om " + feedback.getInstructor().getInstructorId() + " nije pronađen"));
+
+        feedback.setCandidate(candidate);
+        feedback.setInstructor(instructor);
+        Feedback savedFeedback = feedbackRepository.save(feedback);
+        return getFeedbackDetails(savedFeedback.getFeedbackId());
+    }
+
 }
