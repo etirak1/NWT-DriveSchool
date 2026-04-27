@@ -3,6 +3,7 @@ package com.autoskola.trainingservice.controller;
 import com.autoskola.trainingservice.dto.LessonDTO;
 import com.autoskola.trainingservice.model.Lesson;
 import com.autoskola.trainingservice.service.LessonService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -60,6 +61,14 @@ public class LessonController {
     @PatchMapping("/{id}/notes")
     public ResponseEntity<LessonDTO> updateNotes(@PathVariable Long id, @RequestBody String notes) {
         return ResponseEntity.ok(lessonService.patchLessonNotes(id, notes));
+    }
+
+    @Value("${server.port}")
+    private String port;
+
+    @GetMapping("/whoami")
+    public String whoAmI() {
+        return "Odgovor sa porta: " + port;
     }
 
 }
