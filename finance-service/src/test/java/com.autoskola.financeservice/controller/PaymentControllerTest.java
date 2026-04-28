@@ -39,7 +39,7 @@ public class PaymentControllerTest {
         Mockito.when(paymentRepository.findByCandidateAccount_Id(48))
                 .thenReturn(Arrays.asList(p1));
 
-        mockMvc.perform(get("/payments/candidate/48"))
+        mockMvc.perform(get("/payments/candidate/48")) //48
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].amount", is(100.00)));

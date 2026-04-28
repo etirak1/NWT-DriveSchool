@@ -26,7 +26,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@SpringBootTest
+@SpringBootTest(properties = {
+        "spring.datasource.url=jdbc:mysql://localhost:3306/autoskola_finance_db?createDatabaseIfNotExist=true",
+        "spring.datasource.username=root",
+        "spring.datasource.password=",
+        "spring.jpa.database-platform=org.hibernate.dialect.MySQLDialect",
+        "spring.jpa.hibernate.ddl-auto=update",
+        "spring.jpa.show-sql=true"
+})
 @AutoConfigureMockMvc
 @ActiveProfiles("test") // Koristi 'test' profil da izbjegne DataInitializer
 @Transactional // Automatski poništava promjene u bazi nakon testa (Rollback)
