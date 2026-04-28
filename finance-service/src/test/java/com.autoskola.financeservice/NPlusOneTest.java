@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach; // VAŽNO: JUnit 5 anotacija
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -78,7 +79,7 @@ public class NPlusOneTest {
         stats.setStatisticsEnabled(true);
         stats.clear();
 
-        repository.findAllWithPayments();
+        repository.findAllWithPayments(PageRequest.of(0, 10));
 
         assertEquals(1, stats.getPrepareStatementCount(), "Trebao bi biti samo 1 SQL upit!");
     }
