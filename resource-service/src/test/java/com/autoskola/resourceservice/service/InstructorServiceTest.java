@@ -6,6 +6,7 @@ import com.autoskola.resourceservice.repository.InstructorRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -36,5 +37,14 @@ class InstructorServiceTest {
         assertThrows(ResourceNotFoundException.class, () -> {
             service.getById(1L);
         });
+    }
+
+    @Test
+    void shouldReturnAllInstructors() {
+        when(repository.findAll()).thenReturn(List.of(new Instructor()));
+
+        List<Instructor> result = service.getAll();
+
+        assertEquals(1, result.size());
     }
 }
