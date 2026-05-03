@@ -6,6 +6,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
 import org.springframework.web.client.RestTemplate;
@@ -16,6 +17,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @SpringBootApplication
+@EnableDiscoveryClient
 public class TrainingServiceApplication {
 
     public static void main(String[] args) {
@@ -37,7 +39,6 @@ public class TrainingServiceApplication {
     @Profile("!test")
     public CommandLineRunner initData(
             UserRepository userRepository,
-            VehicleRepository vehicleRepository,
             TrainingRuleRepository ruleRepository,
             InstructorRepository instructorRepository,
             CandidateRepository candidateRepository,
@@ -59,11 +60,14 @@ public class TrainingServiceApplication {
             User userInst = userRepository.save(new User(
                     null, "Emina", "Omerović", "INSTRUCTOR"));
 
-            User userCand = userRepository.save(new User(
+            User userCand1 = userRepository.save(new User(
                     null, "Tajra", "Ljubović", "CANDIDATE"));
 
-            Vehicle golf = vehicleRepository.save(new Vehicle(
-                    null, "VW", "Golf 7", "A12-K-345"));
+            User userCand2 = userRepository.save(new User(
+                    null, "Elma", "Nekić", "CANDIDATE"));
+
+            User userCand3 = userRepository.save(new User(
+                    null, "Emina", "Torlak", "CANDIDATE"));
 
             // 1. Unos pravila obuke (npr. B Kategorija)
             TrainingRule bCategory = ruleRepository.save(new TrainingRule(
@@ -75,7 +79,13 @@ public class TrainingServiceApplication {
 
             // 3. Unos kandidata
             Candidate candidate1 = candidateRepository.save(new Candidate(
-                    null, userCand.getUserId(), LocalDate.now().minusDays(10), new BigDecimal("15.0"), instructor1, bCategory));
+                    null, userCand1.getUserId(), LocalDate.now().minusDays(10), new BigDecimal("15.0"), instructor1, bCategory));
+
+            Candidate candidate2 = candidateRepository.save(new Candidate(
+                    null, userCand2.getUserId(), LocalDate.now().minusDays(10), new BigDecimal("15.0"), instructor1, bCategory));
+
+            Candidate candidate3 = candidateRepository.save(new Candidate(
+                    null, userCand3.getUserId(), LocalDate.now().minusDays(10), new BigDecimal("15.0"), instructor1, bCategory));
 
             // 4. Unos jednog zakazanog časa vožnje
             lessonRepository.save(new Lesson(
@@ -87,6 +97,39 @@ public class TrainingServiceApplication {
                     45,
                     "ZAKAZANO",
                     "Vježba kretanja na uzbrdici"
+            ));
+
+            lessonRepository.save(new Lesson(
+                    null,
+                    candidate3,
+                    instructor1,
+                    1L,
+                    LocalDateTime.now().plusDays(2).withHour(10).withMinute(0),
+                    45,
+                    "OTKAZANO",
+                    "Vježba kretanja na uzbrdici"
+            ));
+
+            lessonRepository.save(new Lesson(
+                    null,
+                    candidate3,
+                    instructor1,
+                    1L,
+                    LocalDateTime.now().plusDays(2).withHour(10).withMinute(0),
+                    45,
+                    "ODRAĐENO",
+                    "Vježba poligon"
+            ));
+
+            lessonRepository.save(new Lesson(
+                    null,
+                    candidate2,
+                    instructor1,
+                    1L,
+                    LocalDateTime.now().plusDays(2).withHour(10).withMinute(0),
+                    45,
+                    "ZAKAZANO",
+                    "Vježba poligon"
             ));
 
             // 5. Unos faze obuke (npr. Teorijski dio je u toku)

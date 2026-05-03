@@ -1,6 +1,6 @@
 package com.autoskola.trainingservice.service;
 
-import com.autoskola.trainingservice.dto.InstructorWithUserDTO;
+import com.autoskola.trainingservice.dto.InstructorDTO;
 import com.autoskola.trainingservice.dto.UserDTO;
 import com.autoskola.trainingservice.model.Instructor;
 import com.autoskola.trainingservice.model.User;
@@ -23,7 +23,7 @@ public class InstructorService {
         this.userRepository = userRepository;
     }
 
-    public InstructorWithUserDTO getInstructorWithUser(Long id) {
+    public InstructorDTO getInstructorFullDetails(Long id) {
         Instructor instructor = instructorRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Instructor not found"));
 
@@ -37,10 +37,19 @@ public class InstructorService {
                 user.getRole()
         );
 
-        return new InstructorWithUserDTO(instructor, userDTO);
+        return new InstructorDTO(instructor.getInstructorId(), userDTO);
     }
 
-    public List<InstructorWithUserDTO> getAllInstructors() {
+    public InstructorDTO createInstructor(Instructor instructor) {
+
+        userRepository.findById(instructor.getUserId())
+                .orElseThrow(() -> new RuntimeException("Korisnik sa ID-om " + instructor.getUserId() + " ne postoji."));
+        Instructor saved = instructorRepository.save(instructor);
+
+        return getInstructorFullDetails(saved.getInstructorId());
+    }
+
+    public List<InstructorDTO> getAllInstructors() {
         return instructorRepository.findAll().stream()
                 .map(inst -> {
                     User user = userRepository.findById(inst.getUserId())
@@ -53,7 +62,7 @@ public class InstructorService {
                             user.getRole()
                     );
 
-                    return new InstructorWithUserDTO(inst, userDTO);
+                    return new InstructorDTO(inst.getInstructorId(), userDTO);
                 })
                 .collect(Collectors.toList());
     }

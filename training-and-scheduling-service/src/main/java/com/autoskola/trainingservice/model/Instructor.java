@@ -15,7 +15,7 @@ public class Instructor {
     private Long instructorId;
 
     @NotNull(message = "User ID je obavezan")
-    private Long userId; // povezan sa User
+    private Long userId;
 
 
 }

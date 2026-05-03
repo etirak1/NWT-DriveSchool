@@ -1,20 +1,19 @@
-import com.autoskola.trainingservice.dto.LessonWithUsersDTO;
+package com.autoskola.trainingservice;
+
+import com.autoskola.trainingservice.dto.LessonDTO;
 import com.autoskola.trainingservice.dto.UserDTO;
-import com.autoskola.trainingservice.dto.VehicleDTO;
 import com.autoskola.trainingservice.model.Candidate;
 import com.autoskola.trainingservice.model.Instructor;
 import com.autoskola.trainingservice.model.Lesson;
 import com.autoskola.trainingservice.repository.LessonRepository;
 import com.autoskola.trainingservice.service.LessonService;
 import com.autoskola.trainingservice.service.UserService;
-import com.autoskola.trainingservice.service.VehicleService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -28,9 +27,6 @@ class LessonServiceTest {
 
     @Mock
     private UserService userService;
-
-    @Mock
-    private VehicleService vehicleService;
 
     @InjectMocks
     private LessonService lessonService;
@@ -63,10 +59,7 @@ class LessonServiceTest {
         when(userService.getUserById(20L))
                 .thenReturn(new UserDTO(20L, "Tajra", "Ljubović", "CANDIDATE"));
 
-        when(vehicleService.getVehicleById(1L))
-                .thenReturn(new VehicleDTO(1L, "VW", "Golf", "123-A-456"));
-
-        LessonWithUsersDTO result = lessonService.getLessonDetails(1L);
+        LessonDTO result = lessonService.getLessonDetails(1L);
 
         assertNotNull(result);
         assertEquals("Emina", result.getInstructor().getFirstName());

@@ -1,6 +1,6 @@
 package com.autoskola.trainingservice.controller;
 
-import com.autoskola.trainingservice.dto.FeedbackWithUsersDTO;
+import com.autoskola.trainingservice.dto.FeedbackDTO;
 import com.autoskola.trainingservice.model.Feedback;
 import com.autoskola.trainingservice.repository.FeedbackRepository;
 import com.autoskola.trainingservice.service.FeedbackService;
@@ -14,26 +14,19 @@ import jakarta.validation.Valid;
 public class FeedbackController {
 
     private final FeedbackService feedbackService;
-    private final FeedbackRepository feedbackRepository;
 
-    public FeedbackController(FeedbackService feedbackService, FeedbackRepository feedbackRepository) {
+    public FeedbackController(FeedbackService feedbackService) {
         this.feedbackService = feedbackService;
-        this.feedbackRepository = feedbackRepository;
     }
 
     @GetMapping("/{id}")
-    public FeedbackWithUsersDTO getFeedback(@PathVariable Long id) {
+    public FeedbackDTO getFeedback(@PathVariable Long id) {
         return feedbackService.getFeedbackDetails(id);
     }
 
     @PostMapping
-    public ResponseEntity<FeedbackWithUsersDTO> leaveFeedback(@Valid @RequestBody Feedback feedback) {
-
-        Feedback savedFeedback = feedbackRepository.save(feedback);
-        FeedbackWithUsersDTO response = feedbackService.getFeedbackDetails(savedFeedback.getFeedbackId());
-
+    public ResponseEntity<FeedbackDTO> leaveFeedback(@Valid @RequestBody Feedback feedback) {
+        FeedbackDTO response = feedbackService.createFeedback(feedback);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
-
-
     }
 }
