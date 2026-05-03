@@ -1,6 +1,7 @@
 package com.autoskola.financeservice.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.*; // DODANO
 import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -14,28 +15,28 @@ public class CandidateFinanceAccount {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "candidate_id") // PK sa dijagrama
+    @Column(name = "candidate_id")
     private Integer id;
 
-    @OneToOne
-    @JoinColumn(name = "user_id") // FK sa dijagrama
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    @NotNull(message = "Korisnik mora biti povezan sa nalogom")
     private User user;
 
-    @Column(name = "enrollment_date")
     private LocalDate enrollmentDate;
 
-    @Column(name = "progress_percentage", precision = 5, scale = 2)
+    @DecimalMin(value = "0.0", message = "Progres ne može biti negativan")
+    @DecimalMax(value = "100.0", message = "Progres ne može biti veći od 100")
     private BigDecimal progressPercentage;
 
-    @Column(name = "assigned_instructor_id")
     private Integer assignedInstructorId;
-
-    @Column(name = "rule_id")
     private Integer ruleId;
 
-    // Ovo polje ti treba za tvoj finansijski servis (ukupna cijena obuke)
+    @NotNull(message = "Ukupna cijena obuke je obavezna")
+    @DecimalMin(value = "0.0", message = "Cijena ne može biti negativna")
     private BigDecimal totalAmount;
 
     @OneToMany(mappedBy = "candidateAccount", cascade = CascadeType.ALL)
     private List<Payment> payments;
 }
+

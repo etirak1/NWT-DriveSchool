@@ -1,7 +1,10 @@
 package com.autoskola.resourceservice.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
 import lombok.*;
+import jakarta.validation.constraints.NotNull;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -13,9 +16,12 @@ public class Instructor {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long instructorId;
 
-    private Long userId; // povezan sa User
+    @NotNull(message = "ID korisnika je obavezan")
+    private Long userId;
 
-    private String availabilityNote; // npr. “Available Mon-Fri 9-17”
+    @NotBlank(message = "Napomena o dostupnosti je obavezna")
+    @Size(max = 255, message = "Napomena može imati maksimalno 255 karaktera")
+    private String availabilityNote;
 
     private LocalDateTime dateCreated;
 
