@@ -4,6 +4,12 @@ import com.autoskola.financeservice.dto.CandidateFinanceAccountDTO;
 import com.autoskola.financeservice.service.FinanceService;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import com.github.fge.jsonpatch.JsonPatch;
+
+
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -23,6 +29,11 @@ public class CandidateFinanceAccountController {
         return "Podaci su validni!";
     }
 
+    @PatchMapping(path = "/{id}", consumes = "application/json-patch+json")
+    public CandidateFinanceAccountDTO patchAccount(@PathVariable Integer id, @RequestBody JsonPatch patch) {
+        return financeService.applyPatchToAccount(id, patch);
+    }
+
     @GetMapping
     public List<CandidateFinanceAccountDTO> getAll() {
         return financeService.getAllAccounts();
@@ -31,6 +42,13 @@ public class CandidateFinanceAccountController {
     @GetMapping("/{id}")
     public CandidateFinanceAccountDTO getById(@PathVariable Integer id) {
         return financeService.getAccountById(id);
+    }
+
+
+    @GetMapping("/paginated")
+    public Page<CandidateFinanceAccountDTO> getAllPaginated(
+            @PageableDefault(size = 10, sort = "enrollmentDate") Pageable pageable) {
+        return financeService.getAllAccountsPaginated(pageable);
     }
 
     @GetMapping("/{id}/debt")
