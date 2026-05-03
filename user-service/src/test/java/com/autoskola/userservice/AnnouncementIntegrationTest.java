@@ -42,7 +42,7 @@ public class AnnouncementIntegrationTest {
         boolean exists = announcementRepository.findAll().stream()
                 .anyMatch(a -> a.getTitle().equals("Test Obavijest"));
 
-        assertTrue(exists, "Obaveštenje bi trebalo biti uspešno sačuvano u bazi!");
+        assertTrue(exists, "Obaveštenje bi trebalo biti uspješno sačuvano u bazi!");
     }
 
     @Test

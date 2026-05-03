@@ -8,6 +8,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Profile;
 
 @SpringBootApplication
 public class UserServiceApplication {
@@ -17,6 +18,7 @@ public class UserServiceApplication {
 	}
 
 	@Bean
+	@Profile("!test")
 	CommandLineRunner start(UserRepository userRepository,
 	                        AnnouncementRepository announcementRepository) {
 		return args -> {
