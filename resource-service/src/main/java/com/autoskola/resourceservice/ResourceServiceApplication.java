@@ -3,6 +3,7 @@ package com.autoskola.resourceservice;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
 import org.springframework.web.client.RestTemplate;
@@ -16,7 +17,11 @@ import com.autoskola.resourceservice.repository.InstructorRepository;
 import com.autoskola.resourceservice.repository.UserRepository;
 import java.time.LocalDateTime;
 
+
+
+
 @SpringBootApplication
+@EnableDiscoveryClient
 public class ResourceServiceApplication {
 
 	public static void main(String[] args) {
