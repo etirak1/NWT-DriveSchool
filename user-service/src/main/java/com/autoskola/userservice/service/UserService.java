@@ -1,5 +1,6 @@
 package com.autoskola.userservice.service;
 
+import com.autoskola.userservice.client.TrainingClient;
 import com.autoskola.userservice.dto.UserDTO;
 import com.autoskola.userservice.model.Announcement;
 import com.autoskola.userservice.model.User;
@@ -34,6 +35,9 @@ public class UserService {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private TrainingClient trainingClient;
 
     public Page<UserDTO> getAllUsersPaged(int page, int size, String sortBy) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy));
@@ -76,5 +80,25 @@ public class UserService {
     public UserDTO createUser(User user) {
         User savedUser = userRepository.save(user);
         return modelMapper.map(savedUser, UserDTO.class);
+    }
+
+    public void deleteOrDeactivateInstructor(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Korisnik nije pronadjen"));
+
+        // Provjeravamo da li je korisnik instruktor
+        if ("INSTRUKTOR".equals(user.getRole())) { // Prilagodi polje role tvojoj bazi
+
+            // SINHRONI POZIV: Čekamo odgovor od training-service
+            // Ovo je tačka 1.a iz zadatka - Validacija podataka kao međukorak
+            Boolean imaCasove = trainingClient.hasActiveSessions(id);
+
+            if (imaCasove) {
+                throw new RuntimeException("Ne možete obrisati instruktora jer ima aktivne termine vožnje u training-servisu!");
+            }
+        }
+
+        // Ako nema časova ili nije instruktor, brišemo ga
+        userRepository.deleteById(id);
     }
 }
