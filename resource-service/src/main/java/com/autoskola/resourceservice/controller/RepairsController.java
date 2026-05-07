@@ -1,8 +1,13 @@
 package com.autoskola.resourceservice.controller;
 
+import com.autoskola.resourceservice.dto.RepairRequestDTO;
 import com.autoskola.resourceservice.model.Repairs;
+import com.autoskola.resourceservice.model.Vehicle;
 import com.autoskola.resourceservice.repository.RepairsRepository;
+import com.autoskola.resourceservice.repository.VehicleRepository;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Page;
@@ -17,13 +22,16 @@ import java.util.Map;
 public class RepairsController {
 
     private final RepairsRepository repairsRepository;
+    private final VehicleRepository vehicleRepository;
 
-    public RepairsController(RepairsRepository repairsRepository) {
+    public RepairsController(RepairsRepository repairsRepository, VehicleRepository vehicleRepository) {
         this.repairsRepository = repairsRepository;
+        this.vehicleRepository = vehicleRepository;
     }
 
     @GetMapping
     public List<Repairs> getAllRepairs() {
+        System.out.println("Metoda getAllRepairs pozvana na portu: " + port);
         return repairsRepository.findAllWithVehicle();
     }
 
@@ -53,6 +61,16 @@ public class RepairsController {
 
     @PostMapping("/batch")
     public ResponseEntity<List<Repairs>> createBatch(@RequestBody List<Repairs> repairsList) {
+
+        for (Repairs r : repairsList) {
+            Long vehicleId = r.getVehicle().getVehicleId();
+
+            Vehicle vehicle = vehicleRepository.findById(vehicleId)
+                    .orElseThrow(() -> new RuntimeException("Vehicle not found"));
+
+            r.setVehicle(vehicle);
+        }
+
         return ResponseEntity.ok(repairsRepository.saveAll(repairsList));
     }
 
@@ -75,30 +93,25 @@ public class RepairsController {
     @PatchMapping("/{id}")
     public ResponseEntity<Repairs> patchRepair(
             @PathVariable Long id,
-            @RequestBody Map<String, Object> updates) {
+            @RequestBody RepairRequestDTO dto) {
 
         Repairs repair = repairsRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Popravka nije pronađena"));
 
-        updates.forEach((key, value) -> {
-            switch (key) {
-                case "description":
-                    repair.setDescription((String) value);
-                    break;
-                case "cost":
-                    repair.setCost(Double.valueOf(value.toString()));
-                    break;
-                case "repairDate":
-                    repair.setRepairDate(LocalDateTime.parse(value.toString()));
-                    break;
-                default:
-                    throw new RuntimeException("Nepoznato polje: " + key);
-            }
-        });
+        if (dto.getDescription() != null) {
+            repair.setDescription(dto.getDescription());
+        }
+
+        if (dto.getCost() != null) {
+            repair.setCost(dto.getCost());
+        }
+
+        if (dto.getRepairDate() != null) {
+            repair.setRepairDate(dto.getRepairDate());
+        }
 
         return ResponseEntity.ok(repairsRepository.save(repair));
     }
-
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteRepair(@PathVariable Long id) {
 
@@ -108,6 +121,13 @@ public class RepairsController {
 
         repairsRepository.deleteById(id);
         return ResponseEntity.noContent().build();
+    }
+    @Value("${server.port}")
+    private String port;
+
+    @GetMapping("/port")
+    public String getPort() {
+        return "Odziv sa porta: " + port;
     }
 
 
