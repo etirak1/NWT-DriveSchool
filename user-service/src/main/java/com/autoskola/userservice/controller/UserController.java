@@ -12,6 +12,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.fge.jsonpatch.JsonPatch;
 import com.github.fge.jsonpatch.JsonPatchException;
 import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
+
 
 import java.util.List;
 
@@ -57,4 +59,17 @@ public class UserController {
         }
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+        try {
+            userService.deleteOrDeactivateInstructor(id);
+            return ResponseEntity.ok("Korisnik uspješno obrisan.");
+        } catch (RuntimeException e) {
+            // Ovdje upada poruka iz UserService:
+            // "Ne možete obrisati instruktora jer ima aktivne termine vožnje..."
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(e.getMessage());
+        }
+    }
 }
