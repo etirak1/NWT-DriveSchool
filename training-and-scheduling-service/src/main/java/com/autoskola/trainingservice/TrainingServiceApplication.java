@@ -57,8 +57,11 @@ public class TrainingServiceApplication {
             userRepository.deleteAll();
 
             //Unos korisnika(User)
-            User userInst = userRepository.save(new User(
+            User userInst1 = userRepository.save(new User(
                     null, "Emina", "Omerović", "INSTRUCTOR"));
+
+            User userInst2 = userRepository.save(new User(
+                    null, "Adna", "Alihodžić", "INSTRUCTOR"));
 
             User userCand1 = userRepository.save(new User(
                     null, "Tajra", "Ljubović", "CANDIDATE"));
@@ -69,13 +72,22 @@ public class TrainingServiceApplication {
             User userCand3 = userRepository.save(new User(
                     null, "Emina", "Torlak", "CANDIDATE"));
 
+            User userCand4 = userRepository.save(new User(
+                    null, "Elma", "Tirak", "CANDIDATE"));
+
+            User userCand5 = userRepository.save(new User(
+                    null, "Dinela", "Pešković", "CANDIDATE"));
+
             // 1. Unos pravila obuke (npr. B Kategorija)
             TrainingRule bCategory = ruleRepository.save(new TrainingRule(
                     null, 30, 35, 45, new BigDecimal("1200.00")));
 
             // 2. Unos instruktora
             Instructor instructor1 = instructorRepository.save(new Instructor(
-                    null, userInst.getUserId()));
+                    null, userInst1.getUserId()));
+
+            Instructor instructor2 = instructorRepository.save(new Instructor(
+                    null, userInst2.getUserId()));
 
             // 3. Unos kandidata
             Candidate candidate1 = candidateRepository.save(new Candidate(
@@ -85,7 +97,13 @@ public class TrainingServiceApplication {
                     null, userCand2.getUserId(), LocalDate.now().minusDays(10), new BigDecimal("15.0"), instructor1, bCategory));
 
             Candidate candidate3 = candidateRepository.save(new Candidate(
-                    null, userCand3.getUserId(), LocalDate.now().minusDays(10), new BigDecimal("15.0"), instructor1, bCategory));
+                    null, userCand3.getUserId(), LocalDate.now().minusDays(10), new BigDecimal("45.0"), instructor1, bCategory));
+
+            Candidate candidate4 = candidateRepository.save(new Candidate(
+                    null, userCand4.getUserId(), LocalDate.now().minusDays(10), new BigDecimal("25.0"), instructor2, bCategory));
+
+            Candidate candidate5 = candidateRepository.save(new Candidate(
+                    null, userCand5.getUserId(), LocalDate.now().minusDays(10), new BigDecimal("35.0"), instructor2, bCategory));
 
             // 4. Unos jednog zakazanog časa vožnje
             lessonRepository.save(new Lesson(
@@ -139,6 +157,15 @@ public class TrainingServiceApplication {
             // 6. Unos jednog feedbacka (Kandidat ocjenjuje instruktora)
             feedbackRepository.save(new Feedback(
                     null, candidate1, instructor1, 5, "Odličan instruktor, jako strpljiv.", LocalDate.now()));
+
+            feedbackRepository.save(new Feedback(
+                    null, candidate2, instructor1, 3, "Loša komunikacija", LocalDate.now()));
+
+            feedbackRepository.save(new Feedback(
+                    null, candidate3, instructor1, 5, "Zadovoljna sam radom sa ovim instruktorom.", LocalDate.now()));
+
+            feedbackRepository.save(new Feedback(
+                    null, candidate4, instructor2, 5, "Odličan instruktor, jako strpljiv.", LocalDate.now()));
 
             System.out.println(">>> Training and Scheduling Service: Podaci su uspješno uneseni u bazu!");
         };
