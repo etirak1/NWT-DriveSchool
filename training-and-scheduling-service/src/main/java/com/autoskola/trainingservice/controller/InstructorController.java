@@ -6,9 +6,12 @@ import com.autoskola.trainingservice.model.Candidate;
 import com.autoskola.trainingservice.model.Instructor;
 import com.autoskola.trainingservice.service.InstructorService;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/instructors")
@@ -34,5 +37,16 @@ public class InstructorController {
     @GetMapping
     public List<InstructorDTO> getAllInstructors() {
         return instructorService.getAllInstructors();
+    }
+
+    @Value("${server.port}")
+    private String port;
+
+    @GetMapping("/performance-report")
+    public Map<String, Object> getPerformanceReport() {
+        Map<String, Object> response = new HashMap<>();
+        response.put("calculatedOnPort", port);
+        response.put("reportData", instructorService.getInstructorPerformanceReport());
+        return response;
     }
 }
