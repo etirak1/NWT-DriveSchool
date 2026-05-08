@@ -16,6 +16,6 @@ public interface LessonRepository extends JpaRepository<Lesson, Long> {
     @EntityGraph(attributePaths = {"candidate", "instructor"})
     List<Lesson> findAll();
 
-    @Query("SELECT l FROM Lesson l WHERE l.instructor.instructorId = :instId AND l.status = 'ZAKAZANO'")
-    List<Lesson> findUpcomingByInstructor(@Param("instId") Long instId);
+    @Query("SELECT l FROM Lesson l WHERE l.instructor.userId = :userId AND l.status = 'ZAKAZANO'")
+    List<Lesson> findUpcomingByInstructorUserId(@Param("userId") Long userId);
 }
