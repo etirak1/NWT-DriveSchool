@@ -126,5 +126,9 @@ public class LessonService {
         return getLessonDetails(saved.getLessonId());
     }
 
+    public boolean hasActiveSessions(Long userId) {
+        return !lessonRepository.findUpcomingByInstructorUserId(userId).isEmpty();
+    }
+
 
 }

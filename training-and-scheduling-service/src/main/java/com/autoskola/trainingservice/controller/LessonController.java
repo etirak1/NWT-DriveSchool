@@ -71,4 +71,9 @@ public class LessonController {
         return "Odgovor sa porta: " + port;
     }
 
+    @GetMapping("/instructor/{userId}/has-active-sessions")
+    public ResponseEntity<Boolean> hasActiveSessions(@PathVariable Long userId) {
+        return ResponseEntity.ok(lessonService.hasActiveSessions(userId));
+    }
+
 }
