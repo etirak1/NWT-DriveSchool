@@ -12,7 +12,7 @@ import java.util.Optional;
 
 public interface CandidateFinanceAccountRepository extends JpaRepository<CandidateFinanceAccount, Integer> {
 
-
+    //Entity Graph
     @EntityGraph(attributePaths = {"user", "payments"})
     @Query("SELECT a FROM CandidateFinanceAccount a")
     List<CandidateFinanceAccount> findAllWithPayments();

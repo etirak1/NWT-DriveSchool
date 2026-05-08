@@ -18,13 +18,13 @@
 		<spring-cloud.version>2023.0.1</spring-cloud.version>
 	</properties>
 	<dependencies>
-		<!-- 1. Glavna zavisnost za Eureka Server -->
+		<!-- Eureka Server -->
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
 		</dependency>
 
-		<!-- 2. Actuator za Healthcheck (premješten iz dependencyManagement u dependencies) -->
+		<!-- Healthcheck -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
@@ -39,7 +39,7 @@
 
 	<dependencyManagement>
 		<dependencies>
-			<!-- Upravljanje verzijama za Spring Cloud -->
+
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-dependencies</artifactId>
