@@ -101,4 +101,9 @@ public class UserService {
         // Ako nema časova ili nije instruktor, brišemo ga
         userRepository.deleteById(id);
     }
+
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Korisnik sa emailom " + email + " nije pronađen"));
+    }
 }
