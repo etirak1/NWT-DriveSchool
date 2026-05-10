@@ -13,7 +13,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -30,6 +34,7 @@ class LessonServiceTest {
 
     @InjectMocks
     private LessonService lessonService;
+
 
     @Test
     void testGetLessonDetails_Success() {
@@ -65,4 +70,17 @@ class LessonServiceTest {
         assertEquals("Emina", result.getInstructor().getFirstName());
         assertEquals("Tajra", result.getCandidate().getFirstName());
     }
+
+
+        @Test
+        void hasActiveSessions_ShouldReturnTrue_WhenLessonsExist() {
+            Long userId = 10L;
+            when(lessonRepository.findUpcomingByInstructorUserId(userId))
+                    .thenReturn(List.of(new Lesson()));
+
+            boolean result = lessonService.hasActiveSessions(userId);
+
+            assertTrue(result);
+        }
+
 }
