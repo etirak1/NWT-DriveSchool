@@ -6,6 +6,8 @@ import com.autoskola.trainingservice.service.LessonService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -14,6 +16,7 @@ import org.springframework.data.domain.Sort;
 import java.util.List;
 
 @RestController
+@EnableMethodSecurity
 @RequestMapping("/api/lessons")
 public class LessonController {
 
@@ -24,28 +27,33 @@ public class LessonController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR', 'CANDIDATE')")
     public LessonDTO getLesson(@PathVariable Long id) {
         return lessonService.getLessonDetails(id);
     }
 
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
     public LessonDTO scheduleLesson(@Valid @RequestBody Lesson lesson) {
         return lessonService.saveLesson(lesson);
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR', 'CANDIDATE')")
     public List<LessonDTO> getAllLessons() {
         return lessonService.getAllLessons();
     }
 
     @PostMapping("/{id}/complete")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
     public ResponseEntity<String> completeLesson(@PathVariable Long id) {
         String result = lessonService.completeLessonAndIncreaseProgress(id);
         return ResponseEntity.ok(result);
     }
 
     @GetMapping("/paged")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
     public ResponseEntity<Page<LessonDTO>> getLessonsPaged(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -59,6 +67,7 @@ public class LessonController {
     }
 
     @PatchMapping("/{id}/notes")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
     public ResponseEntity<LessonDTO> updateNotes(@PathVariable Long id, @RequestBody String notes) {
         return ResponseEntity.ok(lessonService.patchLessonNotes(id, notes));
     }
@@ -67,11 +76,13 @@ public class LessonController {
     private String port;
 
     @GetMapping("/whoami")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public String whoAmI() {
         return "Odgovor sa porta: " + port;
     }
 
     @GetMapping("/instructor/{userId}/has-active-sessions")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
     public ResponseEntity<Boolean> hasActiveSessions(@PathVariable Long userId) {
         return ResponseEntity.ok(lessonService.hasActiveSessions(userId));
     }

@@ -1,6 +1,7 @@
 package com.autoskola.resourceservice.exception;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
@@ -50,5 +51,13 @@ public class GlobalExceptionHandler {
         response.put("error", "server_error");
         response.put("message", "Došlo je do greške na serveru");
         return response;
+    }
+
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<Map<String, String>> handleAccessDenied(Exception ex) {
+        Map<String, String> response = new HashMap<>();
+        response.put("error", "FORBIDDEN");
+        response.put("message", "Nemate privilegije za izvršavanje ove akcije.");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
 }

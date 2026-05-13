@@ -45,4 +45,12 @@ public class GlobalExceptionHandler {
         ErrorResponse error = new ErrorResponse("UNSUPPORTED_MEDIA_TYPE", ex.getMessage());
         return new ResponseEntity<>(error, HttpStatus.UNSUPPORTED_MEDIA_TYPE);
     }
+
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<Map<String, String>> handleAccessDenied(Exception ex) {
+        Map<String, String> response = new HashMap<>();
+        response.put("error", "FORBIDDEN");
+        response.put("message", "Nemate privilegije za izvršavanje ove akcije.");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+    }
 }

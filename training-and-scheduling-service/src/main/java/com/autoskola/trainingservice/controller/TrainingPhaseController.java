@@ -4,12 +4,15 @@ import com.autoskola.trainingservice.dto.TrainingPhaseDTO;
 import com.autoskola.trainingservice.model.TrainingPhase;
 import com.autoskola.trainingservice.repository.TrainingPhaseRepository;
 import com.autoskola.trainingservice.service.TrainingPhaseService;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
 import java.util.List;
 
 @RestController
+@EnableMethodSecurity
 @RequestMapping("/api/phases")
 public class TrainingPhaseController {
 
@@ -20,16 +23,19 @@ public class TrainingPhaseController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR', 'CANDIDATE')")
     public TrainingPhaseDTO getPhaseDetails(@PathVariable Long id) {
         return phaseService.getPhaseDetails(id);
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public TrainingPhaseDTO createPhase(@Valid @RequestBody TrainingPhase phase) {
         return phaseService.createPhase(phase);
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR', 'CANDIDATE')")
     public List<TrainingPhaseDTO> getAllPhases() {
         return phaseService.getAllPhases();
     }
