@@ -54,4 +54,12 @@ public class GlobalExceptionHandler {
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<Map<String, String>> handleAccessDenied(Exception ex) {
+        Map<String, String> response = new HashMap<>();
+        response.put("error", "FORBIDDEN");
+        response.put("message", "Nemate privilegije za izvršavanje ove akcije.");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+    }
 }

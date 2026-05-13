@@ -7,6 +7,8 @@ import com.autoskola.trainingservice.model.Instructor;
 import com.autoskola.trainingservice.service.InstructorService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -14,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
+@EnableMethodSecurity
 @RequestMapping("/api/instructors")
 public class InstructorController {
 
@@ -24,17 +27,20 @@ public class InstructorController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
     public InstructorDTO getInstructor(@PathVariable Long id) {
         return instructorService.getInstructorFullDetails(id);
     }
 
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public InstructorDTO createInstructor(@Valid @RequestBody Instructor instructor) {
         return instructorService.createInstructor(instructor);
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
     public List<InstructorDTO> getAllInstructors() {
         return instructorService.getAllInstructors();
     }
@@ -43,6 +49,7 @@ public class InstructorController {
     private String port;
 
     @GetMapping("/performance-report")
+    @PreAuthorize("hasRole('ADMIN')")
     public Map<String, Object> getPerformanceReport() {
         Map<String, Object> response = new HashMap<>();
         response.put("calculatedOnPort", port);
