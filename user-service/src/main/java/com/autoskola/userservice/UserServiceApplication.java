@@ -40,6 +40,8 @@ public class UserServiceApplication {
 			userRepository.save(new User(null, "Elma", "Nekić", "enekic1@etf.unsa.ba", passwordEncoder.encode("123456"), "ADMIN", "ACTIVE", null));
 			userRepository.save(new User(null, "Adna", "Alihodžić", "aalihodzic6@etf.unsa.ba", passwordEncoder.encode("123456"), "ADMIN", "ACTIVE", null));
 			userRepository.save(new User(null, "Dinela", "Pešković", "dpeskovic1@etf.unsa.ba", passwordEncoder.encode("123456"), "ADMIN", "ACTIVE", null));
+			userRepository.save(new User(null, "Emina", "Omerović", "eomerovic1@etf.unsa.ba", passwordEncoder.encode("123456"), "CANDIDATE", "ACTIVE", null));
+			userRepository.save(new User(null, "Tajra", "Ljubović", "tljubovic1@etf.unsa.ba", passwordEncoder.encode("123456"), "INSTRUCTOR", "ACTIVE", null));
 
 			announcementRepository.save(new Announcement(null, "Novi termini", "Novi termini za teoretski ispit su objavljeni.", admin.getUserId(), null, null));
 			announcementRepository.save(new Announcement(null, "Praznici", "Auto-škola ne radi za nadolazeće praznike.", admin.getUserId(), null, null));
