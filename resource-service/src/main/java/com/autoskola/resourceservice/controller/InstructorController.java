@@ -12,6 +12,8 @@ import com.autoskola.resourceservice.service.UserClientService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+
 
 import java.util.List;
 
@@ -33,6 +35,7 @@ public class InstructorController {
     }
 
     @GetMapping("/instructors/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
     public InstructorWithUserDTO getInstructorWithUser(@PathVariable Long id) {
         Instructor instructor = instructorService.getById(id);
 
@@ -40,6 +43,7 @@ public class InstructorController {
         return instructorMapper.toDTO(instructor, user);
     }
     @GetMapping("/instructors")
+    @PreAuthorize("hasRole('ADMIN')")
     public List<Instructor> getAll() {
         return instructorService.getAll();
     }
