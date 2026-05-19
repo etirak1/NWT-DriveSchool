@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import java.util.List;
+import com.autoskola.trainingservice.service.LessonService;
 
 @RestController
 @EnableMethodSecurity

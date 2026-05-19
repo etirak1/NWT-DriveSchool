@@ -38,9 +38,9 @@ public class Lesson {
 
     @NotBlank(message = "Status časa je obavezan")
     @Pattern(
-            regexp = "^(ZAKAZANO|ODRAĐENO|OTKAZANO)$",
+            regexp = "^(ZAKAZANO|ODRAĐENO|OTKAZANO|PENDING)$",
             flags = Pattern.Flag.CASE_INSENSITIVE,
-            message = "Status časa mora biti: ZAKAZANO, ODRAĐENO ili OTKAZANO"
+            message = "Status časa mora biti: ZAKAZANO, ODRAĐENO, OTKAZANO ILI PENDING"
     )
     private String status;
     private String notes;
