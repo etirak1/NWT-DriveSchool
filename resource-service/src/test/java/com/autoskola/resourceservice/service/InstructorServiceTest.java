@@ -3,6 +3,7 @@ package com.autoskola.resourceservice.service;
 import com.autoskola.resourceservice.exception.ResourceNotFoundException;
 import com.autoskola.resourceservice.model.Instructor;
 import com.autoskola.resourceservice.repository.InstructorRepository;
+import com.autoskola.resourceservice.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -15,7 +16,8 @@ import static org.mockito.Mockito.*;
 class InstructorServiceTest {
 
     private final InstructorRepository repository = mock(InstructorRepository.class);
-    private final InstructorService service = new InstructorService(repository);
+    private final UserRepository userRepository = mock(UserRepository.class);
+    private final InstructorService service = new InstructorService(repository, userRepository );
 
     @Test
     void shouldReturnInstructor_whenExists() {
