@@ -1,5 +1,8 @@
 package com.autoskola.trainingservice;
 
+import com.autoskola.trainingservice.client.UserClient;
+import com.autoskola.trainingservice.dto.UserDTO;
+import com.autoskola.trainingservice.dto.UserPageResponse;
 import com.autoskola.trainingservice.model.*;
 import com.autoskola.trainingservice.repository.*;
 import org.modelmapper.ModelMapper;
@@ -7,17 +10,20 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.client.RestTemplate;
+
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @SpringBootApplication
 @EnableDiscoveryClient
+@EnableFeignClients
 public class TrainingServiceApplication {
 
     public static void main(String[] args) {
@@ -38,6 +44,7 @@ public class TrainingServiceApplication {
     @Bean
     @Profile("!test")
     public CommandLineRunner initData(
+            UserClient userClient,
             UserRepository userRepository,
             TrainingRuleRepository ruleRepository,
             InstructorRepository instructorRepository,
@@ -56,118 +63,71 @@ public class TrainingServiceApplication {
             ruleRepository.deleteAll();
             userRepository.deleteAll();
 
-            //Unos korisnika(User)
-            User userInst1 = userRepository.save(new User(
-                    null, "Emina", "Omerović", "INSTRUCTOR"));
-
-            User userInst2 = userRepository.save(new User(
-                    null, "Adna", "Alihodžić", "INSTRUCTOR"));
-
-            User userCand1 = userRepository.save(new User(
-                    null, "Tajra", "Ljubović", "CANDIDATE"));
-
-            User userCand2 = userRepository.save(new User(
-                    null, "Elma", "Nekić", "CANDIDATE"));
-
-            User userCand3 = userRepository.save(new User(
-                    null, "Emina", "Torlak", "CANDIDATE"));
-
-            User userCand4 = userRepository.save(new User(
-                    null, "Elma", "Tirak", "CANDIDATE"));
-
-            User userCand5 = userRepository.save(new User(
-                    null, "Dinela", "Pešković", "CANDIDATE"));
-
-            // 1. Unos pravila obuke (npr. B Kategorija)
+            // 1. Unos pravila obuke
             TrainingRule bCategory = ruleRepository.save(new TrainingRule(
                     null, 30, 35, 45, new BigDecimal("1200.00")));
 
-            // 2. Unos instruktora
-            Instructor instructor1 = instructorRepository.save(new Instructor(
-                    null, userInst1.getUserId()));
+            Instructor instructor1 = null;
+            Candidate candidate1 = null;
+            Candidate candidate2 = null;
+            Candidate candidate3 = null;
 
-            Instructor instructor2 = instructorRepository.save(new Instructor(
-                    null, userInst2.getUserId()));
+            System.out.println(">>> Pokrećem sinhronizaciju sa User Service-om...");
 
-            // 3. Unos kandidata
-            Candidate candidate1 = candidateRepository.save(new Candidate(
-                    null, userCand1.getUserId(), LocalDate.now().minusDays(10), new BigDecimal("15.0"), instructor1, bCategory));
+            try {
+                UserPageResponse response = userClient.getAllUsers();
+                List<UserDTO> remoteUsers = response.getContent();
 
-            Candidate candidate2 = candidateRepository.save(new Candidate(
-                    null, userCand2.getUserId(), LocalDate.now().minusDays(10), new BigDecimal("15.0"), instructor1, bCategory));
+                if (remoteUsers != null) {
 
-            Candidate candidate3 = candidateRepository.save(new Candidate(
-                    null, userCand3.getUserId(), LocalDate.now().minusDays(10), new BigDecimal("45.0"), instructor1, bCategory));
+                    for (UserDTO ru : remoteUsers) {
 
-            Candidate candidate4 = candidateRepository.save(new Candidate(
-                    null, userCand4.getUserId(), LocalDate.now().minusDays(10), new BigDecimal("25.0"), instructor2, bCategory));
+                        userRepository.save(new User(ru.getUserId(), ru.getFirstName(), ru.getLastName(), ru.getRole()));
 
-            Candidate candidate5 = candidateRepository.save(new Candidate(
-                    null, userCand5.getUserId(), LocalDate.now().minusDays(10), new BigDecimal("35.0"), instructor2, bCategory));
+                        if ("INSTRUCTOR".equals(ru.getRole())) {
+                            Instructor i = instructorRepository.save(new Instructor(null, ru.getUserId()));
+                            if (instructor1 == null) instructor1 = i;
+                        }
+                    }
 
-            // 4. Unos jednog zakazanog časa vožnje
-            lessonRepository.save(new Lesson(
-                    null,
-                    candidate1,
-                    instructor1,
-                    1L,
-                    LocalDateTime.now().plusDays(2).withHour(10).withMinute(0),
-                    45,
-                    "ZAKAZANO",
-                    "Vježba kretanja na uzbrdici"
-            ));
 
-            lessonRepository.save(new Lesson(
-                    null,
-                    candidate3,
-                    instructor1,
-                    1L,
-                    LocalDateTime.now().plusDays(2).withHour(10).withMinute(0),
-                    45,
-                    "OTKAZANO",
-                    "Vježba kretanja na uzbrdici"
-            ));
+                    if (instructor1 != null) {
+                        for (UserDTO ru : remoteUsers) {
+                            if ("CANDIDATE".equals(ru.getRole())) {
+                                Candidate c = candidateRepository.save(new Candidate(
+                                        null, ru.getUserId(), LocalDate.now().minusDays(10),
+                                        new BigDecimal("15.0"), instructor1, bCategory));
 
-            lessonRepository.save(new Lesson(
-                    null,
-                    candidate3,
-                    instructor1,
-                    1L,
-                    LocalDateTime.now().plusDays(2).withHour(10).withMinute(0),
-                    45,
-                    "ODRAĐENO",
-                    "Vježba poligon"
-            ));
+                                if (candidate1 == null) candidate1 = c;
+                                else if (candidate2 == null) candidate2 = c;
+                                else if (candidate3 == null) candidate3 = c;
+                            }
+                        }
+                    } else {
+                        System.err.println(">>> Upozorenje: Nije pronađen nijedan instruktor u User Service-u. Kandidati neće biti kreirani.");
+                    }
+                }
+                System.out.println(">>> Sinhronizacija uspješna! ID-evi su usklađeni.");
+            } catch (Exception e) {
+                System.err.println(">>> Greška pri sinhronizaciji: " + e.getMessage());
+            }
 
-            lessonRepository.save(new Lesson(
-                    null,
-                    candidate2,
-                    instructor1,
-                    1L,
-                    LocalDateTime.now().plusDays(2).withHour(10).withMinute(0),
-                    45,
-                    "ZAKAZANO",
-                    "Vježba poligon"
-            ));
+            if (candidate1 != null && instructor1 != null) {
+                lessonRepository.save(new Lesson(null, candidate1, instructor1, 1L,
+                        LocalDateTime.now().plusDays(2).withHour(10).withMinute(0), 45, "ZAKAZANO", "Vježba kretanja na uzbrdici"));
 
-            // 5. Unos faze obuke (npr. Teorijski dio je u toku)
-            phaseRepository.save(new TrainingPhase(
-                    null, candidate1, "TEORIJSKI DIO", "U TOKU", null));
+                if (candidate3 != null) {
+                    lessonRepository.save(new Lesson(null, candidate3, instructor1, 1L,
+                            LocalDateTime.now().plusDays(3).withHour(11).withMinute(0), 45, "ODRAĐENO", "Gradska vožnja"));
+                }
 
-            // 6. Unos jednog feedbacka (Kandidat ocjenjuje instruktora)
-            feedbackRepository.save(new Feedback(
-                    null, candidate1, instructor1, 5, "Odličan instruktor, jako strpljiv.", LocalDate.now()));
+                phaseRepository.save(new TrainingPhase(null, candidate1, "TEORIJSKI DIO", "U TOKU", null));
 
-            feedbackRepository.save(new Feedback(
-                    null, candidate2, instructor1, 3, "Loša komunikacija", LocalDate.now()));
 
-            feedbackRepository.save(new Feedback(
-                    null, candidate3, instructor1, 5, "Zadovoljna sam radom sa ovim instruktorom.", LocalDate.now()));
+                feedbackRepository.save(new Feedback(null, candidate1, instructor1, 5, "Odličan instruktor!", LocalDate.now()));
+            }
 
-            feedbackRepository.save(new Feedback(
-                    null, candidate4, instructor2, 5, "Odličan instruktor, jako strpljiv.", LocalDate.now()));
-
-            System.out.println(">>> Training and Scheduling Service: Podaci su uspješno uneseni u bazu!");
+            System.out.println(">>> Podaci su uspješno sinhronizovani i uneseni!");
         };
     }
 }

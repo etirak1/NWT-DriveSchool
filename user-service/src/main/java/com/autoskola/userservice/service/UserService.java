@@ -106,4 +106,20 @@ public class UserService {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Korisnik sa emailom " + email + " nije pronađen"));
     }
+
+
+    public UserDTO getUserById(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Korisnik sa ID-om " + id + " nije pronađen"));
+
+        return new UserDTO(
+                user.getUserId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getEmail(),
+                user.getRole(),
+                user.getStatus(),
+                user.getDateCreated()
+        );
+    }
 }

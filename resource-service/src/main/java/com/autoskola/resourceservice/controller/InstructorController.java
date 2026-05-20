@@ -39,7 +39,7 @@ public class InstructorController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR', 'CANDIDATE')")
     public List<InstructorDTO> getAllInstructors() {
         return instructorService.getAllInstructors();
     }
