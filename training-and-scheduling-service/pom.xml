@@ -66,6 +66,12 @@
             <version>3.2.0</version>
         </dependency>
 
+        <!-- Asinhrona -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
+        </dependency>
+
         <!-- Testiranje -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
