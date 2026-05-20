@@ -1,122 +1,72 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import React, { useState } from 'react';
+import DashboardPage from './pages/DashboardPage';
+import VehiclePage from './pages/VehiclePage';
+import RepairsPage from './pages/RepairsPage';
+import InstructorPage from './pages/InstructorPage';
+import { ToastContainer } from './components/Notifications';
+import { useToast } from './hooks/useToast';
+import './App.css';
 
-function App() {
-  const [count, setCount] = useState(0)
+const NAV = [
+  { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+  { id: 'vehicles',  label: 'Vozila',    icon: '🚗' },
+  { id: 'repairs',   label: 'Popravke',  icon: '🔧' },
+  { id: 'instructors', label: 'Instruktori', icon: '👨‍🏫' },
+];
+
+export default function App() {
+  const [page, setPage] = useState('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { toasts, addToast, removeToast } = useToast();
+
+  const renderPage = () => {
+    switch (page) {
+      case 'dashboard':   return <DashboardPage />;
+      case 'vehicles':    return <VehiclePage addToast={addToast} />;
+      case 'repairs':     return <RepairsPage addToast={addToast} />;
+      case 'instructors': return <InstructorPage addToast={addToast} />;
+      default:            return <DashboardPage />;
+    }
+  };
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+      <div className={`app-layout ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+        {/* Sidebar */}
+        <aside className="sidebar">
+          <div className="sidebar-brand">
+            <span className="brand-icon">🎓</span>
+            {sidebarOpen && <span className="brand-name">AutoŠkola</span>}
+          </div>
 
-      <div className="ticks"></div>
+          <nav className="sidebar-nav">
+            {NAV.map(item => (
+                <button
+                    key={item.id}
+                    className={`nav-item ${page === item.id ? 'nav-active' : ''}`}
+                    onClick={() => setPage(item.id)}
+                    title={!sidebarOpen ? item.label : ''}
+                >
+                  <span className="nav-icon">{item.icon}</span>
+                  {sidebarOpen && <span className="nav-label">{item.label}</span>}
+                </button>
+            ))}
+          </nav>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+          <button
+              className="sidebar-toggle"
+              onClick={() => setSidebarOpen(o => !o)}
+              title={sidebarOpen ? 'Skupi' : 'Proširi'}
+          >
+            {sidebarOpen ? '◀' : '▶'}
+          </button>
+        </aside>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+        {/* Main */}
+        <main className="main-content">
+          {renderPage()}
+        </main>
+
+        <ToastContainer toasts={toasts} onRemove={removeToast} />
+      </div>
+  );
 }
-
-export default App

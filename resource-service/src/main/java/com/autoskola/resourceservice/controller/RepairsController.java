@@ -19,6 +19,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/repairs")
+@CrossOrigin(origins = "http://localhost:5173", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS})
 public class RepairsController {
 
     private final RepairsRepository repairsRepository;

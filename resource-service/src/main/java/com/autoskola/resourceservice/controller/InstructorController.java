@@ -17,6 +17,7 @@ import java.util.Map;
 @RestController
 @EnableMethodSecurity
 @RequestMapping("/api/instructors")
+@CrossOrigin(origins = "http://localhost:5173", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS})
 public class InstructorController {
 
     private final InstructorService instructorService;
