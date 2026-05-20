@@ -1,50 +1,48 @@
 package com.autoskola.resourceservice.controller;
 
 
-import com.autoskola.resourceservice.dto.InstructorWithUserDTO;
-import com.autoskola.resourceservice.dto.UserDTO;
-import com.autoskola.resourceservice.exception.ResourceNotFoundException;
-import com.autoskola.resourceservice.mapper.InstructorMapper;
+import com.autoskola.resourceservice.dto.InstructorDTO;
 import com.autoskola.resourceservice.model.Instructor;
-import com.autoskola.resourceservice.repository.InstructorRepository;
 import com.autoskola.resourceservice.service.InstructorService;
-import com.autoskola.resourceservice.service.UserClientService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.web.bind.annotation.*;
 
-
+import java.util.HashMap;
 import java.util.List;
-
+import java.util.Map;
 
 @RestController
+@EnableMethodSecurity
+@RequestMapping("/api/instructors")
 public class InstructorController {
 
-
-    private final UserClientService userClientService;
-    private final InstructorMapper instructorMapper;
     private final InstructorService instructorService;
 
-    public InstructorController(UserClientService userClientService,
-                                InstructorMapper instructorMapper,
-                                InstructorService instructorService) {
-        this.userClientService = userClientService;
-        this.instructorMapper = instructorMapper;
+    public InstructorController(InstructorService instructorService) {
         this.instructorService = instructorService;
     }
 
-    @GetMapping("/instructors/{id}")
+    @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
-    public InstructorWithUserDTO getInstructorWithUser(@PathVariable Long id) {
-        Instructor instructor = instructorService.getById(id);
+    public InstructorDTO getInstructor(@PathVariable Long id) {
+        return instructorService.getInstructorFullDetails(id);
+    }
 
-        UserDTO user = userClientService.getUserById(instructor.getUserId());
-        return instructorMapper.toDTO(instructor, user);
-    }
-    @GetMapping("/instructors")
+
+    @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public List<Instructor> getAll() {
-        return instructorService.getAll();
+    public InstructorDTO createInstructor(@Valid @RequestBody Instructor instructor) {
+        return instructorService.createInstructor(instructor);
     }
+
+    @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
+    public List<InstructorDTO> getAllInstructors() {
+        return instructorService.getAllInstructors();
+    }
+
+
 }
