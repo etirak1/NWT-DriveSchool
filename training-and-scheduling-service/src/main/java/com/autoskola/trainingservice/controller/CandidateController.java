@@ -22,7 +22,7 @@ public class CandidateController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR', 'CANDIDATE')")
     public CandidateDTO getCandidateDetails(@PathVariable Long id) {
         return candidateService.getCandidateFullDetails(id);
     }

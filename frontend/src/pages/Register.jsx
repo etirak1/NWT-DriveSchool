@@ -10,7 +10,6 @@ export default function Register() {
     lastName: '',
     email: '',
     password: '',
-    role: 'CANDIDATE',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -25,13 +24,11 @@ export default function Register() {
     setLoading(true);
     try {
       await api.post('/api/users/register', {
-        firstName: form.firstName,
-        lastName: form.lastName,
-        email: form.email,
-        passwordHash: form.password,
-        role: form.role,
-        status: 'ACTIVE',
-      });
+  firstName: form.firstName,
+  lastName: form.lastName,
+  email: form.email,
+  passwordHash: form.password,
+});
       setSuccess('Nalog kreiran. Preusmjeravam na login...');
       setTimeout(() => navigate('/login'), 1200);
     } catch (err) {
@@ -112,20 +109,9 @@ export default function Register() {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-slate-800 mb-1.5">
-                Role
-              </label>
-              <select
-                value={form.role}
-                onChange={update('role')}
-                className="w-full px-3 py-2.5 border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-              >
-                <option value="CANDIDATE">Candidate</option>
-                <option value="INSTRUCTOR">Instructor</option>
-                <option value="ADMIN">Admin</option>
-              </select>
-            </div>
+            <div className="bg-blue-50 text-blue-700 text-xs px-3 py-2 rounded-lg border border-blue-100">
+  You're registering as a <strong>candidate</strong>. Instructor and admin accounts are created by school administration.
+</div>
 
             {error && (
               <div className="bg-red-50 text-red-700 text-sm px-3 py-2 rounded-lg border border-red-100">

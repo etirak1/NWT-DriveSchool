@@ -1,57 +1,72 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-
 import Login from './pages/Login';
 import Register from './pages/Register';
-
-import DashboardLayout from './layouts/DashboardLayout';
-
-import DashboardPage from './pages/DashboardPage';
-import VehiclePage from './pages/VehiclePage';
-import RepairsPage from './pages/RepairsPage';
-import InstructorPage from './pages/InstructorPage';
+import Dashboard from './pages/Dashboard';
+import UserManagement from './pages/UserManagement';
+import CandidateDashboard from './pages/CandidateDashboard';
+import { isAdmin, getCurrentRole } from './auth/jwt';
+import ResourceManagement from './pages/DashboardPage.jsx';
+import Layout from './layouts/DashboardLayout.jsx'
+import Vehicles from './pages/VehiclePage';
+import Repairs from './pages/RepairsPage';
+import Instructors from './pages/InstructorPage';
 
 function RequireAuth({ children }) {
   const token = localStorage.getItem('token');
+  if (!token) return <Navigate to="/login" replace />;
+  return children;
+}
 
-  if (!token) {
-    return <Navigate to="/login" replace />;
-  }
+function SmartDashboard() {
+    const role = getCurrentRole();
+    if (role === 'CANDIDATE') return <CandidateDashboard />;
+    return <Dashboard />;
+}
 
+function RequireAdmin({ children }) {
+  const token = localStorage.getItem('token');
+  if (!token) return <Navigate to="/login" replace />;
+  if (!isAdmin()) return <Navigate to="/dashboard" replace />;
   return children;
 }
 
 export default function App() {
   return (
-      <Routes>
-
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-
-        <Route path="/login" element={<Login />} />
-
-        <Route path="/register" element={<Register />} />
-
-        {/* Protected routes */}
+    <Routes>
+      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route
+        path="/dashboard"
+        element={
+          <RequireAuth>
+            <SmartDashboard />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/users"
+        element={
+          <RequireAdmin>
+            <UserManagement />
+          </RequireAdmin>
+        }
+      />
         <Route
-            path="/dashboard"
+            path="/resources"
             element={
-              <RequireAuth>
-                <DashboardLayout />
-              </RequireAuth>
+                <RequireAuth>
+                    <Layout />
+                </RequireAuth>
             }
         >
-
-          <Route index element={<DashboardPage />} />
-
-          <Route path="vehicles" element={<VehiclePage />} />
-
-          <Route path="repairs" element={<RepairsPage />} />
-
-          <Route path="instructors" element={<InstructorPage />} />
-
+            <Route index element={<ResourceManagement />} />
+            <Route path="vehicles" element={<Vehicles />} />
+            <Route path="repairs" element={<Repairs />} />
+            <Route path="instructors" element={<Instructors />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/login" replace />} />
-
-      </Routes>
+    </Routes>
   );
 }

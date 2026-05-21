@@ -1,4 +1,5 @@
 import React from 'react';
+import '../App.css';
 import { useAsync } from '../hooks/useAsync';
 import { vehicleApi, repairApi, instructorApi } from '../services/api';
 import Dashboard from '../components/Dashboard';
@@ -15,18 +16,23 @@ export default function DashboardPage() {
     if (ev) return <ErrorState message={ev} />;
 
     return (
-        <div className="page">
-            <div className="page-header">
-                <div>
-                    <h1 className="page-title">Dashboard</h1>
-                    <p className="page-sub">Pregled resursa autoškole</p>
+        <div className="main-content">
+            <div className="page">
+                <div className="page-header">
+                    <div>
+                        <h1 className="page-title">Dashboard</h1>
+                        <p className="page-sub">Pregled resursa autoškole</p>
+                    </div>
+                </div>
+
+                <div className="dashboard">
+                    <Dashboard
+                        vehicles={vehicles || []}
+                        repairs={repairs || []}
+                        instructors={instructors || []}
+                    />
                 </div>
             </div>
-            <Dashboard
-                vehicles={vehicles || []}
-                repairs={repairs || []}
-                instructors={instructors || []}
-            />
         </div>
     );
 }

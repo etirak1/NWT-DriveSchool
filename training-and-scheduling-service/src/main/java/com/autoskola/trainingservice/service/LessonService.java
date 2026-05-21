@@ -1,6 +1,7 @@
 package com.autoskola.trainingservice.service;
 
 import com.autoskola.trainingservice.dto.LessonDTO;
+import com.autoskola.trainingservice.client.UserClient;
 import com.autoskola.trainingservice.dto.UserDTO;
 import com.autoskola.trainingservice.dto.LessonEvent;
 import com.autoskola.trainingservice.model.Candidate;
@@ -23,30 +24,41 @@ import org.springframework.data.domain.Pageable;
 public class LessonService {
 
     private final LessonRepository lessonRepository;
-    private final UserService userService;
+    private final UserClient userClient;
     private final CandidateRepository candidateRepository;
     private final InstructorRepository instructorRepository;
     private final RabbitTemplate rabbitTemplate;
 
     // POPRAVLJEN KONSTRUKTOR (Ovdje si imala grešku sa dva RabbitTemplate-a)
     public LessonService(LessonRepository lessonRepository,
-                         UserService userService,
+                          UserClient userClient,
                          CandidateRepository candidateRepository,
                          InstructorRepository instructorRepository,
                          RabbitTemplate rabbitTemplate) {
         this.lessonRepository = lessonRepository;
-        this.userService = userService;
+        this.userClient = userClient;
         this.candidateRepository = candidateRepository;
         this.instructorRepository = instructorRepository;
         this.rabbitTemplate = rabbitTemplate;
+    }
+
+    private UserDTO safeGetUser(Long userId, String fallbackRole) {
+        if (userId == null) {
+            return new UserDTO(null, "Nepoznato", "Korisnik", fallbackRole);
+        }
+        try {
+            return userClient.getUserById(userId);
+        } catch (Exception e) {
+            return new UserDTO(userId, "Nepoznato", "Korisnik", fallbackRole);
+        }
     }
 
     public LessonDTO getLessonDetails(Long id) {
         Lesson lesson = lessonRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Čas nije pronađen"));
 
-        UserDTO instructorUser = userService.getUserById(lesson.getInstructor().getUserId());
-        UserDTO candidateUser = userService.getUserById(lesson.getCandidate().getUserId());
+        UserDTO instructorUser = safeGetUser(lesson.getInstructor().getUserId(), "INSTRUCTOR");
+        UserDTO candidateUser  = safeGetUser(lesson.getCandidate().getUserId(),  "CANDIDATE");
 
         return new LessonDTO(
                 lesson,
@@ -83,8 +95,8 @@ public class LessonService {
         List<LessonDTO> response = new ArrayList<>();
 
         for (Lesson l : lessons) {
-            UserDTO inst = userService.getUserById(l.getInstructor().getUserId());
-            UserDTO cand = userService.getUserById(l.getCandidate().getUserId());
+            UserDTO inst = safeGetUser(l.getInstructor().getUserId(), "INSTRUCTOR");
+            UserDTO cand = safeGetUser(l.getCandidate().getUserId(),  "CANDIDATE");
             response.add(new LessonDTO(l, inst, cand));
         }
 
@@ -123,8 +135,8 @@ public class LessonService {
     public Page<LessonDTO> getAllLessonsPaged(Pageable pageable) {
         return lessonRepository.findAll(pageable)
                 .map(lesson -> {
-                    UserDTO inst = userService.getUserById(lesson.getInstructor().getUserId());
-                    UserDTO cand = userService.getUserById(lesson.getCandidate().getUserId());
+                    UserDTO inst = safeGetUser(lesson.getInstructor().getUserId(), "INSTRUCTOR");
+                    UserDTO cand = safeGetUser(lesson.getCandidate().getUserId(),  "CANDIDATE");
                     return new LessonDTO(lesson, inst, cand);
                 });
     }
