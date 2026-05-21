@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 
 
 import java.util.List;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/announcements")
@@ -17,11 +18,13 @@ public class AnnouncementController {
     @Autowired
     private AnnouncementService announcementService;
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR', 'CANDIDATE')")
     @GetMapping
     public List<AnnouncementDTO> getAll() {
         return announcementService.getAllAnnouncements();
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public AnnouncementDTO create(@Valid @RequestBody Announcement announcement) {
         return announcementService.createAnnouncement(announcement);

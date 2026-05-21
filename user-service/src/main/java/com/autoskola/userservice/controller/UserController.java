@@ -16,6 +16,8 @@ import org.springframework.http.HttpStatus;
 
 
 import java.util.List;
+import org.springframework.security.access.prepost.PreAuthorize;
+
 
 @RestController
 @RequestMapping("/api/users")
@@ -24,7 +26,7 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public ResponseEntity<Page<UserDTO>> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
@@ -34,6 +36,7 @@ public class UserController {
     }
 
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
     @GetMapping("/active")
     public List<UserDTO> getActiveByRole(@RequestParam String role) {
         return userService.getActiveUsers(role);
@@ -44,12 +47,13 @@ public class UserController {
     public ResponseEntity<UserDTO> registerWithWelcome(@Valid @RequestBody User user) {
         return ResponseEntity.ok(userService.registerNewUserWithWelcomeNote(user));
     }
-
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<UserDTO> createUser(@Valid @RequestBody User user) {
         return ResponseEntity.ok(userService.createUser(user));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping(path = "/{id}", consumes = "application/json-patch+json", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UserDTO> patchUser(@PathVariable Long id, @RequestBody JsonPatch patch) {
         try {
@@ -59,6 +63,7 @@ public class UserController {
         }
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
         try {

@@ -17,7 +17,6 @@ import java.util.Map;
 @RestController
 @EnableMethodSecurity
 @RequestMapping("/api/instructors")
-@CrossOrigin(origins = "http://localhost:5173", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS})
 public class InstructorController {
 
     private final InstructorService instructorService;
@@ -45,5 +44,11 @@ public class InstructorController {
         return instructorService.getAllInstructors();
     }
 
+    @PatchMapping("/{id}/availability")
+    @PreAuthorize("hasRole('ADMIN')")
+    public InstructorDTO toggleAvailability(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        String note = body.get("availabilityNote");
+        return instructorService.updateAvailability(id, note);
+    }
 
 }

@@ -1,11 +1,13 @@
 package com.autoskola.resourceservice;
 
+
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.client.RestTemplate;
 import com.autoskola.resourceservice.model.Vehicle;
 import com.autoskola.resourceservice.model.Instructor;
@@ -34,12 +36,16 @@ public class ResourceServiceApplication {
 	}
 
 	@Bean
+	public BCryptPasswordEncoder passwordEncoder() {return new BCryptPasswordEncoder();}
+
+	@Bean
 	@Profile("!test")
 	public CommandLineRunner start(
 			UserRepository userRepository,
 			VehicleRepository vehicleRepository,
 			InstructorRepository instructorRepository,
-			RepairsRepository repairsRepository
+			RepairsRepository repairsRepository,
+			BCryptPasswordEncoder passwordEncoder
 	) {
 		return args -> {
 
@@ -48,19 +54,42 @@ public class ResourceServiceApplication {
 			vehicleRepository.deleteAll();
 			userRepository.deleteAll();
 
-			User admin = userRepository.save(new User(null, "Azra", "Trako", "atrako1@etf.unsa.ba", "123456", "Instruktor", "ACTIVE", null));
-			userRepository.save(new User(null, "Ajla", "Nekić", "anekic1@etf.unsa.ba", "123456", "Instruktor", "ACTIVE", null));
-			userRepository.save(new User(null, "Adna", "Hodzić", "ahodzic6@etf.unsa.ba", "123456", "Administrator", "ACTIVE", null));
-			userRepository.save(new User(null, "Dina", "Nešković", "dneskovic1@etf.unsa.ba", "123456", "Kandidat", "ACTIVE", null));
-			Vehicle vehicle1 = vehicleRepository.save(
-					new Vehicle(null, "Toyota", "Corolla", "E123-ABC", "ACTIVE",
-							LocalDateTime.now().minusMonths(3), LocalDateTime.now().minusYears(1), null));
-			Vehicle vehicle2 = vehicleRepository.save(
-					new Vehicle(null, "BMW", "X5", "F456-DEF", "IN_REPAIR",
-							LocalDateTime.now().minusMonths(6), LocalDateTime.now().minusYears(2), null));
 
-			Instructor instructor = instructorRepository.save(
-					new Instructor(null, admin.getUserId(), "Available Mon-Fri 9-17", null));
+			User admin = userRepository.save(new User(null, "Elma", "Tirak", "etirak1@etf.unsa.ba", passwordEncoder.encode("123456"), "ADMIN", "ACTIVE", null));
+
+			userRepository.save(new User(null, "Elma", "Nekić", "enekic1@etf.unsa.ba", passwordEncoder.encode("123456"), "ADMIN", "ACTIVE", null));
+			userRepository.save(new User(null, "Adna", "Alihodžić", "aalihodzic6@etf.unsa.ba", passwordEncoder.encode("123456"), "ADMIN", "ACTIVE", null));
+			userRepository.save(new User(null, "Dinela", "Pešković", "dpeskovic1@etf.unsa.ba", passwordEncoder.encode("123456"), "ADMIN", "ACTIVE", null));
+			userRepository.save(new User(null, "Emina", "Omerović", "eomerovic1@etf.unsa.ba", passwordEncoder.encode("123456"), "CANDIDATE", "ACTIVE", null));
+			userRepository.save(new User(null, "Tajra", "Ljubović", "tljubovic1@etf.unsa.ba", passwordEncoder.encode("123456"), "INSTRUCTOR", "ACTIVE", null));
+			Vehicle vehicle1 = vehicleRepository.save(new Vehicle(
+					null,
+					"Toyota",
+					"Corolla",
+					"E123-ABC",
+					"ACTIVE",
+					LocalDateTime.now().minusMonths(3),
+					LocalDateTime.now().minusYears(1),
+					LocalDateTime.now(),
+					LocalDateTime.now().minusMonths(3).plusYears(1)
+			));
+			Vehicle vehicle2 =vehicleRepository.save(new Vehicle(
+					null,
+					"BMW",
+					"X5",
+					"F456-DEF",
+					"IN_REPAIR",
+					LocalDateTime.now().minusMonths(6),
+					LocalDateTime.now().minusYears(2),
+					LocalDateTime.now(),
+					LocalDateTime.now().minusMonths(6).plusYears(1)
+			));
+
+			userRepository.findAll().stream()
+					.filter(u -> "INSTRUCTOR".equals(u.getRole()))
+					.forEach(u -> instructorRepository.save(
+							new Instructor(null, u.getUserId(), "AVAILABLE", null)
+					));
 
 			repairsRepository.save(
 					new Repairs(null, vehicle2, LocalDateTime.now().minusDays(10), "Oil change and brake check", 150.0, null));

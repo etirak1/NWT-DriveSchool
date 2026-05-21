@@ -7,8 +7,10 @@ import VehicleDetail from '../components/VehicleDetail';
 import Modal from '../components/Modal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { Spinner, ErrorState } from '../components/States';
+import { useToast } from '../context/ToastContext';
 
-export default function VehiclesPage({ addToast }) {
+export default function VehiclesPage() {
+    const { addToast } = useToast();
     const { data: vehicles, loading, error, refetch } = useAsync(() => vehicleApi.getAll());
     const { data: repairs } = useAsync(() => repairApi.getAll());
 

@@ -20,6 +20,8 @@ import jakarta.persistence.EntityNotFoundException;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
 
 @Service
 public class UserService {
@@ -38,6 +40,10 @@ public class UserService {
 
     @Autowired
     private TrainingClient trainingClient;
+
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
+
 
     public Page<UserDTO> getAllUsersPaged(int page, int size, String sortBy) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy));
@@ -66,6 +72,7 @@ public class UserService {
 
     @Transactional
     public UserDTO registerNewUserWithWelcomeNote(User user) {
+        user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
         User savedUser = userRepository.save(user);
 
         Announcement note = new Announcement();
@@ -78,6 +85,7 @@ public class UserService {
     }
 
     public UserDTO createUser(User user) {
+        user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));  // <-- novo
         User savedUser = userRepository.save(user);
         return modelMapper.map(savedUser, UserDTO.class);
     }

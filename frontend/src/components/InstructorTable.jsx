@@ -2,7 +2,9 @@ import React from 'react';
 import { Badge } from './Notifications';
 
 export default function InstructorTable({ instructors, onEdit, onToggleAvailability }) {
-    if (!instructors?.length) return <div className="table-empty">Nema instruktora za prikaz.</div>;
+    if (!instructors?.length) {
+        return <div className="table-empty">Nema instruktora za prikaz.</div>;
+    }
 
     return (
         <div className="table-wrap">
@@ -10,45 +12,50 @@ export default function InstructorTable({ instructors, onEdit, onToggleAvailabil
                 <thead>
                 <tr>
                     <th>Ime i prezime</th>
-                    <th>Kontakt</th>
-                    <th>Licenca</th>
+                    <th>Email</th>
                     <th>Dostupnost</th>
-                    <th>Aktivni kandidati</th>
                     <th>Akcije</th>
                 </tr>
                 </thead>
+
                 <tbody>
                 {instructors.map(ins => (
                     <tr key={ins.instructorId}>
                         <td>
                             <div className="instructor-name">
-                                <div className="avatar">{ins.firstName?.[0]}{ins.lastName?.[0]}</div>
-                                <div>
-                                    <strong>{ins.firstName} {ins.lastName}</strong>
-                                    {ins.status && <small className="text-muted"> · {ins.status}</small>}
+                                <div className="avatar">
+                                    {ins.user?.firstName?.[0]}
+                                    {ins.user?.lastName?.[0]}
                                 </div>
+
+                                <strong>
+                                    {ins.user?.firstName} {ins.user?.lastName}
+                                </strong>
                             </div>
                         </td>
+
+                        <td>{ins.user?.email}</td>
+
                         <td>
-                            <div>{ins.email}</div>
-                            {ins.phone && <small className="text-muted">{ins.phone}</small>}
-                        </td>
-                        <td><code>{ins.licenseNumber || '—'}</code></td>
-                        <td>
-                            <Badge variant={ins.available ? 'status-active' : 'status-inactive'}>
-                                {ins.available ? 'Dostupan' : 'Nedostupan'}
+                            <Badge variant="status-active">
+                                {ins.availabilityNote}
                             </Badge>
                         </td>
-                        <td>{ins.activeCandidatesCount ?? '—'}</td>
+
                         <td>
                             <div className="table-actions">
-                                <button className="btn-icon" title="Uredi" onClick={() => onEdit(ins)}>✏️</button>
                                 <button
                                     className="btn-icon"
-                                    title={ins.available ? 'Označi nedostupnim' : 'Označi dostupnim'}
+                                    onClick={() => onEdit(ins)}
+                                >
+                                    ✏️
+                                </button>
+
+                                <button
+                                    className="btn-icon"
                                     onClick={() => onToggleAvailability(ins)}
                                 >
-                                    {ins.available ? '🔴' : '🟢'}
+                                    🔄
                                 </button>
                             </div>
                         </td>

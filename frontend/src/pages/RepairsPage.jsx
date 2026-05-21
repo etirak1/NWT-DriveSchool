@@ -6,8 +6,10 @@ import RepairForm from '../components/RepairForm';
 import Modal from '../components/Modal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { Spinner, ErrorState } from '../components/States';
+import { useToast } from '../context/ToastContext';
 
-export default function RepairsPage({ addToast }) {
+export default function RepairsPage() {
+    const { addToast } = useToast();
     const { data: repairs, loading, error, refetch } = useAsync(() => repairApi.getAll());
     const { data: vehicles } = useAsync(() => vehicleApi.getAll());
 

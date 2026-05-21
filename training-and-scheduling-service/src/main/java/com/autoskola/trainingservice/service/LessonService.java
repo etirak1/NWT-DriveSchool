@@ -2,12 +2,15 @@ package com.autoskola.trainingservice.service;
 
 import com.autoskola.trainingservice.dto.LessonDTO;
 import com.autoskola.trainingservice.dto.UserDTO;
+import com.autoskola.trainingservice.dto.LessonEvent;
 import com.autoskola.trainingservice.model.Candidate;
 import com.autoskola.trainingservice.model.Instructor;
 import com.autoskola.trainingservice.model.Lesson;
 import com.autoskola.trainingservice.repository.CandidateRepository;
 import com.autoskola.trainingservice.repository.InstructorRepository;
 import com.autoskola.trainingservice.repository.LessonRepository;
+import com.autoskola.trainingservice.config.RabbitMQConfig;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
@@ -23,13 +26,19 @@ public class LessonService {
     private final UserService userService;
     private final CandidateRepository candidateRepository;
     private final InstructorRepository instructorRepository;
+    private final RabbitTemplate rabbitTemplate;
 
+    // POPRAVLJEN KONSTRUKTOR (Ovdje si imala grešku sa dva RabbitTemplate-a)
     public LessonService(LessonRepository lessonRepository,
-                         UserService userService, CandidateRepository candidateRepository, InstructorRepository instructorRepository) {
+                         UserService userService,
+                         CandidateRepository candidateRepository,
+                         InstructorRepository instructorRepository,
+                         RabbitTemplate rabbitTemplate) {
         this.lessonRepository = lessonRepository;
         this.userService = userService;
         this.candidateRepository = candidateRepository;
         this.instructorRepository = instructorRepository;
+        this.rabbitTemplate = rabbitTemplate;
     }
 
     public LessonDTO getLessonDetails(Long id) {
@@ -55,7 +64,16 @@ public class LessonService {
 
         lesson.setCandidate(candidate);
         lesson.setInstructor(instructor);
+
+        lesson.setStatus("PENDING");
         Lesson savedLesson = lessonRepository.save(lesson);
+
+        LessonEvent event = new LessonEvent();
+        event.setLessonId(savedLesson.getLessonId());
+        event.setCandidateId(candidate.getCandidateId());
+        event.setStatus("PENDING");
+
+        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, "lesson.created", event);
 
         return getLessonDetails(savedLesson.getLessonId());
     }
@@ -75,26 +93,21 @@ public class LessonService {
 
     @Transactional
     public String completeLessonAndIncreaseProgress(Long lessonId) {
-
         Lesson lesson = lessonRepository.findById(lessonId)
                 .orElseThrow(() -> new RuntimeException("Čas nije pronađen"));
-
 
         if (!"ZAKAZANO".equalsIgnoreCase(lesson.getStatus())) {
             throw new RuntimeException("Samo zakazani časovi se mogu označiti kao završeni.");
         }
 
-
         lesson.setStatus("ODRAĐENO");
         lessonRepository.save(lesson);
-
 
         Candidate candidate = lesson.getCandidate();
         BigDecimal currentProgress = candidate.getProgressPercentage();
         if (currentProgress == null) currentProgress = BigDecimal.ZERO;
 
         BigDecimal newProgress = currentProgress.add(new BigDecimal("2.5"));
-
 
         if (newProgress.compareTo(new BigDecimal("100")) > 0) {
             newProgress = new BigDecimal("100");
@@ -129,6 +142,4 @@ public class LessonService {
     public boolean hasActiveSessions(Long userId) {
         return !lessonRepository.findUpcomingByInstructorUserId(userId).isEmpty();
     }
-
-
 }

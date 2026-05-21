@@ -48,6 +48,7 @@ export const instructorApi = {
     getAll: () => request('GET', '/api/instructors'),
     getById: (id) => request('GET', `/api/instructors/${id}`),
     create: (data) => request('POST', '/api/instructors', data),
+    updateAvailability: (id, note) => request('PATCH', `/api/instructors/${id}/availability`, { availabilityNote: note }),
 };
 
 // ── Users (/users) ────────────────────────────────────────────────────────────

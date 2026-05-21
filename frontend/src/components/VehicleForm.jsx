@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
+
 const STATUSES = ['ACTIVE', 'INACTIVE', 'IN_SERVICE', 'UNAVAILABLE'];
 const STATUS_LABELS = {
     ACTIVE: 'Aktivno', INACTIVE: 'Neaktivno',
@@ -8,7 +9,7 @@ const STATUS_LABELS = {
 
 const empty = {
     brand: '', model: '', year: '', registrationNumber: '',
-    registrationDate: '', registrationExpiry: '', status: 'ACTIVE',
+    registrationDate: '', status: 'ACTIVE',
     lastTechnicalInspection: '',
 };
 
@@ -23,7 +24,6 @@ export default function VehicleForm({ initial, onSubmit, onCancel, loading }) {
                 year: initial.year || '',
                 registrationNumber: initial.registrationNumber || '',
                 registrationDate: initial.registrationDate?.slice(0, 10) || '',
-                registrationExpiry: initial.registrationExpiry?.slice(0, 10) || '',
                 status: initial.status || 'ACTIVE',
                 lastTechnicalInspection: initial.lastTechnicalInspection?.slice(0, 10) || '',
             });
@@ -36,7 +36,14 @@ export default function VehicleForm({ initial, onSubmit, onCancel, loading }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        onSubmit(form);
+        onSubmit({
+            brand: form.brand,
+            model: form.model,
+            registrationNumber: form.registrationNumber,
+            status: form.status,
+            registrationDate: form.registrationDate ? `${form.registrationDate}T00:00:00` : null,
+            lastTechnicalInspection: form.lastTechnicalInspection ? `${form.lastTechnicalInspection}T00:00:00` : null,
+        });
     };
 
     return (
@@ -68,11 +75,14 @@ export default function VehicleForm({ initial, onSubmit, onCancel, loading }) {
             <div className="form-row">
                 <div className="form-group">
                     <label>Datum registracije</label>
-                    <input type="date" value={form.registrationDate} onChange={set('registrationDate')} />
-                </div>
-                <div className="form-group">
-                    <label>Datum isteka registracije</label>
-                    <input type="date" value={form.registrationExpiry} onChange={set('registrationExpiry')} />
+                    <input type="date" value={form.registrationDate}onChange={(e) => {
+                        const regDate = e.target.value;
+
+                        setForm(f => ({
+                            ...f,
+                            registrationDate: regDate
+                        }));
+                    }} />
                 </div>
             </div>
 

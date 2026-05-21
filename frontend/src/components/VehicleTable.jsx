@@ -30,6 +30,7 @@ export default function VehicleTable({ vehicles, onEdit, onDelete, onView }) {
                 </thead>
                 <tbody>
                 {vehicles.map(v => (
+                    console.log(v),
                     <tr key={v.vehicleId} className={isExpiringSoon(v.registrationExpiry) || isExpired(v.registrationExpiry) ? 'row-warning' : ''}>
                         <td>
                             <div className="vehicle-name">

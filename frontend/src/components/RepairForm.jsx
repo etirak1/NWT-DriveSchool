@@ -25,13 +25,11 @@ export default function RepairForm({ initial, vehicles, onSubmit, onCancel, load
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        const vehicle = vehicles?.find(v => v.vehicleId === Number(form.vehicleId));
         onSubmit({
             vehicle: { vehicleId: Number(form.vehicleId) },
-            repairDate: form.repairDate,
+            repairDate: form.repairDate ? `${form.repairDate}T00:00:00` : null,
             description: form.description,
             cost: form.cost ? Number(form.cost) : null,
-            status: form.status,
         });
     };
 
@@ -69,8 +67,8 @@ export default function RepairForm({ initial, vehicles, onSubmit, onCancel, load
             </div>
 
             <div className="form-group">
-                <label>Cijena (KM)</label>
-                <input type="number" step="0.01" min="0" value={form.cost} onChange={set('cost')}
+                <label>Cijena (KM) <span className="req">*</span></label>
+                <input  type="number" step="0.01" min="0.01" value={form.cost} onChange={set('cost')}
                        placeholder="0.00" />
             </div>
 
