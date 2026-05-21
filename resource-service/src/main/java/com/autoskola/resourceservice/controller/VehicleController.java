@@ -5,7 +5,7 @@ import com.autoskola.resourceservice.repository.VehicleRepository;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.security.access.prepost.PreAuthorize;
 import java.util.List;
 
 @RestController
@@ -19,22 +19,26 @@ public class VehicleController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
     public List<Vehicle> getAllVehicles() {
         return vehicleRepository.findAll();
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
     public Vehicle getVehicleById(@PathVariable Long id) {
         return vehicleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Vozilo nije pronađeno"));
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public Vehicle createVehicle(@Valid @RequestBody Vehicle vehicle) {
         return vehicleRepository.save(vehicle);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public Vehicle updateVehicle(@PathVariable Long id, @Valid @RequestBody Vehicle updatedVehicle) {
         Vehicle vehicle = vehicleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Vozilo nije pronađeno"));
@@ -50,6 +54,7 @@ public class VehicleController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteVehicle(@PathVariable Long id) {
         vehicleRepository.deleteById(id);
         return ResponseEntity.noContent().build();
