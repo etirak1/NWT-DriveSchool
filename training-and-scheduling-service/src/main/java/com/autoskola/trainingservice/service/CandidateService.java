@@ -4,11 +4,10 @@ import com.autoskola.trainingservice.dto.*;
 import com.autoskola.trainingservice.model.Candidate;
 import com.autoskola.trainingservice.model.Instructor;
 import com.autoskola.trainingservice.model.TrainingRule;
-import com.autoskola.trainingservice.model.User;
+import com.autoskola.trainingservice.client.UserClient;
 import com.autoskola.trainingservice.repository.CandidateRepository;
 import com.autoskola.trainingservice.repository.InstructorRepository;
 import com.autoskola.trainingservice.repository.TrainingRuleRepository;
-import com.autoskola.trainingservice.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -18,29 +17,32 @@ import java.util.List;
 public class CandidateService {
 
     private final CandidateRepository candidateRepository;
-    private final UserRepository userRepository;
+    private final UserClient userClient;
     private final InstructorService instructorService;
     private final InstructorRepository instructorRepository;
     private final TrainingRuleRepository ruleRepository;
 
     public CandidateService(CandidateRepository candidateRepository,
-                            UserRepository userRepository,
+                            UserClient userClient,
                             InstructorService instructorService, InstructorRepository instructorRepository, TrainingRuleRepository ruleRepository) {
         this.candidateRepository = candidateRepository;
-        this.userRepository = userRepository;
+        this.userClient = userClient;
         this.instructorService = instructorService;
         this.instructorRepository = instructorRepository;
         this.ruleRepository = ruleRepository;
     }
 
     public CandidateDTO getCandidateFullDetails(Long id) {
-        Candidate candidate = candidateRepository.findById(id)
+
+        Candidate candidate = candidateRepository.findByUserId(id)
                 .orElseThrow(() -> new RuntimeException("Kandidat nije pronađen"));
 
-        User user = userRepository.findById(candidate.getUserId())
-                .orElseThrow(() -> new RuntimeException("Korisnik nije pronađen"));
-
-        UserDTO userDTO = new UserDTO(user.getUserId(), user.getFirstName(), user.getLastName(), user.getRole());
+        UserDTO userDTO;
+        try {
+            userDTO = userClient.getUserById(candidate.getUserId());
+        } catch (Exception e) {
+            userDTO = new UserDTO(candidate.getUserId(), "Nepoznato", "Korisnik", "CANDIDATE");
+        }
 
         InstructorDTO instructorDetails = null;
         if (candidate.getAssignedInstructor() != null) {
@@ -79,10 +81,12 @@ public class CandidateService {
 
         Candidate savedCandidate = candidateRepository.save(candidate);
 
-        User user = userRepository.findById(savedCandidate.getUserId())
-                .orElseThrow(() -> new RuntimeException("Korisnik nije pronađen"));
-        UserDTO userDTO = new UserDTO(user.getUserId(), user.getFirstName(), user.getLastName(), user.getRole());
-
+        UserDTO userDTO;
+        try {
+            userDTO = userClient.getUserById(savedCandidate.getUserId());
+        } catch (Exception e) {
+            throw new RuntimeException("Korisnik sa ID-om " + savedCandidate.getUserId() + " ne postoji u user-service.");
+        }
         InstructorDTO instructorDetails = instructorService.getInstructorFullDetails(instructor.getInstructorId());
 
         TrainingRuleDTO ruleDTO = new TrainingRuleDTO(rule.getRuleId(), rule.getMinTheoryLessons(),
@@ -98,8 +102,12 @@ public class CandidateService {
         List<CandidateDTO> response = new ArrayList<>();
 
         for (Candidate c : candidates) {
-            User u = userRepository.findById(c.getUserId()).orElse(null);
-            UserDTO uDTO = (u != null) ? new UserDTO(u.getUserId(), u.getFirstName(), u.getLastName(), u.getRole()) : null;
+            UserDTO uDTO;
+            try {
+                uDTO = userClient.getUserById(c.getUserId());
+            } catch (Exception e) {
+                uDTO = new UserDTO(c.getUserId(), "Nepoznato", "Korisnik", "N/A");
+            }
 
             InstructorDTO iDTO = (c.getAssignedInstructor() != null) ?
                     instructorService.getInstructorFullDetails(c.getAssignedInstructor().getInstructorId()) : null;
