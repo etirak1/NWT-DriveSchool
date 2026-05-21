@@ -45,6 +45,8 @@ public class UserController {
 
     @PostMapping("/register")
     public ResponseEntity<UserDTO> registerWithWelcome(@Valid @RequestBody User user) {
+        user.setRole("CANDIDATE");
+        user.setStatus("ACTIVE");
         return ResponseEntity.ok(userService.registerNewUserWithWelcomeNote(user));
     }
     @PreAuthorize("hasRole('ADMIN')")
@@ -70,8 +72,6 @@ public class UserController {
             userService.deleteOrDeactivateInstructor(id);
             return ResponseEntity.ok("Korisnik uspješno obrisan.");
         } catch (RuntimeException e) {
-            // Ovdje upada poruka iz UserService:
-            // "Ne možete obrisati instruktora jer ima aktivne termine vožnje..."
             return ResponseEntity
                     .status(HttpStatus.CONFLICT)
                     .body(e.getMessage());
