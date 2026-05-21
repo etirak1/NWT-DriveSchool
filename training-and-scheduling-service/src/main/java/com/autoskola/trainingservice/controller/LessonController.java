@@ -54,7 +54,7 @@ public class LessonController {
     }
 
     @GetMapping("/paged")
-    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR','CANDIDATE')")
     public ResponseEntity<Page<LessonDTO>> getLessonsPaged(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -68,7 +68,7 @@ public class LessonController {
     }
 
     @PatchMapping("/{id}/notes")
-    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR','CANDIDATE')")
     public ResponseEntity<LessonDTO> updateNotes(@PathVariable Long id, @RequestBody String notes) {
         return ResponseEntity.ok(lessonService.patchLessonNotes(id, notes));
     }

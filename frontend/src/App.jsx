@@ -3,12 +3,19 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import UserManagement from './pages/UserManagement';
-import { isAdmin } from './auth/jwt';
+import CandidateDashboard from './pages/CandidateDashboard';
+import { isAdmin, getCurrentRole } from './auth/jwt';
 
 function RequireAuth({ children }) {
   const token = localStorage.getItem('token');
   if (!token) return <Navigate to="/login" replace />;
   return children;
+}
+
+function SmartDashboard() {
+    const role = getCurrentRole();
+    if (role === 'CANDIDATE') return <CandidateDashboard />;
+    return <Dashboard />;
 }
 
 function RequireAdmin({ children }) {
@@ -28,7 +35,7 @@ export default function App() {
         path="/dashboard"
         element={
           <RequireAuth>
-            <Dashboard />
+            <SmartDashboard />
           </RequireAuth>
         }
       />
