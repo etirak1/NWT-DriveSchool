@@ -77,6 +77,14 @@ export default function Dashboard() {
                 Manage Users
                </Link>
             )}
+	    {userIsAdmin && (
+  <Link
+    to="/admin"
+    className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg font-semibold"
+  >
+    Admin Panel
+  </Link>
+)}
             <div className="text-right hidden sm:block">
               <p className="text-sm font-semibold text-slate-800">{email}</p>
               <span className={`inline-block text-xs px-2 py-0.5 rounded-full font-semibold ${

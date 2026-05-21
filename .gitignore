@@ -37,3 +37,8 @@ build/
 
 ### VS Code ###
 .vscode/
+
+node_modules
+dist
+.vite
+

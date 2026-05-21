@@ -94,8 +94,7 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Korisnik nije pronadjen"));
 
-        // Provjeravamo da li je korisnik instruktor
-        if ("INSTRUKTOR".equals(user.getRole())) { // Prilagodi polje role tvojoj bazi
+        if ("INSTRUKTOR".equals(user.getRole())) {
 
             // SINHRONI POZIV: Čekamo odgovor od training-service
             // Ovo je tačka 1.a iz zadatka - Validacija podataka kao međukorak
@@ -114,4 +113,11 @@ public class UserService {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Korisnik sa emailom " + email + " nije pronađen"));
     }
+
+    public UserDTO getUserById(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Korisnik sa id " + id + " nije pronadjen"));
+        return modelMapper.map(user, UserDTO.class);
+    }
+
 }

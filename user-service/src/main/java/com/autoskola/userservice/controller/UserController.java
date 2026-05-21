@@ -35,13 +35,16 @@ public class UserController {
         return ResponseEntity.ok(userService.getAllUsersPaged(page, size, sortBy));
     }
 
-
     @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
     @GetMapping("/active")
     public List<UserDTO> getActiveByRole(@RequestParam String role) {
         return userService.getActiveUsers(role);
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
+        return ResponseEntity.ok(userService.getUserById(id));
+    }
 
     @PostMapping("/register")
     public ResponseEntity<UserDTO> registerWithWelcome(@Valid @RequestBody User user) {

@@ -5,6 +5,9 @@ import Dashboard from './pages/Dashboard';
 import UserManagement from './pages/UserManagement';
 import CandidateDashboard from './pages/CandidateDashboard';
 import { isAdmin, getCurrentRole } from './auth/jwt';
+import AdminPanel from './pages/AdminPanel';
+
+
 
 function RequireAuth({ children }) {
   const token = localStorage.getItem('token');
@@ -47,6 +50,14 @@ export default function App() {
           </RequireAdmin>
         }
       />
+	<Route
+  path="/admin"
+  element={
+    <RequireAdmin>
+      <AdminPanel />
+    </RequireAdmin>
+  }
+/>
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
