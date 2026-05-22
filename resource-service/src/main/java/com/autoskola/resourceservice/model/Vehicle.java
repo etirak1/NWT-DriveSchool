@@ -34,8 +34,21 @@ public class Vehicle {
 
     private LocalDateTime dateCreated;
 
+    private LocalDateTime registrationExpiry;
+
     @PrePersist
     protected void onCreate() {
         dateCreated = LocalDateTime.now();
+
+        if (registrationDate != null) {
+            registrationExpiry = registrationDate.plusYears(1);
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        if (registrationDate != null) {
+            registrationExpiry = registrationDate.plusYears(1);
+        }
     }
 }

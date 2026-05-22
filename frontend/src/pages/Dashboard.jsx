@@ -69,13 +69,22 @@ export default function Dashboard() {
           </div>
 
           <div className="flex items-center gap-4">
-	     {userIsAdmin && (
-    	       <Link
-                to="/users"
-                className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-sm bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-lg font-semibold"
-               >
-                Manage Users
-               </Link>
+            {userIsAdmin && (
+                <div className="hidden sm:flex items-center gap-2">
+                  <Link
+                      to="/users"
+                      className="flex items-center gap-1.5 px-3 py-2 text-sm bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-lg font-semibold"
+                  >
+                    Manage Users
+                  </Link>
+
+                  <Link
+                      to="/resources"
+                      className="flex items-center gap-1.5 px-3 py-2 text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg font-semibold"
+                  >
+                    Resource Management
+                  </Link>
+                </div>
             )}
             <div className="text-right hidden sm:block">
               <p className="text-sm font-semibold text-slate-800">{email}</p>

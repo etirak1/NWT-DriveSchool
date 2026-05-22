@@ -44,5 +44,11 @@ public class InstructorController {
         return instructorService.getAllInstructors();
     }
 
+    @PatchMapping("/{id}/availability")
+    @PreAuthorize("hasRole('ADMIN')")
+    public InstructorDTO toggleAvailability(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        String note = body.get("availabilityNote");
+        return instructorService.updateAvailability(id, note);
+    }
 
 }

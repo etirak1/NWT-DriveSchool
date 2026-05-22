@@ -5,6 +5,11 @@ import Dashboard from './pages/Dashboard';
 import UserManagement from './pages/UserManagement';
 import CandidateDashboard from './pages/CandidateDashboard';
 import { isAdmin, getCurrentRole } from './auth/jwt';
+import ResourceManagement from './pages/DashboardPage.jsx';
+import Layout from './layouts/DashboardLayout.jsx'
+import Vehicles from './pages/VehiclePage';
+import Repairs from './pages/RepairsPage';
+import Instructors from './pages/InstructorPage';
 
 function RequireAuth({ children }) {
   const token = localStorage.getItem('token');
@@ -47,7 +52,21 @@ export default function App() {
           </RequireAdmin>
         }
       />
-      <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route
+            path="/resources"
+            element={
+                <RequireAuth>
+                    <Layout />
+                </RequireAuth>
+            }
+        >
+            <Route index element={<ResourceManagement />} />
+            <Route path="vehicles" element={<Vehicles />} />
+            <Route path="repairs" element={<Repairs />} />
+            <Route path="instructors" element={<Instructors />} />
+        </Route>
+
+        <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
 }

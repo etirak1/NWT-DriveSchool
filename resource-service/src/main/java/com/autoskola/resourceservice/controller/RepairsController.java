@@ -88,7 +88,15 @@ public class RepairsController {
         Repairs repair = repairsRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Popravka nije pronađena"));
 
-        repair.setVehicle(updatedRepair.getVehicle());
+        if (updatedRepair.getVehicle() != null) {
+            Long vehicleId = updatedRepair.getVehicle().getVehicleId();
+
+            Vehicle vehicle = vehicleRepository.findById(vehicleId)
+                    .orElseThrow(() -> new RuntimeException("Vozilo nije pronađeno"));
+
+            repair.setVehicle(vehicle);
+        }
+
         repair.setRepairDate(updatedRepair.getRepairDate());
         repair.setDescription(updatedRepair.getDescription());
         repair.setCost(updatedRepair.getCost());

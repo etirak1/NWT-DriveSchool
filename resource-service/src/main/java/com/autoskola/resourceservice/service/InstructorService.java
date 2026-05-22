@@ -36,19 +36,11 @@ public class InstructorService {
                 user.getUserId(),
                 user.getFirstName(),
                 user.getLastName(),
+                user.getEmail(),
                 user.getRole()
         );
 
-        return new InstructorDTO(instructor.getInstructorId(), userDTO);
-    }
-
-    public InstructorDTO createInstructor(Instructor instructor) {
-
-        userRepository.findById(instructor.getUserId())
-                .orElseThrow(() -> new RuntimeException("Korisnik sa ID-om " + instructor.getUserId() + " ne postoji."));
-        Instructor saved = instructorRepository.save(instructor);
-
-        return getInstructorFullDetails(saved.getInstructorId());
+        return new InstructorDTO(instructor.getInstructorId(), userDTO, instructor.getAvailabilityNote());
     }
 
     public List<InstructorDTO> getAllInstructors() {
@@ -61,13 +53,24 @@ public class InstructorService {
                             user.getUserId(),
                             user.getFirstName(),
                             user.getLastName(),
+                            user.getEmail(),
                             user.getRole()
                     );
 
-                    return new InstructorDTO(inst.getInstructorId(), userDTO);
+                    return new InstructorDTO(inst.getInstructorId(), userDTO, inst.getAvailabilityNote());
                 })
                 .collect(Collectors.toList());
     }
+
+    public InstructorDTO createInstructor(Instructor instructor) {
+
+        userRepository.findById(instructor.getUserId())
+                .orElseThrow(() -> new RuntimeException("Korisnik sa ID-om " + instructor.getUserId() + " ne postoji."));
+        Instructor saved = instructorRepository.save(instructor);
+
+        return getInstructorFullDetails(saved.getInstructorId());
+    }
+
 
     public Instructor getById(Long id) {
         return instructorRepository.findById(id)
@@ -76,5 +79,13 @@ public class InstructorService {
 
     public List<Instructor> getAll() {
         return instructorRepository.findAll();
+    }
+
+    public InstructorDTO updateAvailability(Long id, String note) {
+        Instructor instructor = instructorRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Instruktor nije pronađen"));
+        instructor.setAvailabilityNote(note);
+        instructorRepository.save(instructor);
+        return getInstructorFullDetails(id);
     }
 }
