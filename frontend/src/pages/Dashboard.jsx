@@ -89,7 +89,7 @@ export default function Dashboard() {
                       to="/candidates"
                       className="flex items-center gap-1.5 px-3 py-2 text-sm bg-green-50 text-green-700 hover:bg-green-100 rounded-lg font-semibold"
                   >
-                    Kandidati
+                    Candidates
                   </Link>
                 </div>
             )}

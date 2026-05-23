@@ -1,59 +1,93 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+    GraduationCap, LogOut, CheckCircle, Clock, BookOpen,
+    ChevronLeft, ChevronRight, MessageSquare, TrendingUp,
+    DollarSign, AlertCircle
+} from 'lucide-react';
 import { api } from '../api/client';
 import { getCurrentUserId, getCurrentEmail, getCurrentRole } from '../auth/jwt';
-import { CheckCircle, Clock, ChevronLeft, ChevronRight, MessageSquare, GraduationCap, LogOut } from 'lucide-react';
 import FeedbackModal from '../components/FeedbackModal';
-import { useNavigate } from 'react-router-dom';
 
-const CandidateDashboard = () => {
+const PHASE_COLORS = {
+    'POLOŽENO':     'bg-green-100 text-green-700',
+    'U TOKU':       'bg-blue-100 text-blue-700',
+    'NEPOLOŽENO':   'bg-red-100 text-red-700',
+    'ZAKAZANO':     'bg-yellow-100 text-yellow-700',
+};
+
+const LESSON_STATUS_COLORS = {
+    'ODRAĐENO':  'bg-green-100 text-green-700',
+    'ZAKAZANO':  'bg-blue-100 text-blue-700',
+    'OTKAZANO':  'bg-red-100 text-red-700',
+};
+
+export default function CandidateDashboard() {
     const navigate = useNavigate();
-    const [candidate, setCandidate] = useState(null);
-    const [pageData, setPageData] = useState({ content: [], totalPages: 0, number: 0 });
-    const [loading, setLoading] = useState(true);
-    const [announcements, setAnnouncements] = useState([]);
-    const [showFeedbackModal, setShowFeedbackModal] = useState(false);
-    const [alreadyRated, setAlreadyRated] = useState(false);
+    const userId  = getCurrentUserId();
+    const email   = getCurrentEmail();
+    const role    = getCurrentRole();
 
-    const userId = getCurrentUserId();
-    const email = getCurrentEmail();
-    const role = getCurrentRole();
+    const [candidate,    setCandidate]    = useState(null);
+    const [phases,       setPhases]       = useState([]);
+    const [payments,     setPayments]     = useState([]);
+    const [account,      setAccount]      = useState(null);
+    const [announcements,setAnnouncements]= useState([]);
+    const [pageData,     setPageData]     = useState({ content: [], totalPages: 0, number: 0 });
+    const [loading,      setLoading]      = useState(true);
+    const [alreadyRated, setAlreadyRated] = useState(false);
+    const [showFeedback, setShowFeedback] = useState(false);
+    const [activeSection,setActiveSection]= useState('overview');
 
     const fetchLessons = async (page = 0) => {
-        const res = await api.get(`/api/lessons/my-lessons?userId=${userId}&page=${page}&size=5&sortBy=dateTime&sortDir=desc`);
-        setPageData(res.data);
+        try {
+            const res = await api.get(
+                `/api/lessons/my-lessons?userId=${userId}&page=${page}&size=5&sortBy=dateTime&sortDir=desc`
+            );
+            setPageData(res.data);
+        } catch (e) { console.error(e); }
     };
 
     useEffect(() => {
-        const loadData = async () => {
+        const load = async () => {
             try {
                 const candRes = await api.get(`/api/candidates/${userId}`);
-                setCandidate(candRes.data);
-                const candData = candRes.data;
-                setCandidate(candData);
+                const cand = candRes.data;
+                setCandidate(cand);
 
-                if (candData.progressPercentage >= 100) {
-                    try {
-                        const ratedRes = await api.get(`/api/feedbacks/candidate/${candData.candidateId}/exists`);
-                        setAlreadyRated(ratedRes.data);
-                    } catch (e) { /* ignoriši */ }
-                }
                 await fetchLessons(0);
-                setLoading(false);
-            } catch (err) { console.error(err); }
-        };
-        loadData();
-    }, []);
 
-    useEffect(() => {
-        const fetchAnnouncements = async () => {
-            try {
-                const res = await api.get('/api/announcements');
-                setAnnouncements(res.data);
+                try {
+                    const phaseRes = await api.get(`/api/phases/candidate/${cand.candidate?.candidateId || cand.candidateId}`);
+                    setPhases(phaseRes.data);
+                } catch (e) { /* phases optional */ }
+
+                try {
+                    const accRes = await api.get(`/api/accounts/${userId}`);
+                    setAccount(accRes.data);
+                    setPayments(accRes.data.payments || []);
+                } catch (e) { /* finance optional */ }
+
+                try {
+                    const annRes = await api.get('/api/announcements');
+                    setAnnouncements(annRes.data);
+                } catch (e) { /* announcements optional */ }
+
+                if ((cand.progressPercentage ?? 0) >= 100) {
+                    try {
+                        const ratedRes = await api.get(
+                            `/api/feedbacks/candidate/${cand.candidate?.candidateId || cand.candidateId}/exists`
+                        );
+                        setAlreadyRated(ratedRes.data);
+                    } catch (e) { /* ignore */ }
+                }
             } catch (err) {
-                console.error('Greška pri učitavanju obavještenja:', err);
+                console.error(err);
+            } finally {
+                setLoading(false);
             }
         };
-        fetchAnnouncements();
+        load();
     }, []);
 
     const handleLogout = () => {
@@ -61,7 +95,32 @@ const CandidateDashboard = () => {
         navigate('/login');
     };
 
-    if (loading) return <div className="p-10 text-center">Učitavanje...</div>;
+    const candidateId = candidate?.candidate?.candidateId ?? candidate?.candidateId;
+    const progress    = candidate?.progressPercentage ?? 0;
+    const rule        = candidate?.rule;
+    const totalRequired = rule?.minTheoryLessons ?? 40;
+    const completed   = Math.round((progress / 100) * totalRequired);
+    const remaining   = Math.max(0, totalRequired - completed);
+
+    const totalAmount    = account?.totalAmount    ?? 0;
+    const remainingDebt  = account?.remainingDebt  ?? 0;
+    const amountPaid     = totalAmount - remainingDebt;
+    const paymentPct     = totalAmount > 0 ? Math.round((amountPaid / totalAmount) * 100) : 0;
+
+    const navItems = [
+        { id: 'overview',  label: 'Overview'  },
+        { id: 'progress',  label: 'Progress'  },
+        { id: 'finances',  label: 'Finances'  },
+        { id: 'announcements', label: 'Announcements' },
+    ];
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+                <p className="text-slate-500 text-sm">Loading...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-slate-50">
@@ -75,7 +134,7 @@ const CandidateDashboard = () => {
                         </div>
                         <div>
                             <h1 className="text-lg font-bold text-slate-900">DriveSchool</h1>
-                            <p className="text-xs text-slate-500">Kandidat Dashboard</p>
+                            <p className="text-xs text-slate-500">Candidate Dashboard</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-4">
@@ -93,116 +152,382 @@ const CandidateDashboard = () => {
                         </button>
                     </div>
                 </div>
+
+                {/* ── Sub-nav ── */}
+                <div className="max-w-5xl mx-auto px-4">
+                    <nav className="flex gap-1 border-t border-slate-100">
+                        {navItems.map(item => (
+                            <button
+                                key={item.id}
+                                onClick={() => setActiveSection(item.id)}
+                                className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                                    activeSection === item.id
+                                        ? 'border-blue-500 text-blue-600'
+                                        : 'border-transparent text-slate-500 hover:text-slate-700'
+                                }`}
+                            >
+                                {item.label}
+                            </button>
+                        ))}
+                    </nav>
+                </div>
             </header>
 
-            {/* ── Sadržaj ── */}
-            <div className="p-8">
-                <div className="grid grid-cols-2 gap-6 mb-8">
-                    <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-                        <CheckCircle className="text-green-500 mb-2" />
-                        <p className="text-gray-500 text-sm font-medium">Napredak</p>
-                        <p className="text-2xl font-bold text-blue-600">{candidate?.progressPercentage}%</p>
-                        {candidate?.progressPercentage >= 100 && (
-                            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 mb-6">
-                                <div className="flex items-center justify-between">
+            <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
+
+                {/* ════════════════ OVERVIEW ════════════════ */}
+                {activeSection === 'overview' && (
+                    <>
+                        {/* Completion banner */}
+                        {progress >= 100 && (
+                            <div className="bg-white rounded-xl border border-slate-200 p-5 flex items-center justify-between">
+                                <div>
+                                    <p className="font-semibold text-slate-800">Training complete!</p>
+                                    <p className="text-sm text-slate-500 mt-0.5">
+                                        {alreadyRated
+                                            ? 'You have already rated your instructor.'
+                                            : 'Rate your instructor and share your experience.'}
+                                    </p>
+                                </div>
+                                {!alreadyRated && (
+                                    <button
+                                        onClick={() => setShowFeedback(true)}
+                                        className="flex items-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+                                    >
+                                        <MessageSquare size={16} /> Rate instructor
+                                    </button>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Progress Overview cards */}
+                        <div className="bg-white rounded-xl border border-slate-200 p-6">
+                            <h2 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                                <TrendingUp size={16} className="text-blue-500" />
+                                Progress overview
+                            </h2>
+                            <div className="grid grid-cols-3 gap-4 mb-5">
+                                {[
+                                    { label: 'Completed',      value: completed, color: 'text-green-600' },
+                                    { label: 'Total required', value: totalRequired, color: 'text-slate-800' },
+                                    { label: 'Remaining',      value: remaining,  color: 'text-blue-600'  },
+                                ].map(s => (
+                                    <div key={s.label} className="bg-slate-50 rounded-lg p-4 text-center">
+                                        <p className={`text-3xl font-bold ${s.color}`}>{s.value}</p>
+                                        <p className="text-xs text-slate-500 mt-1">{s.label}</p>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="space-y-1">
+                                <div className="flex justify-between text-xs text-slate-500">
+                                    <span>Overall progress</span>
+                                    <span className="font-medium text-blue-600">{Math.round(progress)}% completed</span>
+                                </div>
+                                <div className="w-full bg-slate-100 rounded-full h-2.5">
+                                    <div
+                                        className="bg-blue-500 h-2.5 rounded-full transition-all"
+                                        style={{ width: `${Math.min(100, progress)}%` }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Instructor card */}
+                        {candidate?.assignedInstructor && (
+                            <div className="bg-white rounded-xl border border-slate-200 p-6">
+                                <h2 className="text-sm font-semibold text-slate-700 mb-3">Your instructor</h2>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm">
+                                        {candidate.assignedInstructor?.user?.firstName?.[0]}
+                                        {candidate.assignedInstructor?.user?.lastName?.[0]}
+                                    </div>
                                     <div>
-                                        <p className="font-semibold text-gray-800">Obuka završena!</p>
-                                        <p className="text-sm text-gray-500 mt-0.5">
-                                            {alreadyRated
-                                                ? 'Već ste ostavili ocjenu za svog instruktora.'
-                                                : 'Ocijenite svog instruktora i podijelite iskustvo.'}
+                                        <p className="font-semibold text-slate-800">
+                                            {candidate.assignedInstructor?.user?.firstName}{' '}
+                                            {candidate.assignedInstructor?.user?.lastName}
+                                        </p>
+                                        <p className="text-xs text-slate-400">
+                                            {candidate.assignedInstructor?.availabilityNote || 'Instructor'}
                                         </p>
                                     </div>
-                                    {!alreadyRated && (
-                                        <button
-                                            onClick={() => setShowFeedbackModal(true)}
-                                            className="flex items-center gap-2 bg-yellow-400 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-yellow-500 transition"
-                                        >
-                                            <MessageSquare size={16} /> Ocijeni
-                                        </button>
-                                    )}
                                 </div>
                             </div>
                         )}
 
-                        {showFeedbackModal && (
-                            <FeedbackModal
-                                candidate={candidate}
-                                onClose={() => setShowFeedbackModal(false)}
-                                onSubmitted={() => {
-                                    setShowFeedbackModal(false);
-                                    setAlreadyRated(true);
-                                }}
-                            />
+                        {/* Lesson history */}
+                        <LessonTable
+                            pageData={pageData}
+                            onPageChange={fetchLessons}
+                        />
+                    </>
+                )}
+
+                {/* ════════════════ PROGRESS (phases) ════════════════ */}
+                {activeSection === 'progress' && (
+                    <div className="bg-white rounded-xl border border-slate-200 p-6">
+                        <div className="flex items-center gap-2 mb-1">
+                            <GraduationCap size={18} className="text-blue-500" />
+                            <h2 className="text-base font-semibold text-slate-800">Training progress</h2>
+                        </div>
+                        <p className="text-sm text-slate-500 mb-5">Track your journey to becoming a certified driver</p>
+
+                        {/* Overall bar */}
+                        <div className="mb-6 space-y-1">
+                            <div className="flex justify-between text-sm">
+                                <span className="text-slate-600">Overall progress</span>
+                                <span className="font-semibold text-blue-600">{Math.round(progress)}%</span>
+                            </div>
+                            <div className="w-full bg-slate-100 rounded-full h-2.5">
+                                <div
+                                    className="bg-blue-500 h-2.5 rounded-full"
+                                    style={{ width: `${Math.min(100, progress)}%` }}
+                                />
+                            </div>
+                            <p className="text-xs text-slate-400">
+                                {phases.filter(p => p.status === 'POLOŽENO').length} of {phases.length} phases completed
+                            </p>
+                        </div>
+
+                        {/* Phase cards */}
+                        {phases.length === 0 ? (
+                            <p className="text-sm text-slate-400 italic">No training phases found.</p>
+                        ) : (
+                            <div className="space-y-3">
+                                {phases.map(phase => {
+                                    const done = phase.status === 'POLOŽENO';
+                                    return (
+                                        <div
+                                            key={phase.phaseId}
+                                            className={`rounded-lg border p-4 ${done ? 'border-green-200 bg-green-50' : 'border-slate-200 bg-white'}`}
+                                        >
+                                            <div className="flex items-start justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${done ? 'border-green-500 bg-green-500' : 'border-slate-300'}`}>
+                                                        {done && <CheckCircle size={12} className="text-white" />}
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-medium text-slate-800 text-sm">{phase.phaseType}</p>
+                                                        {phase.dateCompleted && (
+                                                            <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
+                                                                <Clock size={10} />
+                                                                Completed on {new Date(phase.dateCompleted).toLocaleDateString('en-GB')}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${PHASE_COLORS[phase.status] || 'bg-slate-100 text-slate-600'}`}>
+                                                    {phase.status === 'POLOŽENO'   ? 'Completed'   :
+                                                        phase.status === 'U TOKU'     ? 'In progress' :
+                                                            phase.status === 'NEPOLOŽENO' ? 'Failed'      :
+                                                                phase.status === 'ZAKAZANO'   ? 'Scheduled'   : phase.status}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         )}
                     </div>
+                )}
 
-                    <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-                        <Clock className="text-purple-500 mb-2" />
-                        <p className="text-gray-500 text-sm font-medium">Datum upisa</p>
-                        <p className="text-lg font-bold text-gray-800">
-                            {candidate?.enrollmentDate
-                                ? new Date(candidate.enrollmentDate).toLocaleDateString('bs-BA')
-                                : '/'}
-                        </p>
-                    </div>
-                </div>
-
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                    <h2 className="text-lg font-bold mb-4">Moji časovi</h2>
-                    <table className="w-full text-left">
-                        <thead className="bg-gray-50 text-gray-500 text-xs">
-                        <tr>
-                            <th className="p-4">Vrijeme</th>
-                            <th className="p-4">Instruktor</th>
-                            <th className="p-4">Status</th>
-                            <th className="p-4">Napomena</th>
-                        </tr>
-                        </thead>
-                        <tbody className="divide-y">
-                        {pageData.content.map(lesson => (
-                            <tr key={lesson.lessonId}>
-                                <td className="p-4 text-sm font-medium">{new Date(lesson.dateTime).toLocaleString('bs-BA')}</td>
-                                <td className="p-4 text-sm">{lesson.instructor?.firstName} {lesson.instructor?.lastName}</td>
-                                <td className="p-4">
-                                    <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${lesson.status === 'ODRAĐENO' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
-                                        {lesson.status}
-                                    </span>
-                                </td>
-                                <td className="p-4 text-sm text-gray-400 italic">{lesson.notes || "/"}</td>
-                            </tr>
-                        ))}
-                        </tbody>
-                    </table>
-
-                    <div className="flex justify-center mt-6 space-x-2">
-                        <button disabled={pageData.number === 0} onClick={() => fetchLessons(pageData.number - 1)} className="p-2 border rounded hover:bg-gray-100 disabled:opacity-50"><ChevronLeft size={20}/></button>
-                        <span className="p-2">Stranica {pageData.number + 1} od {pageData.totalPages}</span>
-                        <button disabled={pageData.number + 1 === pageData.totalPages} onClick={() => fetchLessons(pageData.number + 1)} className="p-2 border rounded hover:bg-gray-100 disabled:opacity-50"><ChevronRight size={20}/></button>
-                    </div>
-                </div>
-
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mt-6">
-                    <h2 className="text-lg font-bold mb-4">Oglasna ploča</h2>
-                    {announcements.length === 0 ? (
-                        <p className="text-gray-400 text-sm italic">Nema trenutnih obavještenja.</p>
-                    ) : (
-                        <div className="divide-y">
-                            {announcements.map(a => (
-                                <div key={a.id} className="py-4">
-                                    <p className="font-semibold text-gray-800">{a.title}</p>
-                                    <p className="text-sm text-gray-600 mt-1">{a.content}</p>
-                                    <p className="text-xs text-gray-400 mt-2">
-                                        {new Date(a.dateCreated).toLocaleDateString('bs-BA')}
-                                    </p>
-                                </div>
-                            ))}
+                {/* ════════════════ FINANCES ════════════════ */}
+                {activeSection === 'finances' && (
+                    <div className="space-y-6">
+                        {/* Summary cards */}
+                        <div className="bg-white rounded-xl border border-slate-200 p-6">
+                            <div className="flex items-center gap-2 mb-4">
+                                <DollarSign size={18} className="text-blue-500" />
+                                <h2 className="text-base font-semibold text-slate-800">Financial overview</h2>
+                            </div>
+                            {account ? (
+                                <>
+                                    <div className="grid grid-cols-3 gap-4 mb-5">
+                                        {[
+                                            { label: 'Total course price', value: `€${totalAmount.toLocaleString()}`,  color: 'text-slate-800'  },
+                                            { label: 'Amount paid',         value: `€${amountPaid.toLocaleString()}`,   color: 'text-green-600'  },
+                                            { label: 'Remaining balance',   value: `€${remainingDebt.toLocaleString()}`,color: 'text-red-500'    },
+                                        ].map(s => (
+                                            <div key={s.label} className="bg-slate-50 rounded-lg p-4 text-center">
+                                                <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+                                                <p className="text-xs text-slate-500 mt-1">{s.label}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="space-y-1">
+                                        <div className="flex justify-between text-xs text-slate-500">
+                                            <span>Payment progress</span>
+                                            <span className="font-medium text-green-600">{paymentPct}%</span>
+                                        </div>
+                                        <div className="w-full bg-slate-100 rounded-full h-2.5">
+                                            <div
+                                                className="bg-green-500 h-2.5 rounded-full"
+                                                style={{ width: `${paymentPct}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                </>
+                            ) : (
+                                <p className="text-sm text-slate-400 italic">Financial data not available.</p>
+                            )}
                         </div>
-                    )}
-                </div>
+
+                        {/* Payment installments */}
+                        {payments.length > 0 && (
+                            <div className="bg-white rounded-xl border border-slate-200 p-6">
+                                <h2 className="text-sm font-semibold text-slate-700 mb-4">Payment installments</h2>
+                                <div className="space-y-2">
+                                    {payments.map((p, i) => (
+                                        <div key={p.paymentId ?? i} className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
+                                            <div>
+                                                <p className="text-sm font-medium text-slate-700">#{i + 1} — €{p.amount?.toLocaleString()}</p>
+                                                <p className="text-xs text-slate-400 mt-0.5">
+                                                    Due {p.dueDate ? new Date(p.dueDate).toLocaleDateString('en-GB') : '—'}
+                                                    {p.datePaid && ` · Paid ${new Date(p.datePaid).toLocaleDateString('en-GB')}`}
+                                                </p>
+                                            </div>
+                                            <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
+                                                p.status === 'PAID'      ? 'bg-green-100 text-green-700'  :
+                                                    p.status === 'PENDING'   ? 'bg-yellow-100 text-yellow-700':
+                                                        p.status === 'CANCELLED' ? 'bg-red-100 text-red-700'      :
+                                                            'bg-slate-100 text-slate-600'
+                                            }`}>
+                                                {p.status === 'PAID'      ? 'Paid'      :
+                                                    p.status === 'PENDING'   ? 'Pending'   :
+                                                        p.status === 'CANCELLED' ? 'Cancelled' : p.status}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* ════════════════ ANNOUNCEMENTS ════════════════ */}
+                {activeSection === 'announcements' && (
+                    <div className="bg-white rounded-xl border border-slate-200 p-6">
+                        <h2 className="text-base font-semibold text-slate-800 mb-1">Announcements</h2>
+                        <p className="text-sm text-slate-500 mb-5">Stay updated with the latest news and important notices</p>
+                        {announcements.length === 0 ? (
+                            <div className="flex flex-col items-center py-12 gap-3">
+                                <AlertCircle size={36} className="text-slate-300" />
+                                <p className="text-slate-400 text-sm">No announcements yet</p>
+                                <p className="text-slate-400 text-xs">Check back later for updates and important notices</p>
+                            </div>
+                        ) : (
+                            <div className="divide-y divide-slate-100">
+                                {announcements.map(a => (
+                                    <div key={a.id} className="py-4 first:pt-0">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <p className="font-semibold text-slate-800 text-sm">{a.title}</p>
+                                            <span className="text-xs text-slate-400 whitespace-nowrap">
+                                                {a.dateCreated ? new Date(a.dateCreated).toLocaleDateString('en-GB') : ''}
+                                            </span>
+                                        </div>
+                                        <p className="text-sm text-slate-600 mt-1">{a.content}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
+
+            {/* Feedback modal */}
+            {showFeedback && (
+                <FeedbackModal
+                    candidate={candidate}
+                    onClose={() => setShowFeedback(false)}
+                    onSubmitted={() => {
+                        setShowFeedback(false);
+                        setAlreadyRated(true);
+                    }}
+                />
+            )}
         </div>
     );
-};
+}
 
-export default CandidateDashboard;
+/* ── Lesson table sub-component ── */
+function LessonTable({ pageData, onPageChange }) {
+    return (
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                    <BookOpen size={16} className="text-blue-500" />
+                    Lesson history
+                </h2>
+            </div>
+
+            {pageData.content.length === 0 ? (
+                <div className="px-6 py-10 text-center text-sm text-slate-400 italic">No lessons found.</div>
+            ) : (
+                <table className="w-full text-left">
+                    <thead className="bg-slate-50 text-slate-500 text-xs">
+                    <tr>
+                        <th className="px-6 py-3 font-medium">Date & time</th>
+                        <th className="px-6 py-3 font-medium">Instructor</th>
+                        <th className="px-6 py-3 font-medium">Status</th>
+                        <th className="px-6 py-3 font-medium">Notes</th>
+                    </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                    {pageData.content.map(lesson => (
+                        <tr key={lesson.lessonId} className="hover:bg-slate-50 transition-colors">
+                            <td className="px-6 py-4 text-sm font-medium text-slate-800">
+                                {new Date(lesson.dateTime).toLocaleString('en-GB', {
+                                    day: '2-digit', month: 'short', year: 'numeric',
+                                    hour: '2-digit', minute: '2-digit'
+                                })}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-slate-600">
+                                {lesson.instructor?.firstName} {lesson.instructor?.lastName}
+                            </td>
+                            <td className="px-6 py-4">
+                                    <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
+                                        lesson.status === 'ODRAĐENO' ? 'bg-green-100 text-green-700' :
+                                            lesson.status === 'ZAKAZANO' ? 'bg-blue-100 text-blue-700'  :
+                                                lesson.status === 'OTKAZANO' ? 'bg-red-100 text-red-700'    :
+                                                    'bg-slate-100 text-slate-600'
+                                    }`}>
+                                        {lesson.status === 'ODRAĐENO' ? 'Completed' :
+                                            lesson.status === 'ZAKAZANO' ? 'Scheduled' :
+                                                lesson.status === 'OTKAZANO' ? 'Cancelled' : lesson.status}
+                                    </span>
+                            </td>
+                            <td className="px-6 py-4 text-sm text-slate-400 italic">
+                                {lesson.notes || '—'}
+                            </td>
+                        </tr>
+                    ))}
+                    </tbody>
+                </table>
+            )}
+
+            {/* Pagination */}
+            {pageData.totalPages > 1 && (
+                <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between">
+                    <p className="text-xs text-slate-400">
+                        Page {pageData.number + 1} of {pageData.totalPages}
+                    </p>
+                    <div className="flex gap-2">
+                        <button
+                            disabled={pageData.number === 0}
+                            onClick={() => onPageChange(pageData.number - 1)}
+                            className="p-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                            <ChevronLeft size={16} />
+                        </button>
+                        <button
+                            disabled={pageData.number + 1 === pageData.totalPages}
+                            onClick={() => onPageChange(pageData.number + 1)}
+                            className="p-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                            <ChevronRight size={16} />
+                        </button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}

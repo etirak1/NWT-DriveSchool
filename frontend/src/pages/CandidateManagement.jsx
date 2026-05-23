@@ -156,7 +156,7 @@ export default function CandidateManagement() {
                     </div>
                 )}
 
-                <h2 className="text-2xl font-bold text-slate-900 mb-6">Kandidati</h2>
+                <h2 className="text-2xl font-bold text-slate-900 mb-6">Cnadidates</h2>
 
                 <div className="space-y-4">
                     {candidates.map(candidate => (
