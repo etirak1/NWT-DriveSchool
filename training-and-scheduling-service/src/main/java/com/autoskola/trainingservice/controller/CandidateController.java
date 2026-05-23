@@ -38,4 +38,10 @@ public class CandidateController {
     public List<CandidateDTO> getAllCandidates() {
         return candidateService.getAllCandidates();
     }
+
+    @PatchMapping("/{id}/assign-instructor/{instructorId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public CandidateDTO assignInstructor(@PathVariable Long id, @PathVariable Long instructorId) {
+        return candidateService.assignInstructor(id, instructorId);
+    }
 }

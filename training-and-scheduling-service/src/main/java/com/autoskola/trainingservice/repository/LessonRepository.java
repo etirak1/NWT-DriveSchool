@@ -1,6 +1,8 @@
 package com.autoskola.trainingservice.repository;
 
 import com.autoskola.trainingservice.model.Lesson;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -18,4 +20,6 @@ public interface LessonRepository extends JpaRepository<Lesson, Long> {
 
     @Query("SELECT l FROM Lesson l WHERE l.instructor.userId = :userId AND l.status = 'ZAKAZANO'")
     List<Lesson> findUpcomingByInstructorUserId(@Param("userId") Long userId);
+
+    Page<Lesson> findByCandidateUserId(Long userId, Pageable pageable);
 }

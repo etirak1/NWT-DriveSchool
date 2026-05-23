@@ -11,6 +11,17 @@ public class RabbitMQConfig {
     public static final String EXCHANGE = "skola_exchange";
     public static final String QUEUE_FINANCE = "finance_queue";
     public static final String QUEUE_TRAINING = "training_queue";
+    public static final String QUEUE_USER_REGISTERED = "user_registered_queue";
+
+    @Bean
+    public Queue userRegisteredQueue() {
+        return new Queue(QUEUE_USER_REGISTERED, true);
+    }
+
+    @Bean
+    public Binding userRegisteredBinding(Queue userRegisteredQueue, TopicExchange exchange) {
+        return BindingBuilder.bind(userRegisteredQueue).to(exchange).with("user.registered");
+    }
 
     @Bean
     public TopicExchange exchange() {

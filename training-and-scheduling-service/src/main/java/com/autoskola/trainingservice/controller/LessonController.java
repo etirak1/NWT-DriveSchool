@@ -88,4 +88,19 @@ public class LessonController {
         return ResponseEntity.ok(lessonService.hasActiveSessions(userId));
     }
 
+    @GetMapping("/my-lessons")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR', 'CANDIDATE')")
+    public ResponseEntity<Page<LessonDTO>> getMyLessons(
+            @RequestParam Long userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(defaultValue = "dateTime") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+
+        Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        return ResponseEntity.ok(lessonService.getLessonsByUserId(userId, pageable));
+    }
+
 }

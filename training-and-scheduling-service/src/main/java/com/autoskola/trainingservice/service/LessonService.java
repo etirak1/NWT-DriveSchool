@@ -47,8 +47,11 @@ public class LessonService {
             return new UserDTO(null, "Nepoznato", "Korisnik", fallbackRole);
         }
         try {
-            return userClient.getUserById(userId);
+            UserDTO dto = userClient.getUserById(userId);
+            System.out.println("safeGetUser uspješno: " + userId + " -> " + dto.getFirstName());
+            return dto;
         } catch (Exception e) {
+            System.out.println("safeGetUser PALO za userId=" + userId + ", greška: " + e.getMessage());
             return new UserDTO(userId, "Nepoznato", "Korisnik", fallbackRole);
         }
     }
@@ -153,5 +156,14 @@ public class LessonService {
 
     public boolean hasActiveSessions(Long userId) {
         return !lessonRepository.findUpcomingByInstructorUserId(userId).isEmpty();
+    }
+
+    public Page<LessonDTO> getLessonsByUserId(Long userId, Pageable pageable) {
+        return lessonRepository.findByCandidateUserId(userId, pageable)
+                .map(lesson -> {
+                    UserDTO inst = safeGetUser(lesson.getInstructor().getUserId(), "INSTRUCTOR");
+                    UserDTO cand = safeGetUser(lesson.getCandidate().getUserId(), "CANDIDATE");
+                    return new LessonDTO(lesson, inst, cand);
+                });
     }
 }

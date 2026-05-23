@@ -17,9 +17,11 @@ import jakarta.validation.Valid;
 public class FeedbackController {
 
     private final FeedbackService feedbackService;
+    private final FeedbackRepository feedbackRepository;
 
-    public FeedbackController(FeedbackService feedbackService) {
+    public FeedbackController(FeedbackService feedbackService, FeedbackRepository feedbackRepository) {
         this.feedbackService = feedbackService;
+        this.feedbackRepository = feedbackRepository;
     }
 
     @GetMapping("/{id}")
@@ -33,5 +35,11 @@ public class FeedbackController {
     public ResponseEntity<FeedbackDTO> leaveFeedback(@Valid @RequestBody Feedback feedback) {
         FeedbackDTO response = feedbackService.createFeedback(feedback);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping("/candidate/{candidateId}/exists")
+    @PreAuthorize("hasAnyRole('CANDIDATE', 'ADMIN')")
+    public ResponseEntity<Boolean> feedbackExists(@PathVariable Long candidateId) {
+        return ResponseEntity.ok(feedbackRepository.existsByCandidateCandidateId(candidateId));
     }
 }

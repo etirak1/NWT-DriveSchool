@@ -123,4 +123,17 @@ public class CandidateService {
         return response;
     }
 
+    public CandidateDTO assignInstructor(Long candidateId, Long instructorId) {
+        Candidate candidate = candidateRepository.findById(candidateId)
+                .orElseThrow(() -> new RuntimeException("Kandidat nije pronađen"));
+
+        Instructor instructor = instructorRepository.findById(instructorId)
+                .orElseThrow(() -> new RuntimeException("Instruktor nije pronađen"));
+
+        candidate.setAssignedInstructor(instructor);
+        candidateRepository.save(candidate);
+
+        return getCandidateFullDetails(candidateId);
+    }
+
 }
