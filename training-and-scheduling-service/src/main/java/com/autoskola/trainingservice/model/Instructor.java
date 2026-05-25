@@ -1,9 +1,8 @@
 package com.autoskola.trainingservice.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "instructors")
@@ -17,5 +16,9 @@ public class Instructor {
     @NotNull(message = "User ID je obavezan")
     private Long userId;
 
-
+    private Long assignedVehicleId;
+    private String vehicleBrand;
+    private String vehicleModel;
+    private String vehicleRegistrationNumber;
+    private String vehicleStatus;
 }

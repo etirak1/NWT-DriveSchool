@@ -44,4 +44,5 @@ public class CandidateController {
     public CandidateDTO assignInstructor(@PathVariable Long id, @PathVariable Long instructorId) {
         return candidateService.assignInstructor(id, instructorId);
     }
+
 }

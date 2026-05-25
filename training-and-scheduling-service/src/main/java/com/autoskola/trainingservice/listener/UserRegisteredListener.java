@@ -2,6 +2,7 @@ package com.autoskola.trainingservice.listener;
 
 import com.autoskola.trainingservice.event.UserRegisteredEvent;
 import com.autoskola.trainingservice.model.Candidate;
+import com.autoskola.trainingservice.model.Instructor;
 import com.autoskola.trainingservice.repository.CandidateRepository;
 import com.autoskola.trainingservice.repository.InstructorRepository;
 import com.autoskola.trainingservice.repository.TrainingRuleRepository;
@@ -11,7 +12,6 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Map;
 
 @Component
 public class UserRegisteredListener {
@@ -27,22 +27,30 @@ public class UserRegisteredListener {
 
     @RabbitListener(queues = "user_registered_queue")
     public void handleUserRegistered(UserRegisteredEvent event) {
-        if (!"CANDIDATE".equals(event.getRole())) return;
-
         Long userId = event.getUserId();
+        String role = event.getRole();
 
+        if ("CANDIDATE".equalsIgnoreCase(role)) {
+            if (candidateRepository.findByUserId(userId).isPresent()) {
+                System.out.println("Kandidat već postoji za userId: " + userId + ", preskačem.");
+                return;
+            }
+            Candidate candidate = new Candidate();
+            candidate.setUserId(userId);
+            candidate.setEnrollmentDate(LocalDate.now());
+            candidate.setProgressPercentage(BigDecimal.ZERO);
+            candidateRepository.save(candidate);
+            System.out.println("Kandidat kreiran za userId: " + userId);
 
-        if (candidateRepository.findByUserId(userId).isPresent()) {
-            System.out.println("Kandidat već postoji za userId: " + userId + ", preskačem.");
-            return;
+        } else if ("INSTRUCTOR".equalsIgnoreCase(role) || "INSTRUKTOR".equalsIgnoreCase(role)) {
+            if (instructorRepository.existsByUserId(userId)) {
+                System.out.println("Instruktor već postoji za userId: " + userId + ", preskačem.");
+                return;
+            }
+            Instructor instructor = new Instructor();
+            instructor.setUserId(userId);
+            instructorRepository.save(instructor);
+            System.out.println("Instruktor kreiran za userId: " + userId);
         }
-
-        Candidate candidate = new Candidate();
-        candidate.setUserId(userId);
-        candidate.setEnrollmentDate(LocalDate.now());
-        candidate.setProgressPercentage(BigDecimal.ZERO);
-        candidateRepository.save(candidate);
-
-        System.out.println("Kandidat kreiran za userId: " + userId);
     }
 }

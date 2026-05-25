@@ -42,7 +42,15 @@ public class InstructorService {
             userDTO = new UserDTO(instructor.getUserId(), "Nepoznato", "Korisnik", "INSTRUCTOR");
         }
 
-        return new InstructorDTO(instructor.getInstructorId(), userDTO);
+        return new InstructorDTO(
+                instructor.getInstructorId(),
+                userDTO,
+                instructor.getAssignedVehicleId(),
+                instructor.getVehicleBrand(),
+                instructor.getVehicleModel(),
+                instructor.getVehicleRegistrationNumber(),
+                instructor.getVehicleStatus()
+        );
     }
 
     public InstructorDTO createInstructor(Instructor instructor) {
@@ -64,7 +72,15 @@ public class InstructorService {
                     } catch (Exception e) {
                         userDTO = new UserDTO(inst.getUserId(), "Nepoznato", "Korisnik", "INSTRUCTOR");
                     }
-                    return new InstructorDTO(inst.getInstructorId(), userDTO);
+                    return new InstructorDTO(
+                            inst.getInstructorId(),
+                            userDTO,
+                            inst.getAssignedVehicleId(),
+                            inst.getVehicleBrand(),
+                            inst.getVehicleModel(),
+                            inst.getVehicleRegistrationNumber(),
+                            inst.getVehicleStatus()
+                    );
                 })
                 .collect(Collectors.toList());
     }

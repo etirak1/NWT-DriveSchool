@@ -1,13 +1,18 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+
+
 import {
     GraduationCap, LogOut, CheckCircle, Clock, BookOpen,
     ChevronLeft, ChevronRight, MessageSquare, TrendingUp,
-    DollarSign, AlertCircle
+    DollarSign, AlertCircle, Plus
 } from 'lucide-react';
 import { api } from '../api/client';
 import { getCurrentUserId, getCurrentEmail, getCurrentRole } from '../auth/jwt';
 import FeedbackModal from '../components/FeedbackModal';
+
+
+
 
 const PHASE_COLORS = {
     'POLOŽENO':     'bg-green-100 text-green-700',
@@ -457,6 +462,12 @@ function LessonTable({ pageData, onPageChange }) {
                     <BookOpen size={16} className="text-blue-500" />
                     Lesson history
                 </h2>
+                <Link
+                    to="/book-lesson"
+                    className="flex items-center gap-1.5 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg font-medium text-sm transition"
+                >
+                    <Plus size={14} /> Zakaži čas
+                </Link>
             </div>
 
             {pageData.content.length === 0 ? (

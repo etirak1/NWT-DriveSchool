@@ -20,12 +20,10 @@ public class Lesson {
     @JoinColumn(name = "candidate_id")
     private Candidate candidate;
 
-    @NotNull(message = "Instruktor je obavezan")
     @ManyToOne
     @JoinColumn(name = "instructor_id")
     private Instructor instructor;
 
-    @NotNull(message = "Vozilo je obavezno")
     private Long vehicleId;
 
     @NotNull(message = "Datum i vrijeme časa su obavezni")

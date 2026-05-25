@@ -8,7 +8,6 @@ import com.autoskola.trainingservice.model.Candidate;
 import com.autoskola.trainingservice.model.Instructor;
 import com.autoskola.trainingservice.model.Lesson;
 import com.autoskola.trainingservice.repository.CandidateRepository;
-import com.autoskola.trainingservice.repository.InstructorRepository;
 import com.autoskola.trainingservice.repository.LessonRepository;
 import com.autoskola.trainingservice.config.RabbitMQConfig;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -26,19 +25,15 @@ public class LessonService {
     private final LessonRepository lessonRepository;
     private final UserClient userClient;
     private final CandidateRepository candidateRepository;
-    private final InstructorRepository instructorRepository;
     private final RabbitTemplate rabbitTemplate;
 
-    // POPRAVLJEN KONSTRUKTOR (Ovdje si imala grešku sa dva RabbitTemplate-a)
     public LessonService(LessonRepository lessonRepository,
-                          UserClient userClient,
+                         UserClient userClient,
                          CandidateRepository candidateRepository,
-                         InstructorRepository instructorRepository,
                          RabbitTemplate rabbitTemplate) {
         this.lessonRepository = lessonRepository;
         this.userClient = userClient;
         this.candidateRepository = candidateRepository;
-        this.instructorRepository = instructorRepository;
         this.rabbitTemplate = rabbitTemplate;
     }
 
@@ -63,34 +58,84 @@ public class LessonService {
         UserDTO instructorUser = safeGetUser(lesson.getInstructor().getUserId(), "INSTRUCTOR");
         UserDTO candidateUser  = safeGetUser(lesson.getCandidate().getUserId(),  "CANDIDATE");
 
-        return new LessonDTO(
-                lesson,
-                instructorUser,
-                candidateUser
-        );
+        return new LessonDTO(lesson, instructorUser, candidateUser);
     }
 
     public LessonDTO saveLesson(Lesson lesson) {
-        Candidate candidate = candidateRepository.findById(lesson.getCandidate().getCandidateId())
-                .orElseThrow(() -> new RuntimeException("Kandidat sa ID-om " + lesson.getCandidate().getCandidateId() + " ne postoji."));
+        // Kandidata tražimo po userId iz request body-a
+        Candidate candidate = candidateRepository.findByUserId(lesson.getCandidate().getUserId())
+                .orElseThrow(() -> new RuntimeException(
+                        "Kandidat sa userId=" + lesson.getCandidate().getUserId() + " ne postoji."));
 
-        Instructor instructor = instructorRepository.findById(lesson.getInstructor().getInstructorId())
-                .orElseThrow(() -> new RuntimeException("Instruktor sa ID-om " + lesson.getInstructor().getInstructorId() + " ne postoji."));
+        // Instruktor se ne šalje u requestu — uzimamo ga direktno iz kandidatovog profila
+        Instructor instructor = candidate.getAssignedInstructor();
+        if (instructor == null) {
+            throw new RuntimeException(
+                    "Kandidat nema dodijeljen instruktor. Molimo odaberite instruktora prije zakazivanja časa.");
+        }
+
+        if (instructor.getAssignedVehicleId() == null) {
+            throw new RuntimeException(
+                    "Instruktor nema dodijeljeno vozilo. Kontaktirajte administratora.");
+        }
+
+        if (!"ACTIVE".equalsIgnoreCase(instructor.getVehicleStatus())) {
+            throw new RuntimeException(
+                    "Vozilo instruktora trenutno nije raspoloživo (status: "
+                            + instructor.getVehicleStatus() + ").");
+        }
+
+        lesson.setVehicleId(instructor.getAssignedVehicleId());
+
+        if (lesson.getDuration() == null) {
+            lesson.setDuration(45);
+        }
+
+        java.time.LocalDateTime newStart = lesson.getDateTime();
+        java.time.LocalDateTime newEnd = newStart.plusMinutes(lesson.getDuration());
+
+        List<Lesson> instructorConflicts = lessonRepository
+                .findOverlappingInstructorLessons(instructor.getInstructorId(), newStart, newEnd);
+        if (!instructorConflicts.isEmpty()) {
+            throw new RuntimeException("Instruktor već ima zakazan čas u tom terminu.");
+        }
+
+        List<Lesson> vehicleConflicts = lessonRepository
+                .findOverlappingVehicleLessons(lesson.getVehicleId(), newStart, newEnd);
+        if (!vehicleConflicts.isEmpty()) {
+            throw new RuntimeException("Vozilo je već zauzeto u tom terminu.");
+        }
 
         lesson.setCandidate(candidate);
         lesson.setInstructor(instructor);
+        lesson.setStatus("ZAKAZANO");
 
-        lesson.setStatus("PENDING");
         Lesson savedLesson = lessonRepository.save(lesson);
 
         LessonEvent event = new LessonEvent();
         event.setLessonId(savedLesson.getLessonId());
         event.setCandidateId(candidate.getCandidateId());
-        event.setStatus("PENDING");
+        event.setStatus("ZAKAZANO");
 
         rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, "lesson.created", event);
 
         return getLessonDetails(savedLesson.getLessonId());
+    }
+
+    public List<LessonDTO> getInstructorScheduleForDay(Long instructorId, java.time.LocalDate date) {
+        java.time.LocalDateTime dayStart = date.atStartOfDay();
+        java.time.LocalDateTime dayEnd = date.plusDays(1).atStartOfDay();
+
+        List<Lesson> lessons = lessonRepository
+                .findInstructorLessonsForDay(instructorId, dayStart, dayEnd);
+
+        List<LessonDTO> result = new ArrayList<>();
+        for (Lesson l : lessons) {
+            UserDTO inst = safeGetUser(l.getInstructor().getUserId(), "INSTRUCTOR");
+            UserDTO cand = safeGetUser(l.getCandidate().getUserId(), "CANDIDATE");
+            result.add(new LessonDTO(l, inst, cand));
+        }
+        return result;
     }
 
     public List<LessonDTO> getAllLessons() {
@@ -123,7 +168,6 @@ public class LessonService {
         if (currentProgress == null) currentProgress = BigDecimal.ZERO;
 
         BigDecimal newProgress = currentProgress.add(new BigDecimal("2.5"));
-
         if (newProgress.compareTo(new BigDecimal("100")) > 0) {
             newProgress = new BigDecimal("100");
         }

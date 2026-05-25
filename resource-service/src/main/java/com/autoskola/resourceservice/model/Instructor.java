@@ -22,6 +22,8 @@ public class Instructor {
     @NotBlank(message = "Napomena o dostupnosti je obavezna")
     @Size(max = 255, message = "Napomena može imati maksimalno 255 karaktera")
     private String availabilityNote;
+    private Long assignedVehicleId;
+
 
     private LocalDateTime dateCreated;
 

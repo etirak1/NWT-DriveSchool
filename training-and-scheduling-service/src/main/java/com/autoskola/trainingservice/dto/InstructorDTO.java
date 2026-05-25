@@ -15,4 +15,10 @@ public class InstructorDTO {
 
     private Long instructorId;
     private UserDTO user;
+    private Long assignedVehicleId;
+    private String vehicleBrand;
+    private String vehicleModel;
+    private String vehicleRegistrationNumber;
+    private String vehicleStatus;
+
 }

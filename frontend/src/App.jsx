@@ -4,12 +4,9 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import UserManagement from './pages/UserManagement';
 import CandidateDashboard from './pages/CandidateDashboard';
+import BookLesson from './pages/BookLesson';
 import { isAdmin, getCurrentRole } from './auth/jwt';
-import ResourceManagement from './pages/DashboardPage.jsx';
-//import Layout from './layouts/DashboardLayout.jsx'
-import Vehicles from './pages/VehiclePage';
-import Repairs from './pages/RepairsPage';
-import Instructors from './pages/InstructorPage';
+import DashboardPage from './pages/DashboardPage';
 import CandidateManagement from './pages/CandidateManagement';
 
 function RequireAuth({ children }) {
@@ -19,9 +16,9 @@ function RequireAuth({ children }) {
 }
 
 function SmartDashboard() {
-    const role = getCurrentRole();
-    if (role === 'CANDIDATE') return <CandidateDashboard />;
-    return <Dashboard />;
+  const role = getCurrentRole();
+  if (role === 'CANDIDATE') return <CandidateDashboard />;
+  return <Dashboard />;
 }
 
 function RequireAdmin({ children }) {
@@ -46,6 +43,22 @@ export default function App() {
         }
       />
       <Route
+        path="/lessons/book"
+        element={
+          <RequireAuth>
+            <BookLesson />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/book-lesson"
+        element={
+          <RequireAuth>
+            <BookLesson />
+          </RequireAuth>
+        }
+      />
+      <Route
         path="/users"
         element={
           <RequireAdmin>
@@ -53,18 +66,23 @@ export default function App() {
           </RequireAdmin>
         }
       />
-
-        <Route
-            path="/candidates"
-            element={
-                <RequireAdmin>
-                    <CandidateManagement />
-                </RequireAdmin>
-            }
-        />
-
-
-        <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route
+        path="/resources"
+        element={
+          <RequireAdmin>
+            <DashboardPage />
+          </RequireAdmin>
+        }
+      />
+      <Route
+        path="/candidates"
+        element={
+          <RequireAdmin>
+            <CandidateManagement />
+          </RequireAdmin>
+        }
+      />
+      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
 }

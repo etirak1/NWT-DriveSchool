@@ -60,14 +60,14 @@ public class CandidateService {
             );
         }
 
-        return new CandidateDTO(
-                candidate.getCandidateId(),
-                candidate.getEnrollmentDate(),
-                candidate.getProgressPercentage(),
-                userDTO,
-                instructorDetails,
-                ruleDTO
-        );
+        CandidateDTO dto = new CandidateDTO();
+        dto.setCandidateId(candidate.getCandidateId());
+        dto.setEnrollmentDate(candidate.getEnrollmentDate());
+        dto.setProgressPercentage(candidate.getProgressPercentage());
+        dto.setUser(userDTO);                       // ili setCandidateUser, ovisi kako se zove polje
+        dto.setAssignedInstructor(instructorDetails); // ili setInstructor
+        dto.setRule(ruleDTO);                       // ili setTrainingRule
+        return dto;
     }
 
     public CandidateDTO createCandidate(Candidate candidate) {
@@ -123,17 +123,19 @@ public class CandidateService {
         return response;
     }
 
-    public CandidateDTO assignInstructor(Long candidateId, Long instructorId) {
+    public CandidateDTO assignInstructor(Long candidateId, Long instructorUserId) {
         Candidate candidate = candidateRepository.findById(candidateId)
                 .orElseThrow(() -> new RuntimeException("Kandidat nije pronađen"));
 
-        Instructor instructor = instructorRepository.findById(instructorId)
+        Instructor instructor = instructorRepository.findByUserId(instructorUserId)
                 .orElseThrow(() -> new RuntimeException("Instruktor nije pronađen"));
 
         candidate.setAssignedInstructor(instructor);
         candidateRepository.save(candidate);
 
-        return getCandidateFullDetails(candidateId);
+        return getCandidateFullDetails(candidate.getUserId());
     }
+
+
 
 }

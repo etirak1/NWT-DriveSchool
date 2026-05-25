@@ -39,5 +39,6 @@ public class Candidate {
     @JoinColumn(name = "rule_id")
     private TrainingRule rule;
 
+
 }
 

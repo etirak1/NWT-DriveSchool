@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, CheckCircle } from 'lucide-react';
 import StarRating from './StarRating';
 import { api } from '../api/client';
 
@@ -37,7 +37,6 @@ const FeedbackModal = ({ candidate, onClose, onSubmitted }) => {
             setTimeout(() => {
                 onSubmitted();
             }, 2000);
-            onSubmitted();
         } catch (err) {
             setError(err.response?.data?.message || 'Greška pri slanju ocjene.');
         } finally {

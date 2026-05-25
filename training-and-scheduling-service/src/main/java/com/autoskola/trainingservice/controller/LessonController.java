@@ -16,6 +16,8 @@ import org.springframework.data.domain.Sort;
 import java.util.List;
 import com.autoskola.trainingservice.service.LessonService;
 
+
+
 @RestController
 @EnableMethodSecurity
 @RequestMapping("/api/lessons")
@@ -35,7 +37,7 @@ public class LessonController {
 
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR', 'CANDIDATE')")
     public LessonDTO scheduleLesson(@Valid @RequestBody Lesson lesson) {
         return lessonService.saveLesson(lesson);
     }
@@ -86,6 +88,15 @@ public class LessonController {
     @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
     public ResponseEntity<Boolean> hasActiveSessions(@PathVariable Long userId) {
         return ResponseEntity.ok(lessonService.hasActiveSessions(userId));
+
+    }
+
+    @GetMapping("/instructor/{instructorId}/availability")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR', 'CANDIDATE')")
+    public ResponseEntity<List<LessonDTO>> getInstructorAvailability(
+            @PathVariable Long instructorId,
+            @RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate date) {
+        return ResponseEntity.ok(lessonService.getInstructorScheduleForDay(instructorId, date));
     }
 
     @GetMapping("/my-lessons")
