@@ -11,6 +11,7 @@ export default defineConfig({
       '/repairs': {target: 'http://localhost:8080', changeOrigin: true},
       '/api/instructors': {target: 'http://localhost:8080', changeOrigin: true},
       '/users': {target: 'http://localhost:8080', changeOrigin: true},
+      '/payment': {target: 'http://localhost:8080', changeOrigin: true, secure: false},
     }
   }
 })

@@ -9,7 +9,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/payments")
+@RequestMapping("/api/payments")
+@CrossOrigin(origins = "http://localhost:5173") // Dodaj ovo za svaki slučaj
 public class PaymentController {
 
     private final PaymentRepository paymentRepository;
@@ -18,15 +19,20 @@ public class PaymentController {
         this.paymentRepository = paymentRepository;
     }
 
+    // --- DODAJ OVU METODU ---
+    @GetMapping
+    public List<Payment> getAllPayments() {
+        return paymentRepository.findAll();
+    }
+
+    // Tvoje postojeće metode...
     @GetMapping("/candidate/{candidateId}")
     public List<Payment> getPaymentsByCandidate(@PathVariable Integer candidateId) {
         return paymentRepository.findByCandidateAccount_Id(candidateId);
     }
 
-
     @PostMapping
     public ResponseEntity<Payment> createPayment(@Valid @RequestBody Payment payment) {
-
         Payment savedPayment = paymentRepository.save(payment);
         return ResponseEntity.ok(savedPayment);
     }

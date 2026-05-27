@@ -1,5 +1,6 @@
 package com.autoskola.financeservice.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*; // DODANO
 import lombok.*;
@@ -36,7 +37,8 @@ public class CandidateFinanceAccount {
     @DecimalMin(value = "0.0", message = "Cijena ne može biti negativna")
     private BigDecimal totalAmount;
 
-    @OneToMany(mappedBy = "candidateAccount", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "candidateAccount")
+    @JsonIgnore // Ovo sprečava da se uplate ponovo učitavaju unutar accounta
     private List<Payment> payments;
 }
 

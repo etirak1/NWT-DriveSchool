@@ -1,5 +1,6 @@
 package com.autoskola.financeservice.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -9,6 +10,7 @@ import java.time.LocalDate;
 @Entity
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
+
 public class Payment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,6 +31,7 @@ public class Payment {
 
     @ManyToOne
     @JoinColumn(name = "candidate_account_id")
+    @JsonIgnoreProperties({"payments"})
     private CandidateFinanceAccount candidateAccount;
 }
 
