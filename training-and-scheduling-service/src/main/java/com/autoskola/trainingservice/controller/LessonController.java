@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import java.util.List;
+import java.time.LocalDateTime;
 
 
 @RestController
@@ -132,6 +133,23 @@ public class LessonController {
         Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
         return ResponseEntity.ok(lessonService.getLessonsByInstructorUserId(userId, pageable));
+    }
+
+
+    @PatchMapping("/{id}/reschedule")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CANDIDATE')")
+    public ResponseEntity<?> rescheduleLesson(
+            @PathVariable Long id,
+            @RequestBody java.util.Map<String, String> body,
+            @RequestHeader("Authorization") String authHeader) {
+        try {
+            LocalDateTime newDateTime = LocalDateTime.parse(body.get("dateTime"));
+            Long userId = Long.parseLong(body.get("userId"));
+            LessonDTO updated = lessonService.rescheduleLesson(id, newDateTime, userId);
+            return ResponseEntity.ok(updated);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", e.getMessage()));
+        }
     }
 
 
