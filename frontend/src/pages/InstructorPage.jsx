@@ -5,7 +5,7 @@ import { Spinner, ErrorState } from '../components/States';
 import { useToast } from '../context/ToastContext';
 
 export default function InstructorsPage() {
-    const { addToast } = useToast();
+    const { showToast } = useToast();
     const { data: instructors, loading, error, refetch } = useAsync(() => instructorApi.getAll());
     console.log(instructors);
     const [search, setSearch] = useState('');
@@ -20,13 +20,13 @@ export default function InstructorsPage() {
         try {
             const newNote = isAvailable(instructor) ? 'UNAVAILABLE' : 'AVAILABLE';
             await instructorApi.updateAvailability(instructor.instructorId, newNote);
-            addToast(
+            showToast(
                 `${instructor.user?.firstName} označen kao ${newNote === 'AVAILABLE' ? 'dostupan' : 'nedostupan'}.`,
                 'success'
             );
             refetch();
         } catch (e) {
-            addToast(`Greška: ${e.message}`, 'error');
+            showToast(`Greška: ${e.message}`, 'error');
         }
     };
 
