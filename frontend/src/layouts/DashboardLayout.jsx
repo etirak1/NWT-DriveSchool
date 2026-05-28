@@ -6,7 +6,7 @@ import '../App.css';
 const NAV = [
     {
         path: '/resources',
-        label: 'Dashboard',
+        label: 'Prikaz resursa',
         icon: '📊'
     },
     {
