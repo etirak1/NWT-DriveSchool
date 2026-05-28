@@ -1,13 +1,12 @@
 package com.autoskola.trainingservice.service;
 
+import com.autoskola.trainingservice.client.UserClient;
 import com.autoskola.trainingservice.dto.InstructorDTO;
 import com.autoskola.trainingservice.dto.UserDTO;
 import com.autoskola.trainingservice.model.Feedback;
 import com.autoskola.trainingservice.model.Instructor;
-import com.autoskola.trainingservice.model.User;
 import com.autoskola.trainingservice.repository.FeedbackRepository;
 import com.autoskola.trainingservice.repository.InstructorRepository;
-import com.autoskola.trainingservice.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -21,13 +20,14 @@ import java.util.stream.Collectors;
 public class InstructorService {
 
     private final InstructorRepository instructorRepository;
-    private final UserRepository userRepository;
+    private final UserClient userClient;
     private final FeedbackRepository feedbackRepository;
 
     public InstructorService(InstructorRepository instructorRepository,
-                             UserRepository userRepository, FeedbackRepository feedbackRepository) {
+                             UserClient userClient,
+                             FeedbackRepository feedbackRepository) {
         this.instructorRepository = instructorRepository;
-        this.userRepository = userRepository;
+        this.userClient = userClient;
         this.feedbackRepository = feedbackRepository;
     }
 
@@ -35,42 +35,52 @@ public class InstructorService {
         Instructor instructor = instructorRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Instructor not found"));
 
-        User user = userRepository.findById(instructor.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        UserDTO userDTO;
+        try {
+            userDTO = userClient.getUserById(instructor.getUserId());
+        } catch (Exception e) {
+            userDTO = new UserDTO(instructor.getUserId(), "Nepoznato", "Korisnik", "INSTRUCTOR");
+        }
 
-        UserDTO userDTO = new UserDTO(
-                user.getUserId(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getRole()
+        return new InstructorDTO(
+                instructor.getInstructorId(),
+                userDTO,
+                instructor.getAssignedVehicleId(),
+                instructor.getVehicleBrand(),
+                instructor.getVehicleModel(),
+                instructor.getVehicleRegistrationNumber(),
+                instructor.getVehicleStatus()
         );
-
-        return new InstructorDTO(instructor.getInstructorId(), userDTO);
     }
 
     public InstructorDTO createInstructor(Instructor instructor) {
-
-        userRepository.findById(instructor.getUserId())
-                .orElseThrow(() -> new RuntimeException("Korisnik sa ID-om " + instructor.getUserId() + " ne postoji."));
+        try {
+            userClient.getUserById(instructor.getUserId());
+        } catch (Exception e) {
+            throw new RuntimeException("Korisnik sa ID-om " + instructor.getUserId() + " ne postoji.");
+        }
         Instructor saved = instructorRepository.save(instructor);
-
         return getInstructorFullDetails(saved.getInstructorId());
     }
 
     public List<InstructorDTO> getAllInstructors() {
         return instructorRepository.findAll().stream()
                 .map(inst -> {
-                    User user = userRepository.findById(inst.getUserId())
-                            .orElseThrow(() -> new RuntimeException("Korisnik nije pronađen"));
-
-                    UserDTO userDTO = new UserDTO(
-                            user.getUserId(),
-                            user.getFirstName(),
-                            user.getLastName(),
-                            user.getRole()
+                    UserDTO userDTO;
+                    try {
+                        userDTO = userClient.getUserById(inst.getUserId());
+                    } catch (Exception e) {
+                        userDTO = new UserDTO(inst.getUserId(), "Nepoznato", "Korisnik", "INSTRUCTOR");
+                    }
+                    return new InstructorDTO(
+                            inst.getInstructorId(),
+                            userDTO,
+                            inst.getAssignedVehicleId(),
+                            inst.getVehicleBrand(),
+                            inst.getVehicleModel(),
+                            inst.getVehicleRegistrationNumber(),
+                            inst.getVehicleStatus()
                     );
-
-                    return new InstructorDTO(inst.getInstructorId(), userDTO);
                 })
                 .collect(Collectors.toList());
     }
@@ -99,5 +109,4 @@ public class InstructorService {
         }
         return report;
     }
-
 }

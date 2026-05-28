@@ -27,4 +27,9 @@ public class TrainingRule {
     @DecimalMin(value = "0.0", inclusive = false, message = "Cijena obuke mora biti veća od 0")
     private BigDecimal coursePrice;
 
+    @Min(value = 1, message = "Sedmični limit mora biti najmanje 1 čas")
+    @Max(value = 4, message = "Sedmični limit ne može biti veći od 4 časova")
+    @Column(name = "max_lessons_per_week")
+    private Integer maxLessonsPerWeek;
+
 }

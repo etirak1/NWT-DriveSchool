@@ -15,7 +15,7 @@ class UserClientServiceTest {
         RestTemplate restTemplate = mock(RestTemplate.class);
         UserClientService service = new UserClientService(restTemplate);
 
-        UserDTO dto = new UserDTO(1L, "Test", "User", "test@mail.com", "INSTRUCTOR", "ACTIVE");
+        UserDTO dto = new UserDTO(1L, "Test", "User", "test@mail.com", "INSTRUCTOR");
 
         when(restTemplate.getForObject(anyString(), eq(UserDTO.class)))
                 .thenReturn(dto);

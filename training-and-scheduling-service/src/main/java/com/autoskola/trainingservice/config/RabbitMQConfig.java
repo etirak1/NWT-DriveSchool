@@ -1,4 +1,5 @@
 package com.autoskola.trainingservice.config;
+
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
@@ -11,6 +12,9 @@ public class RabbitMQConfig {
     public static final String EXCHANGE = "skola_exchange";
     public static final String QUEUE_FINANCE = "finance_queue";
     public static final String QUEUE_TRAINING = "training_queue";
+    public static final String QUEUE_USER_REGISTERED = "user_registered_queue";
+
+    public static final String QUEUE_INSTRUCTOR_VEHICLE = "instructor_vehicle_queue";
 
     @Bean
     public TopicExchange exchange() {
@@ -18,14 +22,18 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public Queue financeQueue() {
-        return new Queue(QUEUE_FINANCE);
+    public Queue userRegisteredQueue() { return new Queue(QUEUE_USER_REGISTERED, true); }
+
+    @Bean
+    public Binding userRegisteredBinding(Queue userRegisteredQueue, TopicExchange exchange) {
+        return BindingBuilder.bind(userRegisteredQueue).to(exchange).with("user.registered");
     }
 
     @Bean
-    public Queue trainingQueue() {
-        return new Queue(QUEUE_TRAINING);
-    }
+    public Queue financeQueue() { return new Queue(QUEUE_FINANCE); }
+
+    @Bean
+    public Queue trainingQueue() { return new Queue(QUEUE_TRAINING); }
 
     @Bean
     public Binding financeBinding(Queue financeQueue, TopicExchange exchange) {
@@ -35,6 +43,21 @@ public class RabbitMQConfig {
     @Bean
     public Binding trainingBinding(Queue trainingQueue, TopicExchange exchange) {
         return BindingBuilder.bind(trainingQueue).to(exchange).with("payment.*");
+    }
+
+    @Bean
+    public Queue instructorVehicleQueue() {
+        return new Queue(QUEUE_INSTRUCTOR_VEHICLE, true);
+    }
+
+    @Bean
+    public Binding instructorVehicleAssignedBinding(Queue instructorVehicleQueue, TopicExchange exchange) {
+        return BindingBuilder.bind(instructorVehicleQueue).to(exchange).with("instructor.vehicle.assigned");
+    }
+
+    @Bean
+    public Binding vehicleStatusBinding(Queue instructorVehicleQueue, TopicExchange exchange) {
+        return BindingBuilder.bind(instructorVehicleQueue).to(exchange).with("vehicle.status.changed");
     }
 
     @Bean

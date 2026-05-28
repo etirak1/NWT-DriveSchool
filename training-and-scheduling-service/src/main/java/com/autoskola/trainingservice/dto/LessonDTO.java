@@ -39,6 +39,9 @@ public class LessonDTO {
     private UserDTO instructor;
     private UserDTO candidate;
 
+    private String lessonType;
+    private String topic;
+
     public LessonDTO(Lesson lesson, UserDTO instructor, UserDTO candidate) {
         this.lessonId = lesson.getLessonId();
         this.dateTime = lesson.getDateTime();
@@ -48,5 +51,7 @@ public class LessonDTO {
         this.vehicleId = lesson.getVehicleId();
         this.instructor = instructor;
         this.candidate = candidate;
+        this.lessonType = lesson.getLessonType();
+        this.topic = lesson.getTopic();
     }
 }

@@ -11,4 +11,5 @@ import java.util.List;
 public interface FeedbackRepository extends JpaRepository<Feedback, Long> {
 
     List<Feedback> findByInstructorInstructorId(Long instructorId);
+    boolean existsByCandidateCandidateId(Long candidateId);
 }

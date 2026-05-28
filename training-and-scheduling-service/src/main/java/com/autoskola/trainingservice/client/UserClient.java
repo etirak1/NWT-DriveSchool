@@ -4,6 +4,7 @@ import com.autoskola.trainingservice.dto.UserDTO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
@@ -12,6 +13,10 @@ public interface UserClient {
 
     @GetMapping("/api/users/{id}")
     UserDTO getUserById(@PathVariable("id") Long id);
+
+    @GetMapping("/api/users/active")
+    List<UserDTO> getActiveUsersByRole(@RequestParam("role") String role);
+
 
 
 }

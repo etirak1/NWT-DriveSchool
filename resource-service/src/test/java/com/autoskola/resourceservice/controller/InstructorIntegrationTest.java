@@ -39,7 +39,7 @@ class InstructorIntegrationTest {
         instructor.setInstructorId(1L);
         instructor.setUserId(10L);
 
-        UserDTO user = new UserDTO(10L, "Azra", "Trako", "a@mail.com", "INSTRUCTOR", "ACTIVE");
+        UserDTO user = new UserDTO(10L, "Azra", "Trako", "a@mail.com", "INSTRUCTOR");
 
         when(instructorService.getById(1L)).thenReturn(instructor);
         when(userClientService.getUserById(10L)).thenReturn(user);

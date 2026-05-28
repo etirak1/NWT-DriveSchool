@@ -56,18 +56,19 @@ public class CandidateService {
                     candidate.getRule().getMinTheoryLessons(),
                     candidate.getRule().getMinPracticalLessons(),
                     candidate.getRule().getLessonDuration(),
-                    candidate.getRule().getCoursePrice()
+                    candidate.getRule().getCoursePrice(),
+                    candidate.getRule().getMaxLessonsPerWeek()
             );
         }
 
-        return new CandidateDTO(
-                candidate.getCandidateId(),
-                candidate.getEnrollmentDate(),
-                candidate.getProgressPercentage(),
-                userDTO,
-                instructorDetails,
-                ruleDTO
-        );
+        CandidateDTO dto = new CandidateDTO();
+        dto.setCandidateId(candidate.getCandidateId());
+        dto.setEnrollmentDate(candidate.getEnrollmentDate());
+        dto.setProgressPercentage(candidate.getProgressPercentage());
+        dto.setUser(userDTO);                       // ili setCandidateUser, ovisi kako se zove polje
+        dto.setAssignedInstructor(instructorDetails); // ili setInstructor
+        dto.setRule(ruleDTO);                       // ili setTrainingRule
+        return dto;
     }
 
     public CandidateDTO createCandidate(Candidate candidate) {
@@ -89,9 +90,14 @@ public class CandidateService {
         }
         InstructorDTO instructorDetails = instructorService.getInstructorFullDetails(instructor.getInstructorId());
 
-        TrainingRuleDTO ruleDTO = new TrainingRuleDTO(rule.getRuleId(), rule.getMinTheoryLessons(),
-                rule.getMinPracticalLessons(), rule.getLessonDuration(),
-                rule.getCoursePrice());
+        TrainingRuleDTO ruleDTO = new TrainingRuleDTO(
+                rule.getRuleId(),
+                rule.getMinTheoryLessons(),
+                rule.getMinPracticalLessons(),
+                rule.getLessonDuration(),
+                rule.getCoursePrice(),
+                rule.getMaxLessonsPerWeek()
+        );
 
         return new CandidateDTO(savedCandidate.getCandidateId(), savedCandidate.getEnrollmentDate(),
                 savedCandidate.getProgressPercentage(), userDTO, instructorDetails, ruleDTO);
@@ -113,14 +119,34 @@ public class CandidateService {
                     instructorService.getInstructorFullDetails(c.getAssignedInstructor().getInstructorId()) : null;
 
             TrainingRuleDTO rDTO = (c.getRule() != null) ?
-                    new TrainingRuleDTO(c.getRule().getRuleId(), c.getRule().getMinTheoryLessons(),
-                            c.getRule().getMinPracticalLessons(), c.getRule().getLessonDuration(),
-                            c.getRule().getCoursePrice()) : null;
+                    new TrainingRuleDTO(
+                            c.getRule().getRuleId(),
+                            c.getRule().getMinTheoryLessons(),
+                            c.getRule().getMinPracticalLessons(),
+                            c.getRule().getLessonDuration(),
+                            c.getRule().getCoursePrice(),
+                            c.getRule().getMaxLessonsPerWeek()
+                    ) : null;
 
             response.add(new CandidateDTO(c.getCandidateId(), c.getEnrollmentDate(),
                     c.getProgressPercentage(), uDTO, iDTO, rDTO));
         }
         return response;
     }
+
+    public CandidateDTO assignInstructor(Long candidateId, Long instructorUserId) {
+        Candidate candidate = candidateRepository.findById(candidateId)
+                .orElseThrow(() -> new RuntimeException("Kandidat nije pronađen"));
+
+        Instructor instructor = instructorRepository.findByUserId(instructorUserId)
+                .orElseThrow(() -> new RuntimeException("Instruktor nije pronađen"));
+
+        candidate.setAssignedInstructor(instructor);
+        candidateRepository.save(candidate);
+
+        return getCandidateFullDetails(candidate.getUserId());
+    }
+
+
 
 }

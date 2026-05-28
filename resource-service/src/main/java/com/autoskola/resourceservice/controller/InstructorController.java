@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
 @RestController
 @EnableMethodSecurity
 @RequestMapping("/api/instructors")
@@ -49,6 +50,16 @@ public class InstructorController {
     public InstructorDTO toggleAvailability(@PathVariable Long id, @RequestBody Map<String, String> body) {
         String note = body.get("availabilityNote");
         return instructorService.updateAvailability(id, note);
+    }
+    @PatchMapping("/{id}/assign-vehicle")
+    @PreAuthorize("hasRole('ADMIN')")
+    public InstructorDTO assignVehicle(@PathVariable Long id,
+                                       @RequestBody Map<String, Long> body) {
+        Long vehicleId = body.get("vehicleId");
+        if (vehicleId == null) {
+            throw new RuntimeException("vehicleId je obavezan u request body.");
+        }
+        return instructorService.assignVehicleToInstructor(id, vehicleId);
     }
 
 }

@@ -77,4 +77,10 @@ public class VehicleController {
         }
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/available")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR', 'CANDIDATE')")
+    public List<Vehicle> getAvailableVehicles() {
+        return vehicleRepository.findByStatus("ACTIVE");
+    }
 }

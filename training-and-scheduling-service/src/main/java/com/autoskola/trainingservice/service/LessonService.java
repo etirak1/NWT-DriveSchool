@@ -8,9 +8,9 @@ import com.autoskola.trainingservice.model.Candidate;
 import com.autoskola.trainingservice.model.Instructor;
 import com.autoskola.trainingservice.model.Lesson;
 import com.autoskola.trainingservice.repository.CandidateRepository;
-import com.autoskola.trainingservice.repository.InstructorRepository;
 import com.autoskola.trainingservice.repository.LessonRepository;
 import com.autoskola.trainingservice.config.RabbitMQConfig;
+import com.autoskola.trainingservice.repository.TrainingPhaseRepository;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,20 +26,19 @@ public class LessonService {
     private final LessonRepository lessonRepository;
     private final UserClient userClient;
     private final CandidateRepository candidateRepository;
-    private final InstructorRepository instructorRepository;
     private final RabbitTemplate rabbitTemplate;
+    private final TrainingPhaseRepository phaseRepository;
 
-    // POPRAVLJEN KONSTRUKTOR (Ovdje si imala grešku sa dva RabbitTemplate-a)
     public LessonService(LessonRepository lessonRepository,
-                          UserClient userClient,
+                         UserClient userClient,
                          CandidateRepository candidateRepository,
-                         InstructorRepository instructorRepository,
-                         RabbitTemplate rabbitTemplate) {
+                         RabbitTemplate rabbitTemplate,
+                         TrainingPhaseRepository phaseRepository) {
         this.lessonRepository = lessonRepository;
         this.userClient = userClient;
         this.candidateRepository = candidateRepository;
-        this.instructorRepository = instructorRepository;
         this.rabbitTemplate = rabbitTemplate;
+        this.phaseRepository = phaseRepository;
     }
 
     private UserDTO safeGetUser(Long userId, String fallbackRole) {
@@ -47,8 +46,11 @@ public class LessonService {
             return new UserDTO(null, "Nepoznato", "Korisnik", fallbackRole);
         }
         try {
-            return userClient.getUserById(userId);
+            UserDTO dto = userClient.getUserById(userId);
+            System.out.println("safeGetUser uspješno: " + userId + " -> " + dto.getFirstName());
+            return dto;
         } catch (Exception e) {
+            System.out.println("safeGetUser PALO za userId=" + userId + ", greška: " + e.getMessage());
             return new UserDTO(userId, "Nepoznato", "Korisnik", fallbackRole);
         }
     }
@@ -60,34 +62,114 @@ public class LessonService {
         UserDTO instructorUser = safeGetUser(lesson.getInstructor().getUserId(), "INSTRUCTOR");
         UserDTO candidateUser  = safeGetUser(lesson.getCandidate().getUserId(),  "CANDIDATE");
 
-        return new LessonDTO(
-                lesson,
-                instructorUser,
-                candidateUser
-        );
+        return new LessonDTO(lesson, instructorUser, candidateUser);
     }
 
     public LessonDTO saveLesson(Lesson lesson) {
-        Candidate candidate = candidateRepository.findById(lesson.getCandidate().getCandidateId())
-                .orElseThrow(() -> new RuntimeException("Kandidat sa ID-om " + lesson.getCandidate().getCandidateId() + " ne postoji."));
+        Candidate candidate = candidateRepository.findByUserId(lesson.getCandidate().getUserId())
+                .orElseThrow(() -> new RuntimeException(
+                        "Kandidat sa userId=" + lesson.getCandidate().getUserId() + " ne postoji."));
 
-        Instructor instructor = instructorRepository.findById(lesson.getInstructor().getInstructorId())
-                .orElseThrow(() -> new RuntimeException("Instruktor sa ID-om " + lesson.getInstructor().getInstructorId() + " ne postoji."));
+        String tip = lesson.getLessonType() == null ? "" : lesson.getLessonType().toUpperCase();
+        if ("VOŽNJA".equals(tip)) {
+            List<com.autoskola.trainingservice.model.TrainingPhase> teorijskaFaze =
+                    phaseRepository.findByCandidateCandidateIdAndPhaseTypeIgnoreCase(
+                            candidate.getCandidateId(), "TEORIJSKI DIO");
+
+            boolean polozenaTeorija = teorijskaFaze.stream()
+                    .anyMatch(p -> "POLOŽENO".equalsIgnoreCase(p.getStatus()));
+
+            if (!polozenaTeorija) {
+                throw new RuntimeException(
+                        "Ne možete zakazati čas vožnje dok ne položite teorijski dio obuke.");
+            }
+
+            Integer limit = (candidate.getRule() != null && candidate.getRule().getMaxLessonsPerWeek() != null)
+                    ? candidate.getRule().getMaxLessonsPerWeek() : 4;
+
+            java.time.LocalDate today = lesson.getDateTime().toLocalDate();
+            java.time.LocalDate weekStart = today.with(java.time.DayOfWeek.MONDAY);
+            java.time.LocalDateTime ws = weekStart.atStartOfDay();
+            java.time.LocalDateTime we = weekStart.plusDays(7).atStartOfDay();
+
+            long brojCasovaUSedmici = lessonRepository
+                    .countDrivingLessonsInWeek(candidate.getCandidateId(), ws, we);
+
+            if (brojCasovaUSedmici >= limit) {
+                throw new RuntimeException(
+                        "Dostigli ste sedmični limit od " + limit + " časova vožnje. " +
+                                "Pokušajte zakazati za sljedeću sedmicu.");
+            }
+        }
+
+        Instructor instructor = candidate.getAssignedInstructor();
+        if (instructor == null) {
+            throw new RuntimeException(
+                    "Kandidat nema dodijeljen instruktor. Molimo odaberite instruktora prije zakazivanja časa.");
+        }
+
+        if (instructor.getAssignedVehicleId() == null) {
+            throw new RuntimeException(
+                    "Instruktor nema dodijeljeno vozilo. Kontaktirajte administratora.");
+        }
+
+        if (!"ACTIVE".equalsIgnoreCase(instructor.getVehicleStatus())) {
+            throw new RuntimeException(
+                    "Vozilo instruktora trenutno nije raspoloživo (status: "
+                            + instructor.getVehicleStatus() + ").");
+        }
+
+        lesson.setVehicleId(instructor.getAssignedVehicleId());
+
+        if (lesson.getDuration() == null) {
+            lesson.setDuration(45);
+        }
+
+        java.time.LocalDateTime newStart = lesson.getDateTime();
+        java.time.LocalDateTime newEnd = newStart.plusMinutes(lesson.getDuration());
+
+        List<Lesson> instructorConflicts = lessonRepository
+                .findOverlappingInstructorLessons(instructor.getInstructorId(), newStart, newEnd);
+        if (!instructorConflicts.isEmpty()) {
+            throw new RuntimeException("Instruktor već ima zakazan čas u tom terminu.");
+        }
+
+        List<Lesson> vehicleConflicts = lessonRepository
+                .findOverlappingVehicleLessons(lesson.getVehicleId(), newStart, newEnd);
+        if (!vehicleConflicts.isEmpty()) {
+            throw new RuntimeException("Vozilo je već zauzeto u tom terminu.");
+        }
 
         lesson.setCandidate(candidate);
         lesson.setInstructor(instructor);
+        lesson.setStatus("ZAKAZANO");
 
-        lesson.setStatus("PENDING");
         Lesson savedLesson = lessonRepository.save(lesson);
 
         LessonEvent event = new LessonEvent();
         event.setLessonId(savedLesson.getLessonId());
         event.setCandidateId(candidate.getCandidateId());
-        event.setStatus("PENDING");
+        event.setStatus("ZAKAZANO");
 
         rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, "lesson.created", event);
 
         return getLessonDetails(savedLesson.getLessonId());
+    }
+
+    public List<LessonDTO> getInstructorScheduleForDay(Long instructorId, java.time.LocalDate date) {
+        java.time.LocalDateTime dayStart = date.atStartOfDay();
+        java.time.LocalDateTime dayEnd = date.plusDays(1).atStartOfDay();
+
+        List<Lesson> lessons = lessonRepository
+                .findInstructorLessonsForDay(instructorId, dayStart, dayEnd);
+
+        List<LessonDTO> result = new ArrayList<>();
+        for (Lesson l : lessons) {
+            UserDTO inst = safeGetUser(l.getInstructor().getUserId(), "INSTRUCTOR");
+            UserDTO cand = safeGetUser(l.getCandidate().getUserId(), "CANDIDATE");
+            result.add(new LessonDTO(l, inst, cand));
+        }
+        return result;
     }
 
     public List<LessonDTO> getAllLessons() {
@@ -103,8 +185,9 @@ public class LessonService {
         return response;
     }
 
+
     @Transactional
-    public String completeLessonAndIncreaseProgress(Long lessonId) {
+    public String completeLessonAndIncreaseProgress(Long lessonId, String topicCovered, String teacherNotes) {
         Lesson lesson = lessonRepository.findById(lessonId)
                 .orElseThrow(() -> new RuntimeException("Čas nije pronađen"));
 
@@ -113,23 +196,12 @@ public class LessonService {
         }
 
         lesson.setStatus("ODRAĐENO");
+        if (topicCovered != null && !topicCovered.isBlank()) lesson.setTopic(topicCovered);
+        if (teacherNotes != null && !teacherNotes.isBlank()) lesson.setNotes(teacherNotes);
         lessonRepository.save(lesson);
+        return "Čas uspješno završen";
 
-        Candidate candidate = lesson.getCandidate();
-        BigDecimal currentProgress = candidate.getProgressPercentage();
-        if (currentProgress == null) currentProgress = BigDecimal.ZERO;
 
-        BigDecimal newProgress = currentProgress.add(new BigDecimal("2.5"));
-
-        if (newProgress.compareTo(new BigDecimal("100")) > 0) {
-            newProgress = new BigDecimal("100");
-        }
-
-        candidate.setProgressPercentage(newProgress);
-        candidateRepository.save(candidate);
-
-        return "Čas ID " + lessonId + " je završen. Progres kandidata " +
-                candidate.getCandidateId() + " je sada " + newProgress + "%";
     }
 
     public Page<LessonDTO> getAllLessonsPaged(Pageable pageable) {
@@ -154,4 +226,54 @@ public class LessonService {
     public boolean hasActiveSessions(Long userId) {
         return !lessonRepository.findUpcomingByInstructorUserId(userId).isEmpty();
     }
+
+    public Page<LessonDTO> getLessonsByUserId(Long userId, Pageable pageable) {
+        return lessonRepository.findByCandidateUserId(userId, pageable)
+                .map(lesson -> {
+                    UserDTO inst = safeGetUser(lesson.getInstructor().getUserId(), "INSTRUCTOR");
+                    UserDTO cand = safeGetUser(lesson.getCandidate().getUserId(), "CANDIDATE");
+                    return new LessonDTO(lesson, inst, cand);
+                });
+    }
+
+
+    public java.util.Map<String, Object> getBookingEligibility(Long userId) {
+        Candidate candidate = candidateRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("Kandidat ne postoji"));
+
+        List<com.autoskola.trainingservice.model.TrainingPhase> teorija =
+                phaseRepository.findByCandidateCandidateIdAndPhaseTypeIgnoreCase(
+                        candidate.getCandidateId(), "TEORIJSKI DIO");
+
+        boolean theoryPassed = teorija.stream()
+                .anyMatch(p -> "POLOŽENO".equalsIgnoreCase(p.getStatus()));
+
+        Integer limit = (candidate.getRule() != null && candidate.getRule().getMaxLessonsPerWeek() != null)
+                ? candidate.getRule().getMaxLessonsPerWeek() : 4;
+
+        java.time.LocalDate today = java.time.LocalDate.now();
+        java.time.LocalDate weekStart = today.with(java.time.DayOfWeek.MONDAY);
+        long inWeek = lessonRepository.countDrivingLessonsInWeek(
+                candidate.getCandidateId(),
+                weekStart.atStartOfDay(),
+                weekStart.plusDays(7).atStartOfDay());
+
+        java.util.Map<String, Object> r = new java.util.HashMap<>();
+        r.put("theoryPassed", theoryPassed);
+        r.put("weeklyLimit", limit);
+        r.put("lessonsThisWeek", inWeek);
+        r.put("canBook", theoryPassed && inWeek < limit);
+        return r;
+    }
+
+    public Page<LessonDTO> getLessonsByInstructorUserId(Long userId, Pageable pageable) {
+        return lessonRepository.findByInstructorUserId(userId, pageable)
+                .map(lesson -> {
+                    UserDTO inst = safeGetUser(lesson.getInstructor().getUserId(), "INSTRUCTOR");
+                    UserDTO cand = safeGetUser(lesson.getCandidate().getUserId(), "CANDIDATE");
+                    return new LessonDTO(lesson, inst, cand);
+                });
+    }
+
+
 }

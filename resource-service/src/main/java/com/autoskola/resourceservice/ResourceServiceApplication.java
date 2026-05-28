@@ -55,13 +55,12 @@ public class ResourceServiceApplication {
 			userRepository.deleteAll();
 
 
-			User admin = userRepository.save(new User(null, "Elma", "Tirak", "etirak1@etf.unsa.ba", passwordEncoder.encode("123456"), "ADMIN", "ACTIVE", null));
-
-			userRepository.save(new User(null, "Elma", "Nekić", "enekic1@etf.unsa.ba", passwordEncoder.encode("123456"), "ADMIN", "ACTIVE", null));
-			userRepository.save(new User(null, "Adna", "Alihodžić", "aalihodzic6@etf.unsa.ba", passwordEncoder.encode("123456"), "ADMIN", "ACTIVE", null));
-			userRepository.save(new User(null, "Dinela", "Pešković", "dpeskovic1@etf.unsa.ba", passwordEncoder.encode("123456"), "ADMIN", "ACTIVE", null));
-			userRepository.save(new User(null, "Emina", "Omerović", "eomerovic1@etf.unsa.ba", passwordEncoder.encode("123456"), "CANDIDATE", "ACTIVE", null));
-			userRepository.save(new User(null, "Tajra", "Ljubović", "tljubovic1@etf.unsa.ba", passwordEncoder.encode("123456"), "INSTRUCTOR", "ACTIVE", null));
+			User admin = userRepository.save(new User(1L, "Elma", "Tirak", "etirak1@etf.unsa.ba", passwordEncoder.encode("123456"), "ADMIN", "ACTIVE", null));
+			userRepository.save(new User(2L, "Elma", "Nekić", "enekic1@etf.unsa.ba", passwordEncoder.encode("123456"), "ADMIN", "ACTIVE", null));
+			userRepository.save(new User(3L, "Adna", "Alihodžić", "aalihodzic6@etf.unsa.ba", passwordEncoder.encode("123456"), "ADMIN", "ACTIVE", null));
+			userRepository.save(new User(4L, "Dinela", "Pešković", "dpeskovic1@etf.unsa.ba", passwordEncoder.encode("123456"), "ADMIN", "ACTIVE", null));
+			userRepository.save(new User(5L, "Emina", "Omerović", "eomerovic1@etf.unsa.ba", passwordEncoder.encode("123456"), "CANDIDATE", "ACTIVE", null));
+			userRepository.save(new User(6L, "Tajra", "Ljubović", "tljubovic1@etf.unsa.ba", passwordEncoder.encode("123456"), "INSTRUCTOR", "ACTIVE", null));
 			Vehicle vehicle1 = vehicleRepository.save(new Vehicle(
 					null,
 					"Toyota",
@@ -88,7 +87,7 @@ public class ResourceServiceApplication {
 			userRepository.findAll().stream()
 					.filter(u -> "INSTRUCTOR".equals(u.getRole()))
 					.forEach(u -> instructorRepository.save(
-							new Instructor(null, u.getUserId(), "AVAILABLE", null)
+							new Instructor(null, u.getUserId(), "AVAILABLE", null, null)
 					));
 
 			repairsRepository.save(

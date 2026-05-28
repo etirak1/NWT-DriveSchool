@@ -12,6 +12,8 @@ import com.autoskola.trainingservice.repository.FeedbackRepository;
 import com.autoskola.trainingservice.repository.InstructorRepository;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+
 @Service
 public class FeedbackService {
 
@@ -49,15 +51,33 @@ public class FeedbackService {
 
     public FeedbackDTO createFeedback(Feedback feedback) {
         Candidate candidate = candidateRepository.findById(feedback.getCandidate().getCandidateId())
-                .orElseThrow(() -> new RuntimeException("Kandidat sa ID-om " + feedback.getCandidate().getCandidateId() + " nije pronađen"));
+                .orElseThrow(() -> new RuntimeException("Kandidat nije pronađen"));
+
+        // Provjera da je obuka završena
+        if (candidate.getProgressPercentage() == null ||
+                candidate.getProgressPercentage().compareTo(new BigDecimal("100")) < 0) {
+            throw new RuntimeException("Kandidat mora završiti obuku prije ocjenjivanja instruktora.");
+        }
+
+        // Provjera duplog feedbacka
+        if (feedbackRepository.existsByCandidateCandidateId(candidate.getCandidateId())) {
+            throw new RuntimeException("Već ste ostavili ocjenu za svog instruktora.");
+        }
 
         Instructor instructor = instructorRepository.findById(feedback.getInstructor().getInstructorId())
-                .orElseThrow(() -> new RuntimeException("Instruktor sa ID-om " + feedback.getInstructor().getInstructorId() + " nije pronađen"));
+                .orElseThrow(() -> new RuntimeException("Instruktor nije pronađen"));
 
         feedback.setCandidate(candidate);
         feedback.setInstructor(instructor);
         Feedback savedFeedback = feedbackRepository.save(feedback);
-        return getFeedbackDetails(savedFeedback.getFeedbackId());
+        return new FeedbackDTO(
+                savedFeedback.getFeedbackId(),
+                savedFeedback.getRating(),
+                savedFeedback.getComment(),
+                savedFeedback.getDateCreated(),
+                null,
+                null
+        );
     }
 
 }

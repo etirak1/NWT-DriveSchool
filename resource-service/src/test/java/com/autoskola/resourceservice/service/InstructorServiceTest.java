@@ -4,8 +4,10 @@ import com.autoskola.resourceservice.exception.ResourceNotFoundException;
 import com.autoskola.resourceservice.model.Instructor;
 import com.autoskola.resourceservice.repository.InstructorRepository;
 import com.autoskola.resourceservice.repository.UserRepository;
+import com.autoskola.resourceservice.repository.VehicleRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 import java.util.List;
 import java.util.Optional;
@@ -14,10 +16,12 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class InstructorServiceTest {
+    private final VehicleRepository vehicleRepository = mock(VehicleRepository.class);
+    private final RabbitTemplate rabbitTemplate = mock(RabbitTemplate.class);
 
     private final InstructorRepository repository = mock(InstructorRepository.class);
     private final UserRepository userRepository = mock(UserRepository.class);
-    private final InstructorService service = new InstructorService(repository, userRepository );
+    private final InstructorService service = new InstructorService(repository, userRepository, vehicleRepository, rabbitTemplate );
 
     @Test
     void shouldReturnInstructor_whenExists() {

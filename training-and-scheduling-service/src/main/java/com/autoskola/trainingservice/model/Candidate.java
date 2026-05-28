@@ -7,10 +7,14 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Entity
 @Table(name = "candidates")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
+
 public class Candidate {
 
     @Id
@@ -18,6 +22,7 @@ public class Candidate {
     private Long candidateId;
 
     @NotNull(message = "User ID je obavezan")
+    @Column(unique = true)
     private Long userId;
 
     @NotNull(message = "Datum upisa je obavezan")
@@ -28,15 +33,16 @@ public class Candidate {
     @DecimalMax(value = "100.0", message = "Progres ne može biti veći od 100%")
     private BigDecimal progressPercentage;
 
-    @NotNull(message = "Instruktor mora biti dodijeljen")
+
     @ManyToOne
     @JoinColumn(name = "assigned_instructor_id")
     private Instructor assignedInstructor;
 
-    @NotNull(message = "Pravilo obuke mora biti odabrano")
+
     @ManyToOne
     @JoinColumn(name = "rule_id")
     private TrainingRule rule;
+
 
 }
 

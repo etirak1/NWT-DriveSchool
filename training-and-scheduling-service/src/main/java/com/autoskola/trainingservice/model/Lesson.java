@@ -20,12 +20,10 @@ public class Lesson {
     @JoinColumn(name = "candidate_id")
     private Candidate candidate;
 
-    @NotNull(message = "Instruktor je obavezan")
     @ManyToOne
     @JoinColumn(name = "instructor_id")
     private Instructor instructor;
 
-    @NotNull(message = "Vozilo je obavezno")
     private Long vehicleId;
 
     @NotNull(message = "Datum i vrijeme časa su obavezni")
@@ -44,6 +42,17 @@ public class Lesson {
     )
     private String status;
     private String notes;
+
+    @NotBlank(message = "Tip časa je obavezan")
+    @Pattern(
+            regexp = "^(TEORIJA|VOŽNJA)$",
+            flags = Pattern.Flag.CASE_INSENSITIVE,
+            message = "Tip časa mora biti TEORIJA ili VOŽNJA"
+    )
+    private String lessonType;
+
+    @Size(max = 500, message = "Opis gradiva može imati maksimalno 500 karaktera")
+    private String topic;
 
 
 

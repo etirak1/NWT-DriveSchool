@@ -32,4 +32,5 @@ public class CandidateDTO {
     private InstructorDTO assignedInstructor;
     private TrainingRuleDTO rule;
 
+
 }
