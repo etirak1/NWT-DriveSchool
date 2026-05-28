@@ -1,48 +1,39 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-
-
 import {
     GraduationCap, LogOut, CheckCircle, Clock, BookOpen,
     ChevronLeft, ChevronRight, MessageSquare, TrendingUp,
-    DollarSign, AlertCircle, Plus
+    DollarSign, AlertCircle, Plus, Car
 } from 'lucide-react';
 import { api } from '../api/client';
 import { getCurrentUserId, getCurrentEmail, getCurrentRole } from '../auth/jwt';
 import FeedbackModal from '../components/FeedbackModal';
 
-
-
-
 const PHASE_COLORS = {
-    'POLOŽENO':     'bg-green-100 text-green-700',
-    'U TOKU':       'bg-blue-100 text-blue-700',
-    'NEPOLOŽENO':   'bg-red-100 text-red-700',
-    'ZAKAZANO':     'bg-yellow-100 text-yellow-700',
-};
-
-const LESSON_STATUS_COLORS = {
-    'ODRAĐENO':  'bg-green-100 text-green-700',
-    'ZAKAZANO':  'bg-blue-100 text-blue-700',
-    'OTKAZANO':  'bg-red-100 text-red-700',
+    'POLOŽENO':   'bg-green-100 text-green-700',
+    'U TOKU':     'bg-blue-100 text-blue-700',
+    'NEPOLOŽENO': 'bg-red-100 text-red-700',
+    'ZAKAZANO':   'bg-yellow-100 text-yellow-700',
 };
 
 export default function CandidateDashboard() {
     const navigate = useNavigate();
-    const userId  = getCurrentUserId();
-    const email   = getCurrentEmail();
-    const role    = getCurrentRole();
+    const userId = getCurrentUserId();
+    const email  = getCurrentEmail();
+    const role   = getCurrentRole();
 
-    const [candidate,    setCandidate]    = useState(null);
-    const [phases,       setPhases]       = useState([]);
-    const [payments,     setPayments]     = useState([]);
-    const [account,      setAccount]      = useState(null);
-    const [announcements,setAnnouncements]= useState([]);
-    const [pageData,     setPageData]     = useState({ content: [], totalPages: 0, number: 0 });
-    const [loading,      setLoading]      = useState(true);
-    const [alreadyRated, setAlreadyRated] = useState(false);
-    const [showFeedback, setShowFeedback] = useState(false);
-    const [activeSection,setActiveSection]= useState('overview');
+    const [candidate,        setCandidate]        = useState(null);
+    const [phases,           setPhases]           = useState([]);
+    const [payments,         setPayments]         = useState([]);
+    const [account,          setAccount]          = useState(null);
+    const [announcements,    setAnnouncements]    = useState([]);
+    const [pageData,         setPageData]         = useState({ content: [], totalPages: 0, number: 0 });
+    const [loading,          setLoading]          = useState(true);
+    const [alreadyRated,     setAlreadyRated]     = useState(false);
+    const [showFeedback,     setShowFeedback]     = useState(false);
+    const [activeSection,    setActiveSection]    = useState('overview');
+    const [drivingCompleted, setDrivingCompleted] = useState(0);
+    const [theoryCompleted,  setTheoryCompleted]  = useState(0);
 
     const fetchLessons = async (page = 0) => {
         try {
@@ -60,32 +51,51 @@ export default function CandidateDashboard() {
                 const cand = candRes.data;
                 setCandidate(cand);
 
+                const candId = cand.candidate?.candidateId || cand.candidateId;
+
                 await fetchLessons(0);
 
+                // Driving progress
                 try {
-                    const phaseRes = await api.get(`/api/phases/candidate/${cand.candidate?.candidateId || cand.candidateId}`);
+                    const allLessons = await api.get(
+                        `/api/lessons/my-lessons?userId=${userId}&page=0&size=100&sortBy=dateTime&sortDir=desc`
+                    );
+                    const count = (allLessons.data.content || []).filter(l => l.status === 'ODRAĐENO').length;
+                    setDrivingCompleted(count);
+                } catch (e) { /* ignore */ }
+
+                // Theory progress
+                try {
+                    const theoryRes = await api.get(`/api/theory-lessons/candidate/${candId}`);
+                    const tCount = (theoryRes.data || []).filter(l => l.completed).length;
+                    setTheoryCompleted(tCount);
+                } catch (e) { /* ignore */ }
+
+                // Phases
+                try {
+                    const phaseRes = await api.get(`/api/phases/candidate/${candId}`);
                     setPhases(phaseRes.data);
                 } catch (e) { /* phases optional */ }
 
+                // Finance
                 try {
                     const accRes = await api.get(`/api/accounts/${userId}`);
                     setAccount(accRes.data);
                     setPayments(accRes.data.payments || []);
                 } catch (e) { /* finance optional */ }
 
+                // Announcements
                 try {
                     const annRes = await api.get('/api/announcements');
                     setAnnouncements(annRes.data);
                 } catch (e) { /* announcements optional */ }
 
-                if ((cand.progressPercentage ?? 0) >= 100) {
-                    try {
-                        const ratedRes = await api.get(
-                            `/api/feedbacks/candidate/${cand.candidate?.candidateId || cand.candidateId}/exists`
-                        );
-                        setAlreadyRated(ratedRes.data);
-                    } catch (e) { /* ignore */ }
-                }
+                // Feedback eligibility
+                try {
+                    const ratedRes = await api.get(`/api/feedbacks/candidate/${candId}/exists`);
+                    setAlreadyRated(ratedRes.data);
+                } catch (e) { /* ignore */ }
+
             } catch (err) {
                 console.error(err);
             } finally {
@@ -100,22 +110,22 @@ export default function CandidateDashboard() {
         navigate('/login');
     };
 
-    const candidateId = candidate?.candidate?.candidateId ?? candidate?.candidateId;
-    const progress    = candidate?.progressPercentage ?? 0;
-    const rule        = candidate?.rule;
-    const totalRequired = rule?.minTheoryLessons ?? 40;
-    const completed   = Math.round((progress / 100) * totalRequired);
-    const remaining   = Math.max(0, totalRequired - completed);
+    const rule               = candidate?.rule;
+    const theoryTotal        = rule?.minTheoryLessons    ?? 40;
+    const drivingTotal       = rule?.minPracticalLessons ?? 40;
+    const theoryPct          = theoryTotal  > 0 ? Math.round((theoryCompleted  / theoryTotal)  * 100) : 0;
+    const drivingPct         = drivingTotal > 0 ? Math.round((drivingCompleted / drivingTotal) * 100) : 0;
+    const allDone            = theoryPct >= 100 && drivingPct >= 100;
 
-    const totalAmount    = account?.totalAmount    ?? 0;
-    const remainingDebt  = account?.remainingDebt  ?? 0;
-    const amountPaid     = totalAmount - remainingDebt;
-    const paymentPct     = totalAmount > 0 ? Math.round((amountPaid / totalAmount) * 100) : 0;
+    const totalAmount   = account?.totalAmount   ?? 0;
+    const remainingDebt = account?.remainingDebt ?? 0;
+    const amountPaid    = totalAmount - remainingDebt;
+    const paymentPct    = totalAmount > 0 ? Math.round((amountPaid / totalAmount) * 100) : 0;
 
     const navItems = [
-        { id: 'overview',  label: 'Overview'  },
-        { id: 'progress',  label: 'Progress'  },
-        { id: 'finances',  label: 'Finances'  },
+        { id: 'overview',      label: 'Overview'      },
+        { id: 'progress',      label: 'Progress'      },
+        { id: 'finances',      label: 'Finances'      },
         { id: 'announcements', label: 'Announcements' },
     ];
 
@@ -130,7 +140,6 @@ export default function CandidateDashboard() {
     return (
         <div className="min-h-screen bg-slate-50">
 
-            {/* ── Header ── */}
             <header className="bg-white border-b border-slate-200">
                 <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -158,7 +167,6 @@ export default function CandidateDashboard() {
                     </div>
                 </div>
 
-                {/* ── Sub-nav ── */}
                 <div className="max-w-5xl mx-auto px-4">
                     <nav className="flex gap-1 border-t border-slate-100">
                         {navItems.map(item => (
@@ -180,11 +188,11 @@ export default function CandidateDashboard() {
 
             <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
 
-                {/* ════════════════ OVERVIEW ════════════════ */}
+                {/* ── OVERVIEW ── */}
                 {activeSection === 'overview' && (
                     <>
                         {/* Completion banner */}
-                        {progress >= 100 && (
+                        {allDone && (
                             <div className="bg-white rounded-xl border border-slate-200 p-5 flex items-center justify-between">
                                 <div>
                                     <p className="font-semibold text-slate-800">Training complete!</p>
@@ -205,17 +213,17 @@ export default function CandidateDashboard() {
                             </div>
                         )}
 
-                        {/* Progress Overview cards */}
+                        {/* Theory progress card */}
                         <div className="bg-white rounded-xl border border-slate-200 p-6">
                             <h2 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                                <TrendingUp size={16} className="text-blue-500" />
-                                Progress overview
+                                <BookOpen size={16} className="text-purple-500" />
+                                Theory lessons
                             </h2>
                             <div className="grid grid-cols-3 gap-4 mb-5">
                                 {[
-                                    { label: 'Completed',      value: completed, color: 'text-green-600' },
-                                    { label: 'Total required', value: totalRequired, color: 'text-slate-800' },
-                                    { label: 'Remaining',      value: remaining,  color: 'text-blue-600'  },
+                                    { label: 'Completed',      value: theoryCompleted,               color: 'text-green-600'  },
+                                    { label: 'Total required', value: theoryTotal,                    color: 'text-slate-800'  },
+                                    { label: 'Remaining',      value: Math.max(0, theoryTotal - theoryCompleted), color: 'text-purple-600' },
                                 ].map(s => (
                                     <div key={s.label} className="bg-slate-50 rounded-lg p-4 text-center">
                                         <p className={`text-3xl font-bold ${s.color}`}>{s.value}</p>
@@ -225,13 +233,49 @@ export default function CandidateDashboard() {
                             </div>
                             <div className="space-y-1">
                                 <div className="flex justify-between text-xs text-slate-500">
-                                    <span>Overall progress</span>
-                                    <span className="font-medium text-blue-600">{Math.round(progress)}% completed</span>
+                                    <span>Theory progress</span>
+                                    <span className={`font-medium ${theoryPct >= 100 ? 'text-green-600' : 'text-purple-600'}`}>
+                                        {theoryPct}% completed
+                                    </span>
                                 </div>
                                 <div className="w-full bg-slate-100 rounded-full h-2.5">
                                     <div
-                                        className="bg-blue-500 h-2.5 rounded-full transition-all"
-                                        style={{ width: `${Math.min(100, progress)}%` }}
+                                        className={`h-2.5 rounded-full transition-all ${theoryPct >= 100 ? 'bg-green-500' : 'bg-purple-500'}`}
+                                        style={{ width: `${Math.min(100, theoryPct)}%` }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Driving progress card */}
+                        <div className="bg-white rounded-xl border border-slate-200 p-6">
+                            <h2 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                                <Car size={16} className="text-blue-500" />
+                                Driving lessons
+                            </h2>
+                            <div className="grid grid-cols-3 gap-4 mb-5">
+                                {[
+                                    { label: 'Completed',      value: drivingCompleted,               color: 'text-green-600' },
+                                    { label: 'Total required', value: drivingTotal,                    color: 'text-slate-800' },
+                                    { label: 'Remaining',      value: Math.max(0, drivingTotal - drivingCompleted), color: 'text-blue-600'  },
+                                ].map(s => (
+                                    <div key={s.label} className="bg-slate-50 rounded-lg p-4 text-center">
+                                        <p className={`text-3xl font-bold ${s.color}`}>{s.value}</p>
+                                        <p className="text-xs text-slate-500 mt-1">{s.label}</p>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="space-y-1">
+                                <div className="flex justify-between text-xs text-slate-500">
+                                    <span>Driving progress</span>
+                                    <span className={`font-medium ${drivingPct >= 100 ? 'text-green-600' : 'text-blue-600'}`}>
+                                        {drivingPct}% completed
+                                    </span>
+                                </div>
+                                <div className="w-full bg-slate-100 rounded-full h-2.5">
+                                    <div
+                                        className={`h-2.5 rounded-full transition-all ${drivingPct >= 100 ? 'bg-green-500' : 'bg-blue-500'}`}
+                                        style={{ width: `${Math.min(100, drivingPct)}%` }}
                                     />
                                 </div>
                             </div>
@@ -260,38 +304,41 @@ export default function CandidateDashboard() {
                         )}
 
                         {/* Lesson history */}
-                        <LessonTable
-                            pageData={pageData}
-                            onPageChange={fetchLessons}
-                        />
+                        <LessonTable pageData={pageData} onPageChange={fetchLessons} />
                     </>
                 )}
 
-                {/* ════════════════ PROGRESS (phases) ════════════════ */}
+                {/* ── PROGRESS ── */}
                 {activeSection === 'progress' && (
                     <div className="bg-white rounded-xl border border-slate-200 p-6">
                         <div className="flex items-center gap-2 mb-1">
-                            <GraduationCap size={18} className="text-blue-500" />
+                            <TrendingUp size={18} className="text-blue-500" />
                             <h2 className="text-base font-semibold text-slate-800">Training progress</h2>
                         </div>
                         <p className="text-sm text-slate-500 mb-5">Track your journey to becoming a certified driver</p>
 
                         {/* Overall bar */}
-                        <div className="mb-6 space-y-1">
-                            <div className="flex justify-between text-sm">
-                                <span className="text-slate-600">Overall progress</span>
-                                <span className="font-semibold text-blue-600">{Math.round(progress)}%</span>
-                            </div>
-                            <div className="w-full bg-slate-100 rounded-full h-2.5">
-                                <div
-                                    className="bg-blue-500 h-2.5 rounded-full"
-                                    style={{ width: `${Math.min(100, progress)}%` }}
-                                />
-                            </div>
-                            <p className="text-xs text-slate-400">
-                                {phases.filter(p => p.status === 'POLOŽENO').length} of {phases.length} phases completed
-                            </p>
-                        </div>
+                        {(() => {
+                            const completedPhases = phases.filter(p => p.status === 'POLOŽENO').length;
+                            const phaseProgress = phases.length > 0 ? Math.round((completedPhases / phases.length) * 100) : 0;
+                            return (
+                                <div className="mb-6 space-y-1">
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-slate-600">Overall progress</span>
+                                        <span className="font-semibold text-blue-600">{phaseProgress}%</span>
+                                    </div>
+                                    <div className="w-full bg-slate-100 rounded-full h-2.5">
+                                        <div
+                                            className="bg-blue-500 h-2.5 rounded-full"
+                                            style={{ width: `${phaseProgress}%` }}
+                                        />
+                                    </div>
+                                    <p className="text-xs text-slate-400">
+                                        {completedPhases} of {phases.length} phases completed
+                                    </p>
+                                </div>
+                            );
+                        })()}
 
                         {/* Phase cards */}
                         {phases.length === 0 ? (
@@ -322,9 +369,9 @@ export default function CandidateDashboard() {
                                                 </div>
                                                 <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${PHASE_COLORS[phase.status] || 'bg-slate-100 text-slate-600'}`}>
                                                     {phase.status === 'POLOŽENO'   ? 'Completed'   :
-                                                        phase.status === 'U TOKU'     ? 'In progress' :
-                                                            phase.status === 'NEPOLOŽENO' ? 'Failed'      :
-                                                                phase.status === 'ZAKAZANO'   ? 'Scheduled'   : phase.status}
+                                                     phase.status === 'U TOKU'     ? 'In progress' :
+                                                     phase.status === 'NEPOLOŽENO' ? 'Failed'      :
+                                                     phase.status === 'ZAKAZANO'   ? 'Scheduled'   : phase.status}
                                                 </span>
                                             </div>
                                         </div>
@@ -335,10 +382,9 @@ export default function CandidateDashboard() {
                     </div>
                 )}
 
-                {/* ════════════════ FINANCES ════════════════ */}
+                {/* ── FINANCES ── */}
                 {activeSection === 'finances' && (
                     <div className="space-y-6">
-                        {/* Summary cards */}
                         <div className="bg-white rounded-xl border border-slate-200 p-6">
                             <div className="flex items-center gap-2 mb-4">
                                 <DollarSign size={18} className="text-blue-500" />
@@ -348,9 +394,9 @@ export default function CandidateDashboard() {
                                 <>
                                     <div className="grid grid-cols-3 gap-4 mb-5">
                                         {[
-                                            { label: 'Total course price', value: `€${totalAmount.toLocaleString()}`,  color: 'text-slate-800'  },
-                                            { label: 'Amount paid',         value: `€${amountPaid.toLocaleString()}`,   color: 'text-green-600'  },
-                                            { label: 'Remaining balance',   value: `€${remainingDebt.toLocaleString()}`,color: 'text-red-500'    },
+                                            { label: 'Total course price', value: `€${totalAmount.toLocaleString()}`,   color: 'text-slate-800' },
+                                            { label: 'Amount paid',        value: `€${amountPaid.toLocaleString()}`,    color: 'text-green-600' },
+                                            { label: 'Remaining balance',  value: `€${remainingDebt.toLocaleString()}`, color: 'text-red-500'   },
                                         ].map(s => (
                                             <div key={s.label} className="bg-slate-50 rounded-lg p-4 text-center">
                                                 <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
@@ -364,10 +410,7 @@ export default function CandidateDashboard() {
                                             <span className="font-medium text-green-600">{paymentPct}%</span>
                                         </div>
                                         <div className="w-full bg-slate-100 rounded-full h-2.5">
-                                            <div
-                                                className="bg-green-500 h-2.5 rounded-full"
-                                                style={{ width: `${paymentPct}%` }}
-                                            />
+                                            <div className="bg-green-500 h-2.5 rounded-full" style={{ width: `${paymentPct}%` }} />
                                         </div>
                                     </div>
                                 </>
@@ -376,7 +419,6 @@ export default function CandidateDashboard() {
                             )}
                         </div>
 
-                        {/* Payment installments */}
                         {payments.length > 0 && (
                             <div className="bg-white rounded-xl border border-slate-200 p-6">
                                 <h2 className="text-sm font-semibold text-slate-700 mb-4">Payment installments</h2>
@@ -391,14 +433,14 @@ export default function CandidateDashboard() {
                                                 </p>
                                             </div>
                                             <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
-                                                p.status === 'PAID'      ? 'bg-green-100 text-green-700'  :
-                                                    p.status === 'PENDING'   ? 'bg-yellow-100 text-yellow-700':
-                                                        p.status === 'CANCELLED' ? 'bg-red-100 text-red-700'      :
-                                                            'bg-slate-100 text-slate-600'
+                                                p.status === 'PAID'      ? 'bg-green-100 text-green-700'   :
+                                                p.status === 'PENDING'   ? 'bg-yellow-100 text-yellow-700' :
+                                                p.status === 'CANCELLED' ? 'bg-red-100 text-red-700'       :
+                                                'bg-slate-100 text-slate-600'
                                             }`}>
                                                 {p.status === 'PAID'      ? 'Paid'      :
-                                                    p.status === 'PENDING'   ? 'Pending'   :
-                                                        p.status === 'CANCELLED' ? 'Cancelled' : p.status}
+                                                 p.status === 'PENDING'   ? 'Pending'   :
+                                                 p.status === 'CANCELLED' ? 'Cancelled' : p.status}
                                             </span>
                                         </div>
                                     ))}
@@ -408,7 +450,7 @@ export default function CandidateDashboard() {
                     </div>
                 )}
 
-                {/* ════════════════ ANNOUNCEMENTS ════════════════ */}
+                {/* ── ANNOUNCEMENTS ── */}
                 {activeSection === 'announcements' && (
                     <div className="bg-white rounded-xl border border-slate-200 p-6">
                         <h2 className="text-base font-semibold text-slate-800 mb-1">Announcements</h2>
@@ -466,7 +508,7 @@ function LessonTable({ pageData, onPageChange }) {
                     to="/book-lesson"
                     className="flex items-center gap-1.5 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg font-medium text-sm transition"
                 >
-                    <Plus size={14} /> Zakaži čas
+                    <Plus size={14} /> Book a lesson
                 </Link>
             </div>
 
@@ -475,47 +517,46 @@ function LessonTable({ pageData, onPageChange }) {
             ) : (
                 <table className="w-full text-left">
                     <thead className="bg-slate-50 text-slate-500 text-xs">
-                    <tr>
-                        <th className="px-6 py-3 font-medium">Date & time</th>
-                        <th className="px-6 py-3 font-medium">Instructor</th>
-                        <th className="px-6 py-3 font-medium">Status</th>
-                        <th className="px-6 py-3 font-medium">Notes</th>
-                    </tr>
+                        <tr>
+                            <th className="px-6 py-3 font-medium">Date & time</th>
+                            <th className="px-6 py-3 font-medium">Instructor</th>
+                            <th className="px-6 py-3 font-medium">Status</th>
+                            <th className="px-6 py-3 font-medium">Notes</th>
+                        </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                    {pageData.content.map(lesson => (
-                        <tr key={lesson.lessonId} className="hover:bg-slate-50 transition-colors">
-                            <td className="px-6 py-4 text-sm font-medium text-slate-800">
-                                {new Date(lesson.dateTime).toLocaleString('en-GB', {
-                                    day: '2-digit', month: 'short', year: 'numeric',
-                                    hour: '2-digit', minute: '2-digit'
-                                })}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-slate-600">
-                                {lesson.instructor?.firstName} {lesson.instructor?.lastName}
-                            </td>
-                            <td className="px-6 py-4">
+                        {pageData.content.map(lesson => (
+                            <tr key={lesson.lessonId} className="hover:bg-slate-50 transition-colors">
+                                <td className="px-6 py-4 text-sm font-medium text-slate-800">
+                                    {new Date(lesson.dateTime).toLocaleString('en-GB', {
+                                        day: '2-digit', month: 'short', year: 'numeric',
+                                        hour: '2-digit', minute: '2-digit'
+                                    })}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-slate-600">
+                                    {lesson.instructor?.firstName} {lesson.instructor?.lastName}
+                                </td>
+                                <td className="px-6 py-4">
                                     <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
                                         lesson.status === 'ODRAĐENO' ? 'bg-green-100 text-green-700' :
-                                            lesson.status === 'ZAKAZANO' ? 'bg-blue-100 text-blue-700'  :
-                                                lesson.status === 'OTKAZANO' ? 'bg-red-100 text-red-700'    :
-                                                    'bg-slate-100 text-slate-600'
+                                        lesson.status === 'ZAKAZANO' ? 'bg-blue-100 text-blue-700'   :
+                                        lesson.status === 'OTKAZANO' ? 'bg-red-100 text-red-700'     :
+                                        'bg-slate-100 text-slate-600'
                                     }`}>
                                         {lesson.status === 'ODRAĐENO' ? 'Completed' :
-                                            lesson.status === 'ZAKAZANO' ? 'Scheduled' :
-                                                lesson.status === 'OTKAZANO' ? 'Cancelled' : lesson.status}
+                                         lesson.status === 'ZAKAZANO' ? 'Scheduled' :
+                                         lesson.status === 'OTKAZANO' ? 'Cancelled' : lesson.status}
                                     </span>
-                            </td>
-                            <td className="px-6 py-4 text-sm text-slate-400 italic">
-                                {lesson.notes || '—'}
-                            </td>
-                        </tr>
-                    ))}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-slate-400 italic">
+                                    {lesson.notes || '—'}
+                                </td>
+                            </tr>
+                        ))}
                     </tbody>
                 </table>
             )}
 
-            {/* Pagination */}
             {pageData.totalPages > 1 && (
                 <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between">
                     <p className="text-xs text-slate-400">

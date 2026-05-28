@@ -30,7 +30,7 @@ public class TrainingDataInitializer {
 
         if (ruleRepository.count() == 0) {
             ruleRepository.save(new TrainingRule(
-                    null, 30, 35, 45, new BigDecimal("1200.00")));
+                    null, 30, 35, 45, new BigDecimal("1200.00"), 4));
             System.out.println("Training rule kreiran.");
         }
 

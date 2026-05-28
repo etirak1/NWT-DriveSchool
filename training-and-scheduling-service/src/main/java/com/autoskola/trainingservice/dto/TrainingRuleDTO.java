@@ -30,5 +30,12 @@ public class TrainingRuleDTO {
     @DecimalMin(value = "0.0", inclusive = false, message = "Cijena mora biti veća od 0")
     private BigDecimal coursePrice;
 
+    @NotNull(message = "Sedmični limit časova je obavezan")
+    @Min(value = 1, message = "Minimalno 1 čas sedmično")
+    @Max(value = 4, message = "Maksimalno 4 časova sedmično")
+    private Integer maxLessonsPerWeek;
+
+
+
 
 }

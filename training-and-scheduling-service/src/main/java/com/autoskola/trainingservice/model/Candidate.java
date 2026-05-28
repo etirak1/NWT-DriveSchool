@@ -7,10 +7,14 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Entity
 @Table(name = "candidates")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
+
 public class Candidate {
 
     @Id

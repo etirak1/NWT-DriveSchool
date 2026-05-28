@@ -14,8 +14,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import java.util.List;
-import com.autoskola.trainingservice.service.LessonService;
-
 
 
 @RestController
@@ -50,8 +48,11 @@ public class LessonController {
 
     @PostMapping("/{id}/complete")
     @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
-    public ResponseEntity<String> completeLesson(@PathVariable Long id) {
-        String result = lessonService.completeLessonAndIncreaseProgress(id);
+    public ResponseEntity<String> completeLesson(
+            @PathVariable Long id,
+            @RequestParam(required = false) String topicCovered,
+            @RequestParam(required = false) String teacherNotes) {
+        String result = lessonService.completeLessonAndIncreaseProgress(id, topicCovered, teacherNotes);
         return ResponseEntity.ok(result);
     }
 
@@ -113,5 +114,26 @@ public class LessonController {
 
         return ResponseEntity.ok(lessonService.getLessonsByUserId(userId, pageable));
     }
+
+    @GetMapping("/eligibility")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CANDIDATE')")
+    public ResponseEntity<java.util.Map<String, Object>> getEligibility(@RequestParam Long userId) {
+        return ResponseEntity.ok(lessonService.getBookingEligibility(userId));
+    }
+
+    @GetMapping("/instructor-lessons")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
+    public ResponseEntity<Page<LessonDTO>> getInstructorLessons(
+            @RequestParam Long userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "dateTime") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        return ResponseEntity.ok(lessonService.getLessonsByInstructorUserId(userId, pageable));
+    }
+
+
 
 }

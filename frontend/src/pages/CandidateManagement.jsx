@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { GraduationCap, LogOut, UserCheck, BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
 import { getCurrentEmail, getCurrentRole } from '../auth/jwt';
+import TheoryLessonsModal from '../components/TheoryLessonsModal';
 
 const PHASE_TYPES = ['TEORIJSKI DIO', 'PRAKTIČNA VOŽNJA', 'POLIGON', 'GRADSKA VOŽNJA', 'ISPIT'];
 const PHASE_STATUSES = ['U TOKU', 'POLOŽENO', 'NEPOLOŽENO', 'ZAKAZANO'];
@@ -19,6 +20,7 @@ export default function CandidateManagement() {
     const [phases, setPhases] = useState({});
     const [successMsg, setSuccessMsg] = useState('');
     const [errorMsg, setErrorMsg] = useState('');
+    const [theoryModalCandidate, setTheoryModalCandidate] = useState(null);
 
     useEffect(() => {
         const loadData = async () => {
@@ -172,6 +174,14 @@ export default function CandidateManagement() {
                                     </div>
 
                                     <button
+                                        onClick={() => setTheoryModalCandidate(candidate)}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg font-medium"
+                                    >
+                                        <GraduationCap size={14} />
+                                        Teorija
+                                    </button>
+
+                                    <button
                                         onClick={() => toggleExpand(candidate.candidateId)}
                                         className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-slate-100 hover:bg-slate-200 rounded-lg"
                                     >
@@ -211,6 +221,13 @@ export default function CandidateManagement() {
                     ))}
                 </div>
             </div>
+
+            {theoryModalCandidate && (
+                <TheoryLessonsModal
+                    candidate={theoryModalCandidate}
+                    onClose={() => setTheoryModalCandidate(null)}
+                />
+            )}
         </div>
     );
 }

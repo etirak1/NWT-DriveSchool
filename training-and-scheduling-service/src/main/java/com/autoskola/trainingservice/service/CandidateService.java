@@ -56,7 +56,8 @@ public class CandidateService {
                     candidate.getRule().getMinTheoryLessons(),
                     candidate.getRule().getMinPracticalLessons(),
                     candidate.getRule().getLessonDuration(),
-                    candidate.getRule().getCoursePrice()
+                    candidate.getRule().getCoursePrice(),
+                    candidate.getRule().getMaxLessonsPerWeek()
             );
         }
 
@@ -89,9 +90,14 @@ public class CandidateService {
         }
         InstructorDTO instructorDetails = instructorService.getInstructorFullDetails(instructor.getInstructorId());
 
-        TrainingRuleDTO ruleDTO = new TrainingRuleDTO(rule.getRuleId(), rule.getMinTheoryLessons(),
-                rule.getMinPracticalLessons(), rule.getLessonDuration(),
-                rule.getCoursePrice());
+        TrainingRuleDTO ruleDTO = new TrainingRuleDTO(
+                rule.getRuleId(),
+                rule.getMinTheoryLessons(),
+                rule.getMinPracticalLessons(),
+                rule.getLessonDuration(),
+                rule.getCoursePrice(),
+                rule.getMaxLessonsPerWeek()
+        );
 
         return new CandidateDTO(savedCandidate.getCandidateId(), savedCandidate.getEnrollmentDate(),
                 savedCandidate.getProgressPercentage(), userDTO, instructorDetails, ruleDTO);
@@ -113,9 +119,14 @@ public class CandidateService {
                     instructorService.getInstructorFullDetails(c.getAssignedInstructor().getInstructorId()) : null;
 
             TrainingRuleDTO rDTO = (c.getRule() != null) ?
-                    new TrainingRuleDTO(c.getRule().getRuleId(), c.getRule().getMinTheoryLessons(),
-                            c.getRule().getMinPracticalLessons(), c.getRule().getLessonDuration(),
-                            c.getRule().getCoursePrice()) : null;
+                    new TrainingRuleDTO(
+                            c.getRule().getRuleId(),
+                            c.getRule().getMinTheoryLessons(),
+                            c.getRule().getMinPracticalLessons(),
+                            c.getRule().getLessonDuration(),
+                            c.getRule().getCoursePrice(),
+                            c.getRule().getMaxLessonsPerWeek()
+                    ) : null;
 
             response.add(new CandidateDTO(c.getCandidateId(), c.getEnrollmentDate(),
                     c.getProgressPercentage(), uDTO, iDTO, rDTO));

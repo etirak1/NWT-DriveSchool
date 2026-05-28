@@ -10,6 +10,7 @@ import com.autoskola.trainingservice.model.Lesson;
 import com.autoskola.trainingservice.repository.CandidateRepository;
 import com.autoskola.trainingservice.repository.LessonRepository;
 import com.autoskola.trainingservice.config.RabbitMQConfig;
+import com.autoskola.trainingservice.repository.TrainingPhaseRepository;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,15 +27,18 @@ public class LessonService {
     private final UserClient userClient;
     private final CandidateRepository candidateRepository;
     private final RabbitTemplate rabbitTemplate;
+    private final TrainingPhaseRepository phaseRepository;
 
     public LessonService(LessonRepository lessonRepository,
                          UserClient userClient,
                          CandidateRepository candidateRepository,
-                         RabbitTemplate rabbitTemplate) {
+                         RabbitTemplate rabbitTemplate,
+                         TrainingPhaseRepository phaseRepository) {
         this.lessonRepository = lessonRepository;
         this.userClient = userClient;
         this.candidateRepository = candidateRepository;
         this.rabbitTemplate = rabbitTemplate;
+        this.phaseRepository = phaseRepository;
     }
 
     private UserDTO safeGetUser(Long userId, String fallbackRole) {
@@ -62,12 +66,42 @@ public class LessonService {
     }
 
     public LessonDTO saveLesson(Lesson lesson) {
-        // Kandidata tražimo po userId iz request body-a
         Candidate candidate = candidateRepository.findByUserId(lesson.getCandidate().getUserId())
                 .orElseThrow(() -> new RuntimeException(
                         "Kandidat sa userId=" + lesson.getCandidate().getUserId() + " ne postoji."));
 
-        // Instruktor se ne šalje u requestu — uzimamo ga direktno iz kandidatovog profila
+        String tip = lesson.getLessonType() == null ? "" : lesson.getLessonType().toUpperCase();
+        if ("VOŽNJA".equals(tip)) {
+            List<com.autoskola.trainingservice.model.TrainingPhase> teorijskaFaze =
+                    phaseRepository.findByCandidateCandidateIdAndPhaseTypeIgnoreCase(
+                            candidate.getCandidateId(), "TEORIJSKI DIO");
+
+            boolean polozenaTeorija = teorijskaFaze.stream()
+                    .anyMatch(p -> "POLOŽENO".equalsIgnoreCase(p.getStatus()));
+
+            if (!polozenaTeorija) {
+                throw new RuntimeException(
+                        "Ne možete zakazati čas vožnje dok ne položite teorijski dio obuke.");
+            }
+
+            Integer limit = (candidate.getRule() != null && candidate.getRule().getMaxLessonsPerWeek() != null)
+                    ? candidate.getRule().getMaxLessonsPerWeek() : 4;
+
+            java.time.LocalDate today = lesson.getDateTime().toLocalDate();
+            java.time.LocalDate weekStart = today.with(java.time.DayOfWeek.MONDAY);
+            java.time.LocalDateTime ws = weekStart.atStartOfDay();
+            java.time.LocalDateTime we = weekStart.plusDays(7).atStartOfDay();
+
+            long brojCasovaUSedmici = lessonRepository
+                    .countDrivingLessonsInWeek(candidate.getCandidateId(), ws, we);
+
+            if (brojCasovaUSedmici >= limit) {
+                throw new RuntimeException(
+                        "Dostigli ste sedmični limit od " + limit + " časova vožnje. " +
+                                "Pokušajte zakazati za sljedeću sedmicu.");
+            }
+        }
+
         Instructor instructor = candidate.getAssignedInstructor();
         if (instructor == null) {
             throw new RuntimeException(
@@ -151,8 +185,9 @@ public class LessonService {
         return response;
     }
 
+
     @Transactional
-    public String completeLessonAndIncreaseProgress(Long lessonId) {
+    public String completeLessonAndIncreaseProgress(Long lessonId, String topicCovered, String teacherNotes) {
         Lesson lesson = lessonRepository.findById(lessonId)
                 .orElseThrow(() -> new RuntimeException("Čas nije pronađen"));
 
@@ -161,22 +196,12 @@ public class LessonService {
         }
 
         lesson.setStatus("ODRAĐENO");
+        if (topicCovered != null && !topicCovered.isBlank()) lesson.setTopic(topicCovered);
+        if (teacherNotes != null && !teacherNotes.isBlank()) lesson.setNotes(teacherNotes);
         lessonRepository.save(lesson);
+        return "Čas uspješno završen";
 
-        Candidate candidate = lesson.getCandidate();
-        BigDecimal currentProgress = candidate.getProgressPercentage();
-        if (currentProgress == null) currentProgress = BigDecimal.ZERO;
 
-        BigDecimal newProgress = currentProgress.add(new BigDecimal("2.5"));
-        if (newProgress.compareTo(new BigDecimal("100")) > 0) {
-            newProgress = new BigDecimal("100");
-        }
-
-        candidate.setProgressPercentage(newProgress);
-        candidateRepository.save(candidate);
-
-        return "Čas ID " + lessonId + " je završen. Progres kandidata " +
-                candidate.getCandidateId() + " je sada " + newProgress + "%";
     }
 
     public Page<LessonDTO> getAllLessonsPaged(Pageable pageable) {
@@ -210,4 +235,45 @@ public class LessonService {
                     return new LessonDTO(lesson, inst, cand);
                 });
     }
+
+
+    public java.util.Map<String, Object> getBookingEligibility(Long userId) {
+        Candidate candidate = candidateRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("Kandidat ne postoji"));
+
+        List<com.autoskola.trainingservice.model.TrainingPhase> teorija =
+                phaseRepository.findByCandidateCandidateIdAndPhaseTypeIgnoreCase(
+                        candidate.getCandidateId(), "TEORIJSKI DIO");
+
+        boolean theoryPassed = teorija.stream()
+                .anyMatch(p -> "POLOŽENO".equalsIgnoreCase(p.getStatus()));
+
+        Integer limit = (candidate.getRule() != null && candidate.getRule().getMaxLessonsPerWeek() != null)
+                ? candidate.getRule().getMaxLessonsPerWeek() : 4;
+
+        java.time.LocalDate today = java.time.LocalDate.now();
+        java.time.LocalDate weekStart = today.with(java.time.DayOfWeek.MONDAY);
+        long inWeek = lessonRepository.countDrivingLessonsInWeek(
+                candidate.getCandidateId(),
+                weekStart.atStartOfDay(),
+                weekStart.plusDays(7).atStartOfDay());
+
+        java.util.Map<String, Object> r = new java.util.HashMap<>();
+        r.put("theoryPassed", theoryPassed);
+        r.put("weeklyLimit", limit);
+        r.put("lessonsThisWeek", inWeek);
+        r.put("canBook", theoryPassed && inWeek < limit);
+        return r;
+    }
+
+    public Page<LessonDTO> getLessonsByInstructorUserId(Long userId, Pageable pageable) {
+        return lessonRepository.findByInstructorUserId(userId, pageable)
+                .map(lesson -> {
+                    UserDTO inst = safeGetUser(lesson.getInstructor().getUserId(), "INSTRUCTOR");
+                    UserDTO cand = safeGetUser(lesson.getCandidate().getUserId(), "CANDIDATE");
+                    return new LessonDTO(lesson, inst, cand);
+                });
+    }
+
+
 }

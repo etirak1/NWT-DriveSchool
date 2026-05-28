@@ -43,6 +43,17 @@ public class Lesson {
     private String status;
     private String notes;
 
+    @NotBlank(message = "Tip časa je obavezan")
+    @Pattern(
+            regexp = "^(TEORIJA|VOŽNJA)$",
+            flags = Pattern.Flag.CASE_INSENSITIVE,
+            message = "Tip časa mora biti TEORIJA ili VOŽNJA"
+    )
+    private String lessonType;
+
+    @Size(max = 500, message = "Opis gradiva može imati maksimalno 500 karaktera")
+    private String topic;
+
 
 
 }

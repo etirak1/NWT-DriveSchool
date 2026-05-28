@@ -46,4 +46,17 @@ public interface LessonRepository extends JpaRepository<Lesson, Long> {
 
 
     Page<Lesson> findByCandidateUserId(Long userId, Pageable pageable);
+    Page<Lesson> findByInstructorUserId(Long userId, Pageable pageable);
+
+
+    @Query("SELECT COUNT(l) FROM Lesson l " +
+            "WHERE l.candidate.candidateId = :candidateId " +
+            "AND l.status IN ('ZAKAZANO', 'ODRAĐENO', 'PENDING') " +
+            "AND UPPER(l.lessonType) = 'VOŽNJA' " +
+            "AND l.dateTime >= :weekStart AND l.dateTime < :weekEnd")
+    long countDrivingLessonsInWeek(@Param("candidateId") Long candidateId,
+                                   @Param("weekStart") LocalDateTime weekStart,
+                                   @Param("weekEnd") LocalDateTime weekEnd);
 }
+
+

@@ -8,6 +8,7 @@ import BookLesson from './pages/BookLesson';
 import { isAdmin, getCurrentRole } from './auth/jwt';
 import DashboardPage from './pages/DashboardPage';
 import CandidateManagement from './pages/CandidateManagement';
+import InstructorDashboard from './pages/InstructorDashboard';
 
 function RequireAuth({ children }) {
   const token = localStorage.getItem('token');
@@ -18,6 +19,7 @@ function RequireAuth({ children }) {
 function SmartDashboard() {
   const role = getCurrentRole();
   if (role === 'CANDIDATE') return <CandidateDashboard />;
+  if (role === 'INSTRUCTOR') return <InstructorDashboard />;
   return <Dashboard />;
 }
 
@@ -80,6 +82,14 @@ export default function App() {
           <RequireAdmin>
             <CandidateManagement />
           </RequireAdmin>
+        }
+      />
+      <Route
+        path="/instructor-dashboard"
+        element={
+          <RequireAuth>
+            <InstructorDashboard />
+          </RequireAuth>
         }
       />
       <Route path="*" element={<Navigate to="/login" replace />} />

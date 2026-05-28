@@ -18,6 +18,9 @@ export default function BookLesson() {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
+    const [eligibility, setEligibility] = useState(null);
+    const [lessonType, setLessonType] = useState('VOŽNJA');
+    const [topic, setTopic] = useState('');
 
     const TIME_SLOTS = [];
     for (let h = 8; h <= 16; h++) {
@@ -30,6 +33,13 @@ export default function BookLesson() {
             try {
                 const res = await api.get(`/api/candidates/${userId}`);
                 setCandidate(res.data);
+
+                try {
+                    const elig = await api.get(`/api/lessons/eligibility?userId=${userId}`);
+                    setEligibility(elig.data);
+                } catch (e) {
+                    console.error('Greška pri provjeri eligibility-ja:', e);
+                }
             } catch (err) {
                 console.error(err);
                 setError('Greška pri učitavanju podataka kandidata.');
@@ -92,6 +102,8 @@ export default function BookLesson() {
                 dateTime,
                 duration: 45,
                 status: 'ZAKAZANO',
+                lessonType: lessonType,
+                topic: topic.trim() || null,
                 notes: notes.trim() || null
             };
             await api.post('/api/lessons', payload);
@@ -138,6 +150,47 @@ export default function BookLesson() {
         );
     }
 
+    // ── Blokada ako teorijski dio nije položen ──
+    if (eligibility && !eligibility.theoryPassed) {
+        return (
+            <div className="min-h-screen bg-slate-50 p-8">
+                <div className="max-w-xl mx-auto">
+                    <button onClick={() => navigate('/dashboard')}
+                        className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-4">
+                        <ArrowLeft size={16} /> Nazad
+                    </button>
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
+                        <h2 className="font-bold text-amber-800 mb-2">Teorijski dio nije položen</h2>
+                        <p className="text-sm text-amber-700">
+                            Časove vožnje možete zakazati tek nakon što položite teorijski dio obuke.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // ── Blokada ako je dostignut sedmični limit ──
+    if (eligibility && eligibility.lessonsThisWeek >= eligibility.weeklyLimit) {
+        return (
+            <div className="min-h-screen bg-slate-50 p-8">
+                <div className="max-w-xl mx-auto">
+                    <button onClick={() => navigate('/dashboard')}
+                        className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-4">
+                        <ArrowLeft size={16} /> Nazad
+                    </button>
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
+                        <h2 className="font-bold text-amber-800 mb-2">Sedmični limit dostignut</h2>
+                        <p className="text-sm text-amber-700">
+                            Već imate zakazano {eligibility.lessonsThisWeek} od {eligibility.weeklyLimit} dozvoljenih
+                            časova vožnje ove sedmice. Pokušajte ponovo iduće sedmice.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     const instructorName = instructor.user
         ? `${instructor.user.firstName} ${instructor.user.lastName}`
         : 'Vaš instruktor';
@@ -156,10 +209,16 @@ export default function BookLesson() {
 
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
                     <h1 className="text-2xl font-bold text-slate-900 mb-1">Zakaži čas vožnje</h1>
-                    <p className="text-sm text-slate-500 mb-6 flex items-center gap-1.5">
+                    <p className="text-sm text-slate-500 mb-2 flex items-center gap-1.5">
                         <User size={14} />
                         Instruktor: <span className="font-semibold text-slate-900">{instructorName}</span>
                     </p>
+
+                    {eligibility && (
+                        <div className="text-xs text-slate-500 mb-6">
+                            Iskorišteno {eligibility.lessonsThisWeek}/{eligibility.weeklyLimit} časova vožnje ove sedmice
+                        </div>
+                    )}
 
                     {success ? (
                         <div className="text-center py-10">
@@ -240,6 +299,20 @@ export default function BookLesson() {
                                     Instruktor nema dodijeljeno vozilo — kontaktirajte administraciju.
                                 </div>
                             )}
+
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-800 mb-1.5">
+                                    Tema/gradivo (opcionalno)
+                                </label>
+                                <input
+                                    type="text"
+                                    value={topic}
+                                    onChange={(e) => setTopic(e.target.value)}
+                                    maxLength={200}
+                                    placeholder="Npr. parking, vožnja u gradu, kružni tok..."
+                                    className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                                />
+                            </div>
 
                             <div>
                                 <label className="block text-sm font-semibold text-slate-800 mb-1.5">

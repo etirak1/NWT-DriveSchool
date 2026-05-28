@@ -10,4 +10,5 @@ import java.util.List;
 @Repository
 public interface TrainingPhaseRepository extends JpaRepository<TrainingPhase, Long> {
     List<TrainingPhase> findByCandidateCandidateId(Long candidateId);
+    List<TrainingPhase> findByCandidateCandidateIdAndPhaseTypeIgnoreCase(Long candidateId, String phaseType);
 }

@@ -6,7 +6,6 @@ import com.autoskola.resourceservice.dto.UserDTO;
 import com.autoskola.resourceservice.event.InstructorVehicleAssignedEvent;
 import com.autoskola.resourceservice.exception.ResourceNotFoundException;
 import com.autoskola.resourceservice.model.Instructor;
-import com.autoskola.resourceservice.model.User;
 import com.autoskola.resourceservice.model.Vehicle;
 import com.autoskola.resourceservice.repository.InstructorRepository;
 import com.autoskola.resourceservice.repository.UserRepository;
@@ -27,8 +26,7 @@ public class InstructorService {
     private final RabbitTemplate rabbitTemplate;
 
     public InstructorService(InstructorRepository instructorRepository,
-                             UserRepository userRepository,
-                             VehicleRepository vehicleRepository,
+                             UserRepository userRepository, VehicleRepository vehicleRepository,
                              RabbitTemplate rabbitTemplate) {
         this.instructorRepository = instructorRepository;
         this.userRepository = userRepository;
