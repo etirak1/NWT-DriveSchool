@@ -31,7 +31,7 @@ function NewPaymentModal({ account, onClose, onSuccess }) {
         setError('');
         try {
             await paymentApi.create({
-                candidateId: account.id,
+                candidateAccountId: account.id,
                 amount: parseFloat(form.amount),
                 dueDate: form.dueDate,
                 status: form.status,
@@ -107,22 +107,11 @@ function NewPaymentModal({ account, onClose, onSuccess }) {
     );
 }
 
-function CandidateDetailModal({ account, onClose, onAddPayment }) {
-    const [payments, setPayments] = useState([]);
-    const [loading, setLoading] = useState(true);
-
-    const loadPayments = useCallback(async () => {
-        try {
-            const data = await paymentApi.getByCandidateId(account.id);
-            setPayments(data || []);
-        } catch {
-            setPayments([]);
-        } finally {
-            setLoading(false);
-        }
-    }, [account.id]);
-
-    useEffect(() => { loadPayments(); }, [loadPayments]);
+function CandidateDetailModal({ account, onClose, onAddPayment, onRefresh }) {
+    // Koristimo payments direktno iz accounta (već su učitani sa /accounts/paginated)
+    // Za refresh nakon nove uplate pozivamo onRefresh koji reload-a accounts
+    const payments = account.payments || [];
+    const loading = false;
 
     const totalPaid = payments.filter(p => p.status === 'PAID').reduce((s, p) => s + parseFloat(p.amount || 0), 0);
 
