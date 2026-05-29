@@ -10,7 +10,7 @@ import { Spinner, ErrorState } from '../components/States';
 import { useToast } from '../context/ToastContext';
 
 export default function VehiclesPage() {
-    const { addToast } = useToast();
+    const { showToast } = useToast();
     const { data: vehicles, loading, error, refetch } = useAsync(() => vehicleApi.getAll());
     const { data: repairs } = useAsync(() => repairApi.getAll());
 
@@ -30,16 +30,16 @@ export default function VehiclesPage() {
         try {
             if (editTarget) {
                 await vehicleApi.update(editTarget.vehicleId, data);
-                addToast('Vozilo uspješno ažurirano!', 'success');
+                showToast('Vozilo uspješno ažurirano!', 'success');
             } else {
                 await vehicleApi.create(data);
-                addToast('Vozilo uspješno dodano!', 'success');
+                showToast('Vozilo uspješno dodano!', 'success');
             }
             setShowForm(false);
             setEditTarget(null);
             refetch();
         } catch (e) {
-            addToast(`Greška: ${e.message}`, 'error');
+            showToast(`Greška: ${e.message}`, 'error');
         } finally {
             setSaving(false);
         }
@@ -48,10 +48,10 @@ export default function VehiclesPage() {
     const handleDelete = async () => {
         try {
             await vehicleApi.delete(deleteTarget.vehicleId);
-            addToast('Vozilo obrisano.', 'success');
+            showToast('Vozilo obrisano.', 'success');
             refetch();
         } catch (e) {
-            addToast(`Greška: ${e.message}`, 'error');
+            showToast(`Greška: ${e.message}`, 'error');
         }
     };
 

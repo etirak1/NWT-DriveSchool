@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
 const empty = { vehicleId: '', repairDate: '', description: '', cost: '', status: 'PLANNED' };
-const STATUSES = ['PLANNED', 'PENDING', 'IN_PROGRESS', 'COMPLETED'];
-const STATUS_LABELS = { PLANNED: 'Planirano', PENDING: 'Na čekanju', IN_PROGRESS: 'U toku', COMPLETED: 'Završeno' };
 
 export default function RepairForm({ initial, vehicles, onSubmit, onCancel, loading }) {
     const [form, setForm] = useState(empty);
@@ -14,7 +12,6 @@ export default function RepairForm({ initial, vehicles, onSubmit, onCancel, load
                 repairDate: initial.repairDate?.slice(0, 10) || '',
                 description: initial.description || '',
                 cost: initial.cost || '',
-                status: initial.status || 'PLANNED',
             });
         } else {
             setForm(empty);
@@ -52,12 +49,6 @@ export default function RepairForm({ initial, vehicles, onSubmit, onCancel, load
                     <label>Datum popravke <span className="req">*</span></label>
                     <input required type="date" value={form.repairDate} onChange={set('repairDate')} />
                 </div>
-                <div className="form-group">
-                    <label>Status</label>
-                    <select value={form.status} onChange={set('status')}>
-                        {STATUSES.map(s => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
-                    </select>
-                </div>
             </div>
 
             <div className="form-group">
@@ -69,7 +60,7 @@ export default function RepairForm({ initial, vehicles, onSubmit, onCancel, load
             <div className="form-group">
                 <label>Cijena (KM) <span className="req">*</span></label>
                 <input  type="number" step="0.01" min="0.01" value={form.cost} onChange={set('cost')}
-                       placeholder="0.00" />
+                        placeholder="0.00" />
             </div>
 
             <div className="form-actions">

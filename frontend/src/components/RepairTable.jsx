@@ -18,7 +18,6 @@ export default function RepairTable({ repairs, onEdit, onDelete }) {
                     <th>Datum</th>
                     <th>Opis</th>
                     <th>Cijena</th>
-                    <th>Status</th>
                     <th>Akcije</th>
                 </tr>
                 </thead>
@@ -32,11 +31,6 @@ export default function RepairTable({ repairs, onEdit, onDelete }) {
                         <td>{formatDate(r.repairDate)}</td>
                         <td className="desc-cell">{r.description}</td>
                         <td>{r.cost ? `${r.cost} KM` : '—'}</td>
-                        <td>
-                            <Badge variant={statusVariant[r.status] || 'default'}>
-                                {repairStatusLabel(r.status)}
-                            </Badge>
-                        </td>
                         <td>
                             <div className="table-actions">
                                 <button className="btn-icon" title="Uredi" onClick={() => onEdit(r)}>✏️</button>

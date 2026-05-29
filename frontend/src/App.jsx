@@ -9,7 +9,11 @@ import { isAdmin, getCurrentRole } from './auth/jwt';
 import DashboardPage from './pages/DashboardPage';
 import CandidateManagement from './pages/CandidateManagement';
 import InstructorDashboard from './pages/InstructorDashboard';
-
+import Layout from './layouts/DashboardLayout.jsx'
+import ResourceManagement from './pages/DashboardPage.jsx';
+import Vehicles from './pages/VehiclePage';
+import Repairs from './pages/RepairsPage';
+import Instructors from './pages/InstructorPage';
 function RequireAuth({ children }) {
   const token = localStorage.getItem('token');
   if (!token) return <Navigate to="/login" replace />;
@@ -68,14 +72,19 @@ export default function App() {
           </RequireAdmin>
         }
       />
-      <Route
-        path="/resources"
-        element={
-          <RequireAdmin>
-            <DashboardPage />
-          </RequireAdmin>
-        }
-      />
+        <Route
+            path="/resources"
+            element={
+                <RequireAuth>
+                    <Layout />
+                </RequireAuth>
+            }
+        >
+            <Route index element={<ResourceManagement />} />
+            <Route path="vehicles" element={<Vehicles />} />
+            <Route path="repairs" element={<Repairs />} />
+            <Route path="instructors" element={<Instructors />} />
+        </Route>
       <Route
         path="/candidates"
         element={

@@ -9,7 +9,7 @@ import { Spinner, ErrorState } from '../components/States';
 import { useToast } from '../context/ToastContext';
 
 export default function RepairsPage() {
-    const { addToast } = useToast();
+    const { showToast } = useToast();
     const { data: repairs, loading, error, refetch } = useAsync(() => repairApi.getAll());
     const { data: vehicles } = useAsync(() => vehicleApi.getAll());
 
@@ -28,16 +28,16 @@ export default function RepairsPage() {
         try {
             if (editTarget) {
                 await repairApi.update(editTarget.repairId, data);
-                addToast('Popravka ažurirana!', 'success');
+                showToast('Popravka ažurirana!', 'success');
             } else {
                 await repairApi.create(data);
-                addToast('Popravka dodana!', 'success');
+                showToast('Popravka dodana!', 'success');
             }
             setShowForm(false);
             setEditTarget(null);
             refetch();
         } catch (e) {
-            addToast(`Greška: ${e.message}`, 'error');
+            showToast(`Greška: ${e.message}`, 'error');
         } finally {
             setSaving(false);
         }
@@ -46,10 +46,10 @@ export default function RepairsPage() {
     const handleDelete = async () => {
         try {
             await repairApi.delete(deleteTarget.repairId);
-            addToast('Popravka obrisana.', 'success');
+            showToast('Popravka obrisana.', 'success');
             refetch();
         } catch (e) {
-            addToast(`Greška: ${e.message}`, 'error');
+            showToast(`Greška: ${e.message}`, 'error');
         }
     };
 
