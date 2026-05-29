@@ -15,4 +15,6 @@ public interface TheoryLessonRepository extends JpaRepository<TheoryLesson, Long
     Optional<TheoryLesson> findByCandidateCandidateIdAndLessonNumber(Long candidateId, Integer lessonNumber);
 
     long countByCandidateCandidateIdAndCompletedTrue(Long candidateId);
+
+    void deleteAllByCandidateCandidateId(Long candidateId);
 }

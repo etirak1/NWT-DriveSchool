@@ -62,6 +62,15 @@ public class DrivingLessonService {
         return drivingLessonRepository.countByCandidateCandidateId(candidateId);
     }
 
+    @Transactional
+    public DrivingLesson markCompleted(Long candidateId, Integer lessonNumber, boolean completed) {
+        DrivingLesson lesson = drivingLessonRepository
+                .findByCandidateCandidateIdAndLessonNumber(candidateId, lessonNumber)
+                .orElseThrow(() -> new RuntimeException("Čas nije pronađen."));
+        lesson.setCompleted(completed);
+        return drivingLessonRepository.save(lesson);
+    }
+
     private void updateDrivingPhase(Long candidateId) {
         long count = drivingLessonRepository.countByCandidateCandidateId(candidateId);
 

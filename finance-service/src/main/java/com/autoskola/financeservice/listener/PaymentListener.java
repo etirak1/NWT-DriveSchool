@@ -1,34 +1,28 @@
 package com.autoskola.financeservice.listener;
 
-import com.autoskola.financeservice.dto.LessonEvent; // PROVERI DA LI MAS OVU KLASU U FINANCE SERVISU
+import com.autoskola.financeservice.dto.LessonEvent;
 import com.autoskola.financeservice.config.RabbitMQConfig;
+import com.autoskola.financeservice.service.SagaService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
 public class PaymentListener {
 
-    @Autowired
-    private RabbitTemplate rabbitTemplate;
+    private static final Logger log = LoggerFactory.getLogger(PaymentListener.class);
+
+    private final SagaService sagaService;
+
+    public PaymentListener(SagaService sagaService) {
+        this.sagaService = sagaService;
+    }
 
     @RabbitListener(queues = RabbitMQConfig.QUEUE_FINANCE)
     public void handlePayment(LessonEvent event) {
-        System.out.println("Finance-service: Primljen zahtjev za plaćanje časa: " + event.getLessonId());
-
-        try {
-            boolean success = true;
-
-            if (success) {
-                event.setStatus("SUCCESS");
-                rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, "payment.success", event);
-            } else {
-                throw new Exception("Nedovoljno sredstava");
-            }
-        } catch (Exception e) {
-            event.setStatus("FAILED");
-            rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, "payment.failed", event);
-        }
+        log.info("=== SAGA: Primljen event | lessonId={} | sagaId={} ===",
+                event.getLessonId(), event.getSagaId());
+        sagaService.processEvent(event);
     }
 }

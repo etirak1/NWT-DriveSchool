@@ -7,9 +7,9 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
+      '/api': {target: 'http://localhost:8080', changeOrigin: true},
       '/vehicles': {target: 'http://localhost:8080', changeOrigin: true},
       '/repairs': {target: 'http://localhost:8080', changeOrigin: true},
-      '/api/instructors': {target: 'http://localhost:8080', changeOrigin: true},
       '/users': {target: 'http://localhost:8080', changeOrigin: true},
     }
   }

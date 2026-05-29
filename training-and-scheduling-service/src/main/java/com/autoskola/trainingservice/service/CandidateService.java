@@ -8,7 +8,9 @@ import com.autoskola.trainingservice.client.UserClient;
 import com.autoskola.trainingservice.repository.CandidateRepository;
 import com.autoskola.trainingservice.repository.InstructorRepository;
 import com.autoskola.trainingservice.repository.TrainingRuleRepository;
+import com.autoskola.trainingservice.repository.TheoryLessonRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,15 +23,20 @@ public class CandidateService {
     private final InstructorService instructorService;
     private final InstructorRepository instructorRepository;
     private final TrainingRuleRepository ruleRepository;
+    private final TheoryLessonRepository theoryLessonRepository;
 
     public CandidateService(CandidateRepository candidateRepository,
                             UserClient userClient,
-                            InstructorService instructorService, InstructorRepository instructorRepository, TrainingRuleRepository ruleRepository) {
+                            InstructorService instructorService,
+                            InstructorRepository instructorRepository,
+                            TrainingRuleRepository ruleRepository,
+                            TheoryLessonRepository theoryLessonRepository) {
         this.candidateRepository = candidateRepository;
         this.userClient = userClient;
         this.instructorService = instructorService;
         this.instructorRepository = instructorRepository;
         this.ruleRepository = ruleRepository;
+        this.theoryLessonRepository = theoryLessonRepository;
     }
 
     public CandidateDTO getCandidateFullDetails(Long id) {
@@ -71,6 +78,7 @@ public class CandidateService {
         return dto;
     }
 
+    @Transactional
     public CandidateDTO createCandidate(Candidate candidate) {
         Instructor instructor = instructorRepository.findById(candidate.getAssignedInstructor().getInstructorId())
                 .orElseThrow(() -> new RuntimeException("Instruktor nije pronađen"));
@@ -81,6 +89,9 @@ public class CandidateService {
         candidate.setRule(rule);
 
         Candidate savedCandidate = candidateRepository.save(candidate);
+
+        // Obriši eventualne stare theory lessons (ostatak od prethodnog testiranja)
+        theoryLessonRepository.deleteAllByCandidateCandidateId(savedCandidate.getCandidateId());
 
         UserDTO userDTO;
         try {

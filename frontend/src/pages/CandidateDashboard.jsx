@@ -53,7 +53,10 @@ export default function CandidateDashboard() {
                 const cand = candRes.data;
                 setCandidate(cand);
 
-                const candId = cand.candidate?.candidateId || cand.candidateId;
+                const candId = cand.candidateId ?? cand.candidate?.candidateId;
+                if (!candId) {
+                    console.error('candId is undefined — candidate response:', cand);
+                }
 
                 await fetchLessons(0);
 

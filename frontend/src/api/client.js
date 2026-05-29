@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Sve ide kroz API gateway na portu 8080
-const API_BASE = 'http://localhost:8080';
+// Sve ide kroz Vite proxy → API gateway na portu 8080
+const API_BASE = '';
 
 export const api = axios.create({
   baseURL: API_BASE,

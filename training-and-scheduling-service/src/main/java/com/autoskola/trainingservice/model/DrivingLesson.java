@@ -28,6 +28,9 @@ public class DrivingLesson {
     @Column(length = 500)
     private String notes;
 
+    @Column(nullable = false)
+    private Boolean completed = false;
+
     public DrivingLesson() {}
 
     public DrivingLesson(Candidate candidate, Integer lessonNumber, LocalDate date, String notes) {
@@ -35,6 +38,7 @@ public class DrivingLesson {
         this.lessonNumber = lessonNumber;
         this.date = date;
         this.notes = notes;
+        this.completed = false;
     }
 
     public Long getId() { return id; }
@@ -51,4 +55,7 @@ public class DrivingLesson {
 
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
+
+    public Boolean getCompleted() { return completed; }
+    public void setCompleted(Boolean completed) { this.completed = completed; }
 }

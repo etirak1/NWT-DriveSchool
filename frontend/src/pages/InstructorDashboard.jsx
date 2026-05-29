@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
-import { GraduationCap, LogOut, Car, ChevronDown, ChevronUp, Plus, Trash2, Calendar, CheckCircle } from 'lucide-react';
+import { GraduationCap, LogOut, Car, ChevronDown, ChevronUp, Plus, Trash2, Calendar, CheckCircle, Check } from 'lucide-react';
 import { getCurrentEmail, getCurrentRole, getCurrentUserId } from '../auth/jwt';
 
 export default function InstructorDashboard() {
@@ -80,6 +80,19 @@ export default function InstructorDashboard() {
             showSuccess('Čas uspješno dodan!');
         } catch (err) {
             showError(err.response?.data?.message || 'Greška pri dodavanju časa.');
+        }
+    };
+
+    const toggleLessonComplete = async (candidateId, lessonNumber, currentCompleted) => {
+        try {
+            await api.patch(
+                `/api/driving-lessons/candidate/${candidateId}/lesson/${lessonNumber}/complete`,
+                { completed: !currentCompleted }
+            );
+            const res = await api.get(`/api/driving-lessons/candidate/${candidateId}`);
+            setLessons(prev => ({ ...prev, [candidateId]: res.data }));
+        } catch (err) {
+            showError('Greška pri ažuriranju statusa časa.');
         }
     };
 
@@ -269,24 +282,35 @@ export default function InstructorDashboard() {
                                             {candidateLessons.length > 0 ? (
                                                 <div className="space-y-2 mb-4">
                                                     {candidateLessons.map(lesson => (
-                                                        <div key={lesson.id} className="flex items-center justify-between bg-white rounded-lg px-4 py-2.5 border border-slate-200">
+                                                        <div key={lesson.id} className={`flex items-center justify-between rounded-lg px-4 py-2.5 border transition-colors ${lesson.completed ? 'bg-green-50 border-green-200' : 'bg-white border-slate-200'}`}>
                                                             <div className="flex items-center gap-3">
-                                                                <span className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center">
-                                                                    {lesson.lessonNumber}
+                                                                <span className={`w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center ${lesson.completed ? 'bg-green-500 text-white' : 'bg-blue-100 text-blue-700'}`}>
+                                                                    {lesson.completed ? <Check size={13} /> : lesson.lessonNumber}
                                                                 </span>
                                                                 <div>
-                                                                    <p className="text-sm font-medium text-slate-700">{lesson.date}</p>
+                                                                    <p className="text-sm font-medium text-slate-700">
+                                                                        Čas {lesson.lessonNumber} · {lesson.date}
+                                                                    </p>
                                                                     {lesson.notes && (
                                                                         <p className="text-xs text-slate-400">{lesson.notes}</p>
                                                                     )}
                                                                 </div>
                                                             </div>
-                                                            <button
-                                                                onClick={() => deleteLesson(candidate.candidateId, lesson.lessonNumber)}
-                                                                className="text-slate-300 hover:text-red-500 transition-colors"
-                                                            >
-                                                                <Trash2 size={15} />
-                                                            </button>
+                                                            <div className="flex items-center gap-2">
+                                                                <button
+                                                                    onClick={() => toggleLessonComplete(candidate.candidateId, lesson.lessonNumber, lesson.completed)}
+                                                                    className={`text-xs px-2 py-1 rounded-lg border font-medium transition-colors ${lesson.completed ? 'bg-green-100 text-green-700 border-green-200 hover:bg-green-200' : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-green-50 hover:text-green-600 hover:border-green-200'}`}
+                                                                    title={lesson.completed ? 'Označi kao neodrađeno' : 'Označi kao odrađeno'}
+                                                                >
+                                                                    {lesson.completed ? '✓ Odrađeno' : 'Odraditi'}
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => deleteLesson(candidate.candidateId, lesson.lessonNumber)}
+                                                                    className="text-slate-300 hover:text-red-500 transition-colors"
+                                                                >
+                                                                    <Trash2 size={15} />
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -296,6 +320,7 @@ export default function InstructorDashboard() {
 
                                             {!allDone && (
                                                 <AddDrivingLessonForm
+                                                    key={candidateLessons.length}
                                                     candidateId={candidate.candidateId}
                                                     existingNumbers={candidateLessons.map(l => l.lessonNumber)}
                                                     onAdd={addLesson}

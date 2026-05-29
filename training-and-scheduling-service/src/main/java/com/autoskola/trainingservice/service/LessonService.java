@@ -11,6 +11,8 @@ import com.autoskola.trainingservice.repository.CandidateRepository;
 import com.autoskola.trainingservice.repository.LessonRepository;
 import com.autoskola.trainingservice.config.RabbitMQConfig;
 import com.autoskola.trainingservice.repository.TrainingPhaseRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +25,8 @@ import org.springframework.data.domain.Pageable;
 
 @Service
 public class LessonService {
+
+    private static final Logger log = LoggerFactory.getLogger(LessonService.class);
 
     private final LessonRepository lessonRepository;
     private final UserClient userClient;
@@ -147,10 +151,14 @@ public class LessonService {
 
         Lesson savedLesson = lessonRepository.save(lesson);
 
-        LessonEvent event = new LessonEvent();
-        event.setLessonId(savedLesson.getLessonId());
-        event.setCandidateId(candidate.getCandidateId());
-        event.setStatus("ZAKAZANO");
+        LessonEvent event = new LessonEvent(
+                savedLesson.getLessonId(),
+                candidate.getCandidateId(),
+                "ZAKAZANO"
+        ); // sagaId se automatski generiše kao UUID
+
+        log.info("=== SAGA: Šaljem event | lessonId={} | sagaId={} ===",
+                event.getLessonId(), event.getSagaId());
 
         rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, "lesson.created", event);
 

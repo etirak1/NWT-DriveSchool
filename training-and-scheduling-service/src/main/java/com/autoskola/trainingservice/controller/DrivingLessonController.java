@@ -51,6 +51,21 @@ public class DrivingLessonController {
         return ResponseEntity.noContent().build();
     }
 
+    @PatchMapping("/candidate/{candidateId}/lesson/{lessonNumber}/complete")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_INSTRUCTOR')")
+    public ResponseEntity<?> markCompleted(
+            @PathVariable Long candidateId,
+            @PathVariable Integer lessonNumber,
+            @RequestBody Map<String, Object> body) {
+        try {
+            boolean completed = (Boolean) body.getOrDefault("completed", true);
+            DrivingLesson updated = drivingLessonService.markCompleted(candidateId, lessonNumber, completed);
+            return ResponseEntity.ok(updated);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
     @GetMapping("/candidate/{candidateId}/count")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_INSTRUCTOR', 'ROLE_CANDIDATE')")
     public ResponseEntity<Map<String, Long>> getCount(@PathVariable Long candidateId) {
