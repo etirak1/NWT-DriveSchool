@@ -116,6 +116,9 @@ export default function CandidateDashboard() {
     const theoryPct          = theoryTotal  > 0 ? Math.round((theoryCompleted  / theoryTotal)  * 100) : 0;
     const drivingPct         = drivingTotal > 0 ? Math.round((drivingCompleted / drivingTotal) * 100) : 0;
     const allDone            = theoryPct >= 100 && drivingPct >= 100;
+    const theoryPassed       = phases.some(
+        p => p.phaseType?.toUpperCase() === 'TEORIJSKI DIO' && p.status?.toUpperCase() === 'POLOŽENO'
+    );
 
     const totalAmount   = account?.totalAmount   ?? 0;
     const remainingDebt = account?.remainingDebt ?? 0;
@@ -304,7 +307,7 @@ export default function CandidateDashboard() {
                         )}
 
                         {/* Lesson history */}
-                        <LessonTable pageData={pageData} onPageChange={fetchLessons} />
+                        <LessonTable pageData={pageData} onPageChange={fetchLessons} theoryPassed={theoryPassed} />
                     </>
                 )}
 
@@ -496,7 +499,7 @@ export default function CandidateDashboard() {
 }
 
 /* ── Lesson table sub-component ── */
-function LessonTable({ pageData, onPageChange }) {
+function LessonTable({ pageData, onPageChange, theoryPassed }) {
     return (
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
@@ -504,12 +507,16 @@ function LessonTable({ pageData, onPageChange }) {
                     <BookOpen size={16} className="text-blue-500" />
                     Lesson history
                 </h2>
-                <Link
-                    to="/book-lesson"
-                    className="flex items-center gap-1.5 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg font-medium text-sm transition"
-                >
-                    <Plus size={14} /> Book a lesson
-                </Link>
+                {theoryPassed ? (
+                    <Link
+                        to="/book-lesson"
+                        className="flex items-center gap-1.5 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg font-medium text-sm transition"
+                    >
+                        <Plus size={14} /> Book a lesson
+                    </Link>
+                ) : (
+                    <span className="text-xs text-slate-400 italic">Theory exam required</span>
+                )}
             </div>
 
             {pageData.content.length === 0 ? (

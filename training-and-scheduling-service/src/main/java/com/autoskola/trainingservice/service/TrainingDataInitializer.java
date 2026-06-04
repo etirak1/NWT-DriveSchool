@@ -23,16 +23,19 @@ public class TrainingDataInitializer {
 
     @Transactional
     public void init() {
-        // Truncate samo training_rules
         entityManager.createNativeQuery("SET FOREIGN_KEY_CHECKS=0").executeUpdate();
+        entityManager.createNativeQuery("TRUNCATE TABLE feedbacks").executeUpdate();
+        entityManager.createNativeQuery("TRUNCATE TABLE lessons").executeUpdate();
+        entityManager.createNativeQuery("TRUNCATE TABLE driving_lessons").executeUpdate();
+        entityManager.createNativeQuery("TRUNCATE TABLE theory_lessons").executeUpdate();
+        entityManager.createNativeQuery("TRUNCATE TABLE training_phases").executeUpdate();
+        entityManager.createNativeQuery("TRUNCATE TABLE candidates").executeUpdate();
+        entityManager.createNativeQuery("TRUNCATE TABLE instructors").executeUpdate();
         entityManager.createNativeQuery("TRUNCATE TABLE training_rules").executeUpdate();
         entityManager.createNativeQuery("SET FOREIGN_KEY_CHECKS=1").executeUpdate();
 
-        if (ruleRepository.count() == 0) {
-            ruleRepository.save(new TrainingRule(
-                    null, 30, 35, 45, new BigDecimal("1200.00"), 4));
-            System.out.println("Training rule kreiran.");
-        }
+        ruleRepository.save(new TrainingRule(
+                null, 30, 35, 45, new BigDecimal("1200.00"), 4));
 
         System.out.println("Training service: inicijalizacija završena.");
     }
