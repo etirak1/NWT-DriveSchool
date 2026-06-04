@@ -10,8 +10,8 @@ export default defineConfig({
       '/repairs':        { target: 'http://localhost:8080', changeOrigin: true },
       '/api/instructors':{ target: 'http://localhost:8080', changeOrigin: true },
       '/users':          { target: 'http://localhost:8080', changeOrigin: true },
-      '/accounts':       { target: 'http://localhost:8084', changeOrigin: true },
-      '/payments':       { target: 'http://localhost:8084', changeOrigin: true },
+      '/accounts':       { target: 'http://localhost:8080', changeOrigin: true },
+      '/payments':       { target: 'http://localhost:8080', changeOrigin: true },
     }
   }
 })
