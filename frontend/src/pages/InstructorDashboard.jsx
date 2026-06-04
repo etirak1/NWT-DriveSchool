@@ -135,9 +135,6 @@ export default function InstructorDashboard() {
                         </div>
                     </div>
                     <div className="flex items-center gap-4">
-                        <button onClick={() => navigate('/dashboard')} className="text-sm text-blue-600 hover:underline">
-                            ← Nazad
-                        </button>
                         <div className="text-right hidden sm:block">
                             <p className="text-sm font-semibold text-slate-800">{email}</p>
                             <span className="inline-block text-xs px-2 py-0.5 rounded-full font-semibold bg-green-100 text-green-700">{role}</span>

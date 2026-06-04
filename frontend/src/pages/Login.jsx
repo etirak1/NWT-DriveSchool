@@ -1,14 +1,41 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import {useNavigate, Link, useLocation, useSearchParams} from 'react-router-dom';
 import { LogIn, Mail, Lock } from 'lucide-react';
 import { api } from '../api/client';
 
 export default function Login() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const stateMessage = location.state?.message;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const reason = searchParams.get('reason');
+
+  let displayMessage = '';
+  let messageType = 'amber';
+
+  if (reason === 'service_offline') {
+    displayMessage = 'Servis trenutno nije dostupan. Pokušajte kasnije.';
+    messageType = 'red'; // Crvena za kritične greške
+  } else if (reason === 'session_expired') {
+    displayMessage = 'Sesija je istekla. Prijavite se ponovo.';
+    messageType = 'amber';
+  } else if (stateMessage) {
+    displayMessage = stateMessage;
+    messageType = 'amber';
+  }
+
+
+  useEffect(() => {
+    if (reason || stateMessage) {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,16 +45,26 @@ export default function Login() {
       const res = await api.post('/api/auth/login', { email, password });
       localStorage.setItem('token', res.data.token);
       navigate('/dashboard');
-    } catch (err) {
+    }  catch (err) {
+    if (!err.response) {
+      // Nema odgovora od servera — servis nije dostupan
+      setError('Servis za prijavu trenutno nije dostupan. Molimo pokušajte kasnije.');
+    } else if (err.response.status === 401 || err.response.status === 400) {
+      setError('Pogrešan email ili lozinka.');
+    } else if (err.response.status === 503 || err.response.status === 502) {
+      setError('Servis za prijavu trenutno nije dostupan. Molimo pokušajte kasnije.');
+    } else {
       const msg =
-        (typeof err?.response?.data === 'string' ? err.response.data : null) ||
-        err?.response?.data?.message ||
-        'Pogrešan email ili lozinka.';
+          (typeof err?.response?.data === 'string' ? err.response.data : null) ||
+          err?.response?.data?.message ||
+          'Došlo je do greške. Molimo pokušajte kasnije.';
       setError(msg);
-    } finally {
-      setLoading(false);
     }
+  } finally {
+    setLoading(false);
+  }
   };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
@@ -42,6 +79,17 @@ export default function Login() {
           <p className="text-center text-slate-500 mt-2">
             Sign in to your driving school account
           </p>
+
+          {displayMessage && (
+              <div className={`mt-4 px-3 py-2 rounded-lg border text-sm text-center ${
+                  messageType === 'red'
+                      ? 'bg-red-50 text-red-700 border-red-100'
+                      : 'bg-amber-50 text-amber-700 border-amber-100'
+              }`}>
+                {displayMessage}
+              </div>
+          )}
+
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-5">
             <div>

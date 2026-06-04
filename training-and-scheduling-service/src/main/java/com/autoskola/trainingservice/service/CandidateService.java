@@ -144,7 +144,7 @@ public class CandidateService {
         candidate.setAssignedInstructor(instructor);
         candidateRepository.save(candidate);
 
-        return getCandidateFullDetails(candidate.getUserId());
+        return getCandidateFullDetails(candidate.getCandidateId());
     }
 
 
