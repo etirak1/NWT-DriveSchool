@@ -43,7 +43,7 @@ public class InstructorService {
                         user.getLastName(), user.getEmail(), user.getRole()))
                 .orElse(new UserDTO(instructor.getUserId(), "N/A", "N/A", "N/A", "INSTRUCTOR"));
 
-        return new InstructorDTO(instructor.getInstructorId(), userDTO, instructor.getAvailabilityNote());
+        return new InstructorDTO(instructor.getInstructorId(), userDTO, instructor.getAvailabilityNote(),  instructor.getAssignedVehicleId() );
     }
 
     public List<InstructorDTO> getAllInstructors() {
@@ -53,7 +53,7 @@ public class InstructorService {
                             .map(user -> new UserDTO(user.getUserId(), user.getFirstName(),
                                     user.getLastName(), user.getEmail(), user.getRole()))
                             .orElse(new UserDTO(inst.getUserId(), "N/A", "N/A", "N/A", "INSTRUCTOR"));
-                    return new InstructorDTO(inst.getInstructorId(), userDTO, inst.getAvailabilityNote());
+                    return new InstructorDTO(inst.getInstructorId(), userDTO, inst.getAvailabilityNote(),  inst.getAssignedVehicleId() );
                 })
                 .collect(Collectors.toList());
     }

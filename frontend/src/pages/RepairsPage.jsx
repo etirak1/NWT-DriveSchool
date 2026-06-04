@@ -10,9 +10,11 @@ import { useToast } from '../context/ToastContext';
 
 export default function RepairsPage() {
     const { addToast } = useToast();
-    const { data: repairs, loading, error, refetch } = useAsync(() => repairApi.getAll());
-    const { data: vehicles } = useAsync(() => vehicleApi.getAll());
+    const { data: repairsResponse, loading, error, refetch } = useAsync(() => repairApi.getAll());
+    const { data: vehiclesResponse } = useAsync(() => vehicleApi.getAll());
 
+    const repairs = repairsResponse?.data || [];
+    const vehicles = vehiclesResponse?.data || [];
     const [showForm, setShowForm] = useState(false);
     const [editTarget, setEditTarget] = useState(null);
     const [deleteTarget, setDeleteTarget] = useState(null);

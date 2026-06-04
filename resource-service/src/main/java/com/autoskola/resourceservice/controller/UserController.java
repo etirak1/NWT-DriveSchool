@@ -1,6 +1,7 @@
 package com.autoskola.resourceservice.controller;
 
 import com.autoskola.resourceservice.model.User;
+import com.autoskola.resourceservice.event.ResourceEventPublisher;
 import com.autoskola.resourceservice.repository.UserRepository;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
@@ -12,9 +13,12 @@ import java.util.List;
 public class UserController {
 
     private final UserRepository userRepository;
+    private final ResourceEventPublisher eventPublisher;
 
-    public UserController(UserRepository userRepository) {
+    public UserController(UserRepository userRepository,
+                          ResourceEventPublisher eventPublisher) {
         this.userRepository = userRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @GetMapping
@@ -33,7 +37,9 @@ public class UserController {
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN')")
     public User createUser(@Valid @RequestBody User user) {
-        return userRepository.save(user);
+        User saved = userRepository.save(user);
+        eventPublisher.publishUserCreated(saved);
+        return saved;
     }
 
     @PutMapping("/{id}")
@@ -49,12 +55,15 @@ public class UserController {
         user.setRole(updatedUser.getRole());
         user.setStatus(updatedUser.getStatus());
 
-        return userRepository.save(user);
+        User saved = userRepository.save(user);
+        eventPublisher.publishUserUpdated(saved);
+        return saved;
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public void deleteUser(@PathVariable Long id) {
         userRepository.deleteById(id);
+        eventPublisher.publishUserDeleted(id);
     }
 }
