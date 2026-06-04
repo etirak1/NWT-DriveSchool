@@ -8,6 +8,7 @@ import {
 import { api } from '../api/client';
 import { getCurrentUserId, getCurrentEmail, getCurrentRole } from '../auth/jwt';
 import FeedbackModal from '../components/FeedbackModal';
+import RescheduleModal from '../components/RescheduleModal';
 
 const PHASE_COLORS = {
     'POLOŽENO':   'bg-green-100 text-green-700',
@@ -32,8 +33,9 @@ export default function CandidateDashboard() {
     const [alreadyRated,     setAlreadyRated]     = useState(false);
     const [showFeedback,     setShowFeedback]     = useState(false);
     const [activeSection,    setActiveSection]    = useState('overview');
-    const [drivingCompleted, setDrivingCompleted] = useState(0);
-    const [theoryCompleted,  setTheoryCompleted]  = useState(0);
+    const [drivingCompleted,  setDrivingCompleted]  = useState(0);
+    const [theoryCompleted,   setTheoryCompleted]   = useState(0);
+    const [rescheduleLesson,  setRescheduleLesson]  = useState(null);
 
     const fetchLessons = async (page = 0) => {
         try {
@@ -307,7 +309,12 @@ export default function CandidateDashboard() {
                         )}
 
                         {/* Lesson history */}
-                        <LessonTable pageData={pageData} onPageChange={fetchLessons} theoryPassed={theoryPassed} />
+                        <LessonTable
+                            pageData={pageData}
+                            onPageChange={fetchLessons}
+                            onReschedule={setRescheduleLesson}
+                            theoryPassed={theoryPassed}
+                        />
                     </>
                 )}
 
@@ -483,6 +490,24 @@ export default function CandidateDashboard() {
                 )}
             </div>
 
+            {/* Reschedule modal */}
+            {rescheduleLesson && (
+                <RescheduleModal
+                    lesson={rescheduleLesson}
+                    onClose={() => setRescheduleLesson(null)}
+                    onRescheduled={() => {
+                        setRescheduleLesson(null);
+                        fetchLessons(pageData.number);
+                        // Refresh driving count
+                        api.get(`/api/lessons/my-lessons?userId=${getCurrentUserId()}&page=0&size=100&sortBy=dateTime&sortDir=desc`)
+                            .then(res => {
+                                const count = (res.data.content || []).filter(l => l.status === 'ODRAĐENO').length;
+                                setDrivingCompleted(count);
+                            }).catch(() => {});
+                    }}
+                />
+            )}
+
             {/* Feedback modal */}
             {showFeedback && (
                 <FeedbackModal
@@ -499,7 +524,7 @@ export default function CandidateDashboard() {
 }
 
 /* ── Lesson table sub-component ── */
-function LessonTable({ pageData, onPageChange, theoryPassed }) {
+function LessonTable({ pageData, onPageChange, onReschedule, theoryPassed }) {
     return (
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
@@ -529,6 +554,7 @@ function LessonTable({ pageData, onPageChange, theoryPassed }) {
                             <th className="px-6 py-3 font-medium">Instructor</th>
                             <th className="px-6 py-3 font-medium">Status</th>
                             <th className="px-6 py-3 font-medium">Notes</th>
+                            <th className="px-6 py-3 font-medium"></th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -557,6 +583,16 @@ function LessonTable({ pageData, onPageChange, theoryPassed }) {
                                 </td>
                                 <td className="px-6 py-4 text-sm text-slate-400 italic">
                                     {lesson.notes || '—'}
+                                </td>
+                                <td className="px-6 py-4">
+                                    {lesson.status === 'ZAKAZANO' && onReschedule && (
+                                        <button
+                                            onClick={() => onReschedule(lesson)}
+                                            className="text-xs px-2.5 py-1 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 font-medium transition"
+                                        >
+                                            Reschedule
+                                        </button>
+                                    )}
                                 </td>
                             </tr>
                         ))}

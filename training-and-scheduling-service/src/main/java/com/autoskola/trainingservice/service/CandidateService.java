@@ -34,7 +34,7 @@ public class CandidateService {
 
     public CandidateDTO getCandidateFullDetails(Long id) {
 
-        Candidate candidate = candidateRepository.findByUserId(id)
+        Candidate candidate = candidateRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Kandidat nije pronađen"));
 
         UserDTO userDTO;
@@ -65,9 +65,9 @@ public class CandidateService {
         dto.setCandidateId(candidate.getCandidateId());
         dto.setEnrollmentDate(candidate.getEnrollmentDate());
         dto.setProgressPercentage(candidate.getProgressPercentage());
-        dto.setUser(userDTO);                       // ili setCandidateUser, ovisi kako se zove polje
-        dto.setAssignedInstructor(instructorDetails); // ili setInstructor
-        dto.setRule(ruleDTO);                       // ili setTrainingRule
+        dto.setUser(userDTO);
+        dto.setAssignedInstructor(instructorDetails);
+        dto.setRule(ruleDTO);
         return dto;
     }
 
@@ -144,7 +144,7 @@ public class CandidateService {
         candidate.setAssignedInstructor(instructor);
         candidateRepository.save(candidate);
 
-        return getCandidateFullDetails(candidate.getUserId());
+        return getCandidateFullDetails(candidate.getCandidateId());
     }
 
 

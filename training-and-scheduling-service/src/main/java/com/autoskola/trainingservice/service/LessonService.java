@@ -15,6 +15,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.data.domain.Page;
@@ -274,6 +275,59 @@ public class LessonService {
                     return new LessonDTO(lesson, inst, cand);
                 });
     }
+    @Transactional
+    public LessonDTO rescheduleLesson(Long lessonId, LocalDateTime newDateTime, Long userId) {
+        Lesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new RuntimeException("Čas nije pronađen"));
+
+        if (!lesson.getCandidate().getUserId().equals(userId)) {
+            throw new RuntimeException("Nemate dozvolu za izmjenu ovog časa.");
+        }
+
+        if (!"ZAKAZANO".equalsIgnoreCase(lesson.getStatus())) {
+            throw new RuntimeException("Može se pomjeriti samo zakazani čas.");
+        }
+
+        if (!newDateTime.isAfter(java.time.LocalDateTime.now())) {
+            throw new RuntimeException("Novi termin mora biti u budućnosti.");
+        }
+
+        Instructor instructor = lesson.getInstructor();
+        java.time.LocalDateTime newEnd = newDateTime.plusMinutes(lesson.getDuration());
+
+        // Provjera konflikta instruktora (isključi trenutni čas)
+        List<Lesson> conflicts = lessonRepository
+                .findOverlappingInstructorLessons(instructor.getInstructorId(), newDateTime, newEnd)
+                .stream()
+                .filter(l -> !l.getLessonId().equals(lessonId))
+                .collect(java.util.stream.Collectors.toList());
+
+        if (!conflicts.isEmpty()) {
+            throw new RuntimeException("Instruktor već ima zakazan čas u tom terminu.");
+        }
+
+        // Provjera konflikta vozila (isključi trenutni čas)
+        if (lesson.getVehicleId() != null) {
+            List<Lesson> vehicleConflicts = lessonRepository
+                    .findOverlappingVehicleLessons(lesson.getVehicleId(), newDateTime, newEnd)
+                    .stream()
+                    .filter(l -> !l.getLessonId().equals(lessonId))
+                    .collect(java.util.stream.Collectors.toList());
+
+            if (!vehicleConflicts.isEmpty()) {
+                throw new RuntimeException("Vozilo je već zauzeto u tom terminu.");
+            }
+        }
+
+        lesson.setDateTime(newDateTime);
+        lessonRepository.save(lesson);
+
+        return getLessonDetails(lessonId);
+    }
+
+
+
+
 
 
 }
