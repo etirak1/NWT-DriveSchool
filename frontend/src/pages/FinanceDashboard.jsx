@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { GraduationCap, LogOut } from 'lucide-react';
+import { GraduationCap, LogOut, ArrowLeft } from 'lucide-react';
 import { financeApi, paymentApi } from '../services/financeApi';
 import { getCurrentRole, getCurrentEmail, isAdmin } from '../auth/jwt';
 
@@ -330,24 +330,13 @@ export default function FinanceDashboard() {
             {/* Header */}
             <header className="bg-white border-b border-slate-200">
                 <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="bg-blue-500 w-10 h-10 rounded-lg flex items-center justify-center">
-                            <GraduationCap className="text-white" size={22} />
-                        </div>
-                        <div>
-                            <h1 className="text-lg font-bold text-slate-900">DriveSchool</h1>
-                            <p className="text-xs text-slate-500">Finansijski Servis</p>
-                        </div>
-                    </div>
+                    <Link
+                        to="/dashboard"
+                        className="flex items-center gap-1.5 text-slate-600 hover:text-slate-900 text-sm"
+                    >
+                        <ArrowLeft size={16} /> Back to Dashboard
+                    </Link>
                     <div className="flex items-center gap-4">
-                        {userIsAdmin && (
-                            <div className="hidden sm:flex items-center gap-2">
-                                <Link to="/users" className="px-3 py-2 text-sm bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-lg font-semibold">Manage Users</Link>
-                                <Link to="/resources" className="px-3 py-2 text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg font-semibold">Resource Management</Link>
-                                <Link to="/candidates" className="px-3 py-2 text-sm bg-green-50 text-green-700 hover:bg-green-100 rounded-lg font-semibold">Candidates</Link>
-                                <Link to="/finance" className="px-3 py-2 text-sm bg-amber-100 text-amber-800 rounded-lg font-semibold">💰 Finance</Link>
-                            </div>
-                        )}
                         <div className="text-right hidden sm:block">
                             <p className="text-sm font-semibold text-slate-800">{email}</p>
                             <span className="inline-block text-xs px-2 py-0.5 rounded-full font-semibold bg-purple-100 text-purple-700">{role}</span>

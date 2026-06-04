@@ -9,10 +9,11 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowLeft,
+  LogOut,
   X,
 } from 'lucide-react';
 import { api } from '../api/client';
-import { isAdmin } from '../auth/jwt';
+import { isAdmin, getCurrentEmail, getCurrentRole } from '../auth/jwt';
 
 const ROLES = ['ALL', 'ADMIN', 'INSTRUCTOR', 'CANDIDATE'];
 
@@ -128,12 +129,26 @@ export default function UserManagement() {
       <header className="bg-white border-b border-slate-200">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link
-            to="/dashboard"
-            className="flex items-center gap-1.5 text-slate-600 hover:text-slate-900 text-sm"
+              to="/dashboard"
+              className="flex items-center gap-1.5 text-slate-600 hover:text-slate-900 text-sm"
           >
             <ArrowLeft size={16} /> Back to Dashboard
           </Link>
-          <h1 className="font-bold text-slate-900">Driving School Management</h1>
+
+          <div className="flex items-center gap-4">
+            <div className="text-right hidden sm:block">
+              <p className="text-sm font-semibold text-slate-800">{getCurrentEmail()}</p>
+              <span className="inline-block text-xs px-2 py-0.5 rounded-full font-semibold bg-purple-100 text-purple-700">
+          {getCurrentRole()}
+        </span>
+            </div>
+            <button
+                onClick={() => { localStorage.removeItem('token'); navigate('/login'); }}
+                className="flex items-center gap-1.5 px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
+            >
+              <LogOut size={16} /> Logout
+            </button>
+          </div>
         </div>
       </header>
 
