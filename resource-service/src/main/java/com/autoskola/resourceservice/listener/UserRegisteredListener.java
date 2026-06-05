@@ -30,7 +30,7 @@ public class UserRegisteredListener {
             user.setLastName(event.getLastName());
             user.setEmail(event.getEmail());
             user.setRole(event.getRole());
-            user.setPasswordHash("N/A");
+            user.setPasswordHash("N/A_PLACEHOLDER");
             user.setStatus("ACTIVE");
             userRepository.save(user);
             System.out.println("Korisnik sačuvan lokalno: userId=" + event.getUserId());

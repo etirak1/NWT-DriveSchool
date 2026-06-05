@@ -5,7 +5,7 @@ import Dashboard from './pages/Dashboard';
 import UserManagement from './pages/UserManagement';
 import CandidateDashboard from './pages/CandidateDashboard';
 import BookLesson from './pages/BookLesson';
-import { isAdmin, getCurrentRole } from './auth/jwt';
+import {isAdmin, getCurrentRole, isTokenValid} from './auth/jwt';
 import DashboardPage from './pages/DashboardPage';
 import CandidateManagement from './pages/CandidateManagement';
 import InstructorDashboard from './pages/InstructorDashboard';
@@ -19,7 +19,10 @@ import Instructors from './pages/InstructorPage';
 
 function RequireAuth({ children }) {
     const token = localStorage.getItem('token');
-    if (!token) return <Navigate to="/login" replace />;
+    if (!token || !isTokenValid()) {
+        localStorage.removeItem('token');
+        return <Navigate to="/login" replace />;
+    }
     return children;
 }
 
@@ -32,7 +35,10 @@ function SmartDashboard() {
 
 function RequireAdmin({ children }) {
     const token = localStorage.getItem('token');
-    if (!token) return <Navigate to="/login" replace />;
+    if (!token || !isTokenValid()) {
+        localStorage.removeItem('token');
+        return <Navigate to="/login" replace />;
+    }
     if (!isAdmin()) return <Navigate to="/dashboard" replace />;
     return children;
 }

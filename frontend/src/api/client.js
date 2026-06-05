@@ -1,33 +1,55 @@
 import axios from 'axios';
 
-// Sve ide kroz API gateway na portu 8080
 const API_BASE = 'http://localhost:8080';
 
 export const api = axios.create({
   baseURL: API_BASE,
   headers: { 'Content-Type': 'application/json' },
+  timeout: 5000,
 });
 
-// Automatski dodaj JWT token na svaki zahtjev ako postoji
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (payload.exp && payload.exp * 1000 < Date.now()) {
+        localStorage.removeItem('token');
+        window.location.href = '/login?reason=session_expired';
+        return Promise.reject(new Error('Token istekao'));
+      }
+    } catch (e) {
+     
+      localStorage.removeItem('token');
+      window.location.href = '/login?reason=session_expired';
+      return Promise.reject(new Error('Token neispravan'));
+    }
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
-// Auto-logout ako backend vrati 401
 api.interceptors.response.use(
-  (res) => res,
-  (err) => {
-    if (err.response && err.response.status === 401) {
-      localStorage.removeItem('token');
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
+  (response) => response,
+  (error) => {
+    const status = error.response?.status;
+    const isAuthRoute = error.config?.url?.includes('/api/auth/');
+
+    
+    if (isAuthRoute) {
+      return Promise.reject(error);
     }
-    return Promise.reject(err);
+
+    
+    if (status === 401) {
+      localStorage.removeItem('token');
+      window.location.href = '/login?reason=session_expired';
+      return new Promise(() => {});
+    }
+
+   
+    return Promise.reject(error);
   }
 );
 

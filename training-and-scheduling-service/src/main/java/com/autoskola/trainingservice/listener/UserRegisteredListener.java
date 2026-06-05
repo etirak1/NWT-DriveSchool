@@ -31,7 +31,7 @@ public class UserRegisteredListener {
         String role = event.getRole();
 
         if ("CANDIDATE".equalsIgnoreCase(role)) {
-            if (candidateRepository.findByUserId(userId).isPresent()) {
+            if (candidateRepository.existsByUserId(userId)) {
                 System.out.println("Kandidat već postoji za userId: " + userId + ", preskačem.");
                 return;
             }

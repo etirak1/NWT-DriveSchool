@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../api/client';
-import { GraduationCap, LogOut, UserCheck, BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
+import { GraduationCap, LogOut, UserCheck, BookOpen, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react';
 import { getCurrentEmail, getCurrentRole } from '../auth/jwt';
 import TheoryLessonsModal from '../components/TheoryLessonsModal';
 
@@ -105,19 +105,13 @@ export default function CandidateManagement() {
         <div className="min-h-screen bg-slate-50">
             <header className="bg-white border-b border-slate-200">
                 <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="bg-blue-500 w-10 h-10 rounded-lg flex items-center justify-center">
-                            <GraduationCap className="text-white" size={22} />
-                        </div>
-                        <div>
-                            <h1 className="text-lg font-bold text-slate-900">DriveSchool</h1>
-                            <p className="text-xs text-slate-500">Upravljanje kandidatima</p>
-                        </div>
-                    </div>
+                    <Link
+                        to="/dashboard"
+                        className="flex items-center gap-1.5 text-slate-600 hover:text-slate-900 text-sm"
+                    >
+                        <ArrowLeft size={16} /> Back to Dashboard
+                    </Link>
                     <div className="flex items-center gap-4">
-                        <button onClick={() => navigate('/dashboard')} className="text-sm text-blue-600 hover:underline">
-                            ← Nazad
-                        </button>
                         <div className="text-right hidden sm:block">
                             <p className="text-sm font-semibold text-slate-800">{email}</p>
                             <span className="inline-block text-xs px-2 py-0.5 rounded-full font-semibold bg-purple-100 text-purple-700">{role}</span>

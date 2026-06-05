@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
+  Menu,
   Megaphone,
   Plus,
   X,
@@ -19,6 +20,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const role = getCurrentRole();
   const email = getCurrentEmail();
@@ -33,11 +35,7 @@ export default function Dashboard() {
       setAnnouncements(list);
       setError('');
     } catch (err) {
-      const msg =
-          err?.response?.status === 401
-              ? 'Sesija je istekla. Prijavite se ponovo.'
-              : err?.response?.data?.message || 'Greška pri učitavanju obavještenja.';
-      setError(msg);
+      setError('Greška pri učitavanju obavještenja.');
     } finally {
       setLoading(false);
     }
@@ -112,6 +110,10 @@ export default function Dashboard() {
               </span>
               </div>
 
+              <button onClick={() => setIsMenuOpen(v => !v)} className="sm:hidden p-2 rounded-lg hover:bg-slate-100">
+                {isMenuOpen ? <X size={20}/> : <Menu size={20}/>}
+              </button>
+
               <button
                   onClick={handleLogout}
                   className="flex items-center gap-1.5 px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
@@ -121,6 +123,15 @@ export default function Dashboard() {
             </div>
           </div>
         </header>
+
+        {isMenuOpen && userIsAdmin && (
+            <div className="sm:hidden border-t border-slate-100 bg-white px-4 py-3 flex flex-col gap-2">
+              <Link to="/users">Manage Users</Link>
+          <Link to="/resources">Resource Management</Link>
+          <Link to="/candidates">Candidates</Link>
+          <Link to="/finance">Finance</Link>
+          </div>
+          )}
 
         {/* Main */}
         <main className="max-w-5xl mx-auto px-4 py-8">

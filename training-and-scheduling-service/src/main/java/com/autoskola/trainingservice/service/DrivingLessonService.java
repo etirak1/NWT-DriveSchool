@@ -37,6 +37,14 @@ public class DrivingLessonService {
         if (drivingLessonRepository.findByCandidateCandidateIdAndLessonNumber(candidateId, lessonNumber).isPresent()) {
             throw new IllegalArgumentException("Čas broj " + lessonNumber + " već postoji za ovog kandidata.");
         }
+        List<TrainingPhase> theoryPhases = trainingPhaseRepository
+                .findByCandidateCandidateIdAndPhaseTypeIgnoreCase(candidateId, "TEORIJSKI DIO");
+        boolean theoryPassed = theoryPhases.stream()
+                .anyMatch(p -> "POLOŽENO".equalsIgnoreCase(p.getStatus()));
+        if (!theoryPassed) {
+            throw new IllegalArgumentException("Kandidat mora imati položenu teoriju prije nego što može zakazati čas vožnje.");
+        }
+
 
         Candidate candidate = candidateRepository.findById(candidateId)
                 .orElseThrow(() -> new RuntimeException("Kandidat nije pronađen."));

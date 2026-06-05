@@ -10,6 +10,16 @@ export function decodeJwt(token) {
   }
 }
 
+// Provjera je li token istekao
+export function isTokenValid() {
+  const token = localStorage.getItem('token');
+  if (!token) return false;
+  const payload = decodeJwt(token);
+  if (!payload) return false;
+  if (!payload.exp) return false;
+  return payload.exp * 1000 > Date.now();
+}
+
 // Vraća rolu trenutno ulogovanog korisnika
 export function getCurrentRole() {
   const token = localStorage.getItem('token');
