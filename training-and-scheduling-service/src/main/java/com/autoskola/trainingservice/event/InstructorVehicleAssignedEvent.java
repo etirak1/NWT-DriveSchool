@@ -1,12 +1,11 @@
 package com.autoskola.trainingservice.event;
 
-import lombok.*;
-import java.io.Serializable;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
-public class InstructorVehicleAssignedEvent implements Serializable {
+public class InstructorVehicleAssignedEvent {
     private Long instructorId;
     private Long instructorUserId;
     private Long vehicleId;

@@ -1,19 +1,18 @@
 package com.autoskola.resourceservice.controller;
 
-
 import com.autoskola.resourceservice.dto.InstructorDTO;
 import com.autoskola.resourceservice.model.Instructor;
+import com.autoskola.resourceservice.event.ResourceEventPublisher;
+import com.autoskola.resourceservice.model.Vehicle;
+import com.autoskola.resourceservice.repository.VehicleRepository;
 import com.autoskola.resourceservice.service.InstructorService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 
 @RestController
 @EnableMethodSecurity
@@ -21,9 +20,14 @@ import java.util.Map;
 public class InstructorController {
 
     private final InstructorService instructorService;
+    private final ResourceEventPublisher eventPublisher;
+    private final VehicleRepository vehicleRepository;
 
-    public InstructorController(InstructorService instructorService) {
+    public InstructorController(InstructorService instructorService,
+                                ResourceEventPublisher eventPublisher, VehicleRepository vehicleRepository) {
         this.instructorService = instructorService;
+        this.eventPublisher = eventPublisher;
+        this.vehicleRepository = vehicleRepository;
     }
 
     @GetMapping("/{id}")
@@ -32,11 +36,13 @@ public class InstructorController {
         return instructorService.getInstructorFullDetails(id);
     }
 
-
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public InstructorDTO createInstructor(@Valid @RequestBody Instructor instructor) {
-        return instructorService.createInstructor(instructor);
+        InstructorDTO saved = instructorService.createInstructor(instructor);
+        eventPublisher.publishInstructorAvailabilityUpdated(
+                saved.getInstructorId(), saved.getAvailabilityNote());
+        return saved;
     }
 
     @GetMapping
@@ -47,10 +53,14 @@ public class InstructorController {
 
     @PatchMapping("/{id}/availability")
     @PreAuthorize("hasRole('ADMIN')")
-    public InstructorDTO toggleAvailability(@PathVariable Long id, @RequestBody Map<String, String> body) {
+    public InstructorDTO toggleAvailability(@PathVariable Long id,
+                                            @RequestBody Map<String, String> body) {
         String note = body.get("availabilityNote");
-        return instructorService.updateAvailability(id, note);
+        InstructorDTO updated = instructorService.updateAvailability(id, note);
+        eventPublisher.publishInstructorAvailabilityUpdated(id, note);
+        return updated;
     }
+
     @PatchMapping("/{id}/assign-vehicle")
     @PreAuthorize("hasRole('ADMIN')")
     public InstructorDTO assignVehicle(@PathVariable Long id,
@@ -61,5 +71,4 @@ public class InstructorController {
         }
         return instructorService.assignVehicleToInstructor(id, vehicleId);
     }
-
 }

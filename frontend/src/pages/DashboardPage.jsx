@@ -14,9 +14,13 @@ export default function DashboardPage() {
     const email = getCurrentEmail();
     const role = getCurrentRole();
 
-    const { data: vehicles, loading: lv, error: ev } = useAsync(() => vehicleApi.getAll());
-    const { data: repairs, loading: lr } = useAsync(() => repairApi.getAll());
-    const { data: instructors, loading: li } = useAsync(() => instructorApi.getAll());
+    const { data: vRes, loading: lv, error: ev } = useAsync(() => vehicleApi.getAll());
+    const { data: rRes, loading: lr } = useAsync(() => repairApi.getAll());
+    const { data: iRes, loading: li } = useAsync(() => instructorApi.getAll());
+
+    const vehicles = vRes?.data || [];
+    const repairs = rRes?.data || [];
+    const instructors = iRes?.data || [];
 
     const loading = lv || lr || li;
 
@@ -59,9 +63,9 @@ export default function DashboardPage() {
                         Overview of driving school vehicles and instructors
                     </p>
                     <Dashboard
-                        vehicles={vehicles || []}
-                        repairs={repairs || []}
-                        instructors={instructors || []}
+                        vehicles={vehicles}
+                        repairs={repairs}
+                        instructors={instructors}
                     />
                 </div>
             </main>

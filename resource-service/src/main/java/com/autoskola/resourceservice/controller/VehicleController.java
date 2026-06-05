@@ -2,6 +2,7 @@ package com.autoskola.resourceservice.controller;
 
 import com.autoskola.resourceservice.dto.VehicleRequestDTO;
 import com.autoskola.resourceservice.model.Vehicle;
+import com.autoskola.resourceservice.event.ResourceEventPublisher;
 import com.autoskola.resourceservice.repository.VehicleRepository;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -14,9 +15,12 @@ import java.util.List;
 public class VehicleController {
 
     private final VehicleRepository vehicleRepository;
+    private final ResourceEventPublisher eventPublisher;
 
-    public VehicleController(VehicleRepository vehicleRepository) {
+    public VehicleController(VehicleRepository vehicleRepository,
+                             ResourceEventPublisher eventPublisher) {
         this.vehicleRepository = vehicleRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @GetMapping
@@ -35,19 +39,16 @@ public class VehicleController {
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public Vehicle createVehicle(@Valid @RequestBody Vehicle vehicle) {
-
         if (vehicle.getRegistrationDate() != null) {
-            vehicle.setRegistrationExpiry(
-                    vehicle.getRegistrationDate().plusYears(1)
-            );
+            vehicle.setRegistrationExpiry(vehicle.getRegistrationDate().plusYears(1));
         }
-
-        return vehicleRepository.save(vehicle);
+        Vehicle saved = vehicleRepository.save(vehicle);
+        eventPublisher.publishVehicleCreated(saved);
+        return saved;
     }
 
     @PutMapping("/{id}")
     public Vehicle updateVehicle(@PathVariable Long id, @Valid @RequestBody VehicleRequestDTO dto) {
-
         Vehicle vehicle = vehicleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Vozilo nije pronađeno"));
 
@@ -55,18 +56,17 @@ public class VehicleController {
         vehicle.setModel(dto.getModel());
         vehicle.setRegistrationNumber(dto.getRegistrationNumber());
         vehicle.setStatus(dto.getStatus());
-
         vehicle.setRegistrationDate(dto.getRegistrationDate());
 
         if (dto.getRegistrationDate() != null) {
-            vehicle.setRegistrationExpiry(
-                    dto.getRegistrationDate().plusYears(1)
-            );
+            vehicle.setRegistrationExpiry(dto.getRegistrationDate().plusYears(1));
         }
 
         vehicle.setLastTechnicalInspection(dto.getLastTechnicalInspection());
 
-        return vehicleRepository.save(vehicle);
+        Vehicle saved = vehicleRepository.save(vehicle);
+        eventPublisher.publishVehicleUpdated(saved);
+        return saved;
     }
 
     @DeleteMapping("/{id}")
@@ -75,6 +75,8 @@ public class VehicleController {
         if (!vehicleRepository.existsById(id)) {
             throw new RuntimeException("Vozilo nije pronađeno");
         }
+        vehicleRepository.deleteById(id);
+        eventPublisher.publishVehicleDeleted(id);
         return ResponseEntity.noContent().build();
     }
 

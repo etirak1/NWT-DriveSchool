@@ -10,6 +10,12 @@ import DashboardPage from './pages/DashboardPage';
 import CandidateManagement from './pages/CandidateManagement';
 import InstructorDashboard from './pages/InstructorDashboard';
 import FinanceDashboard from './pages/FinanceDashboard'; // ← NOVO
+import Layout from './layouts/DashboardLayout.jsx'
+import ResourceManagement from './pages/DashboardPage.jsx';
+import Vehicles from './pages/VehiclePage';
+import Repairs from './pages/RepairsPage';
+import Instructors from './pages/InstructorPage';
+
 
 function RequireAuth({ children }) {
     const token = localStorage.getItem('token');
@@ -65,8 +71,17 @@ export default function App() {
             />
             <Route
                 path="/resources"
-                element={<RequireAdmin><DashboardPage /></RequireAdmin>}
-            />
+                element={
+                    <RequireAuth>
+                        <Layout />
+                    </RequireAuth>
+                }
+            >
+                <Route index element={<ResourceManagement />} />
+                <Route path="vehicles" element={<Vehicles />} />
+                <Route path="repairs" element={<Repairs />} />
+                <Route path="instructors" element={<Instructors />} />
+            </Route>
             <Route
                 path="/candidates"
                 element={<RequireAdmin><CandidateManagement /></RequireAdmin>}
@@ -90,3 +105,5 @@ export default function App() {
         </Routes>
     );
 }
+
+

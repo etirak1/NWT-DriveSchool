@@ -13,8 +13,7 @@ public class RabbitMQConfig {
     public static final String QUEUE_FINANCE = "finance_queue";
     public static final String QUEUE_TRAINING = "training_queue";
     public static final String QUEUE_USER_REGISTERED = "user_registered_queue";
-
-    public static final String QUEUE_INSTRUCTOR_VEHICLE = "instructor_vehicle_queue";
+    public static final String QUEUE_VEHICLE_ASSIGNED = "training_vehicle_assigned_queue";
 
     @Bean
     public TopicExchange exchange() {
@@ -29,11 +28,9 @@ public class RabbitMQConfig {
         return BindingBuilder.bind(userRegisteredQueue).to(exchange).with("user.registered");
     }
 
-    @Bean
-    public Queue financeQueue() { return new Queue(QUEUE_FINANCE); }
+    @Bean public Queue financeQueue() { return new Queue(QUEUE_FINANCE); }
 
-    @Bean
-    public Queue trainingQueue() { return new Queue(QUEUE_TRAINING); }
+    @Bean public Queue trainingQueue() { return new Queue(QUEUE_TRAINING); }
 
     @Bean
     public Binding financeBinding(Queue financeQueue, TopicExchange exchange) {
@@ -46,18 +43,15 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public Queue instructorVehicleQueue() {
-        return new Queue(QUEUE_INSTRUCTOR_VEHICLE, true);
+    public Queue vehicleAssignedQueue() {
+        return new Queue(QUEUE_VEHICLE_ASSIGNED, true);
     }
 
     @Bean
-    public Binding instructorVehicleAssignedBinding(Queue instructorVehicleQueue, TopicExchange exchange) {
-        return BindingBuilder.bind(instructorVehicleQueue).to(exchange).with("instructor.vehicle.assigned");
-    }
-
-    @Bean
-    public Binding vehicleStatusBinding(Queue instructorVehicleQueue, TopicExchange exchange) {
-        return BindingBuilder.bind(instructorVehicleQueue).to(exchange).with("vehicle.status.changed");
+    public Binding vehicleAssignedBinding(TopicExchange exchange) {
+        return BindingBuilder.bind(vehicleAssignedQueue())
+                .to(exchange)
+                .with("instructor.vehicle.assigned");
     }
 
     @Bean

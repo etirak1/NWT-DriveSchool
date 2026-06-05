@@ -11,8 +11,11 @@ import { useToast } from '../context/ToastContext';
 
 export default function VehiclesPage() {
     const { addToast } = useToast();
-    const { data: vehicles, loading, error, refetch } = useAsync(() => vehicleApi.getAll());
-    const { data: repairs } = useAsync(() => repairApi.getAll());
+    const { data: vRes, loading, error, refetch } = useAsync(() => vehicleApi.getAll());
+    const { data: rRes } = useAsync(() => repairApi.getAll());
+
+    const vehicles = vRes?.data || [];
+    const repairs = rRes?.data || [];
 
     const [showForm, setShowForm] = useState(false);
     const [editTarget, setEditTarget] = useState(null);
@@ -21,7 +24,7 @@ export default function VehiclesPage() {
     const [saving, setSaving] = useState(false);
     const [search, setSearch] = useState('');
 
-    const filtered = (vehicles || []).filter(v =>
+    const filtered = vehicles.filter(v =>
         `${v.brand} ${v.model} ${v.registrationNumber}`.toLowerCase().includes(search.toLowerCase())
     );
 
@@ -50,6 +53,7 @@ export default function VehiclesPage() {
             await vehicleApi.delete(deleteTarget.vehicleId);
             addToast('Vozilo obrisano.', 'success');
             refetch();
+            setDeleteTarget(null);
         } catch (e) {
             addToast(`Greška: ${e.message}`, 'error');
         }

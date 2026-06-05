@@ -6,6 +6,8 @@ import {
     formatDate
 } from '../utils/helpers';
 
+import { Link } from 'react-router-dom';
+
 import { Alert, Badge } from './Notifications';
 
 function StatCard({ icon, label, value, sub, variant = '' }) {
@@ -54,8 +56,10 @@ export default function Dashboard({
 
     // Instruktori
     const busyInstructors = instructors.filter(
-        i => !i.available
+        instructor => instructor.availabilityNote === 'UNAVAILABLE'
     ).length;
+
+    console.log("Instruktori:", instructors);
 
     return (
         <div className="dashboard">
@@ -150,9 +154,8 @@ export default function Dashboard({
 
                 <StatCard
                     icon="👨‍🏫"
-                    label="Instruktori zauzeti"
+                    label="Zauzeti instruktori"
                     value={`${busyInstructors}/${instructors.length}`}
-                    sub="trenutno aktivni"
                 />
             </div>
 
@@ -210,40 +213,16 @@ export default function Dashboard({
                     </div>
                 )}
 
-                {/* INSTRUKTORI */}
-                <div className="dash-section">
-
-                    <h3 className="dash-section-title">
-                        👨‍🏫 Instruktori
-                    </h3>
-
-                    <div className="mini-list">
-
-                        {instructors.slice(0, 5).map(instructor => (
-                            <div
-                                key={instructor.instructorId}
-                                className="mini-list-item"
-                            >
-
-                                <span>
-                                    {instructor.firstName} {instructor.lastName}
-                                </span>
-
-                                <Badge
-                                    variant={
-                                        instructor.available
-                                            ? 'status-active'
-                                            : 'status-inactive'
-                                    }
-                                >
-                                    {instructor.available
-                                        ? 'Slobodan'
-                                        : 'Zauzet'}
-                                </Badge>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                <Link
+                    to="/resources/instructors"
+                    style={{ textDecoration: 'none', color: 'inherit' }}
+                >
+                    <StatCard
+                        icon="👨‍🏫"
+                        value="➡️"
+                        label="Pregled svih instruktora"
+                    />
+                </Link>
             </div>
         </div>
     );

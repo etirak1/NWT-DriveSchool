@@ -52,3 +52,16 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+export const userApi = {
+    getActiveInstructors: () => api.get('/api/users/active?role=INSTRUCTOR'),
+    updateUser: (userId, patchData) => api.patch(`/api/users/${userId}`, patchData, {
+        headers: { 'Content-Type': 'application/json-patch+json' }
+    })
+};
+
+export const instructorApi = {
+    getAll: () => api.get('/api/instructors'),
+    updateAvailability: (id, note) => api.patch(`/api/instructors/${id}/availability`, { availabilityNote: note }),
+    assignVehicle: (id, vehicleId) => api.patch(`/api/instructors/${id}/assign-vehicle`, { vehicleId })
+};
