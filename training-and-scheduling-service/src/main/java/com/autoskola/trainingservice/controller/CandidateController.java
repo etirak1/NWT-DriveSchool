@@ -27,6 +27,12 @@ public class CandidateController {
         return candidateService.getCandidateFullDetails(id);
     }
 
+    @GetMapping("/by-user/{userId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR', 'CANDIDATE')")
+    public CandidateDTO getCandidateByUserId(@PathVariable Long userId) {
+        return candidateService.getCandidateByUserId(userId);
+    }
+
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public CandidateDTO createCandidate(@Valid @RequestBody Candidate candidate) {

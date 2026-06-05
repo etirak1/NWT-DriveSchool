@@ -32,10 +32,19 @@ public class CandidateService {
         this.ruleRepository = ruleRepository;
     }
 
-    public CandidateDTO getCandidateFullDetails(Long id) {
+    public CandidateDTO getCandidateByUserId(Long userId) {
+        Candidate candidate = candidateRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("Kandidat nije pronađen"));
+        return buildDTO(candidate);
+    }
 
+    public CandidateDTO getCandidateFullDetails(Long id) {
         Candidate candidate = candidateRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Kandidat nije pronađen"));
+        return buildDTO(candidate);
+    }
+
+    private CandidateDTO buildDTO(Candidate candidate) {
 
         UserDTO userDTO;
         try {
@@ -70,6 +79,7 @@ public class CandidateService {
         dto.setRule(ruleDTO);
         return dto;
     }
+
 
     public CandidateDTO createCandidate(Candidate candidate) {
         Instructor instructor = instructorRepository.findById(candidate.getAssignedInstructor().getInstructorId())

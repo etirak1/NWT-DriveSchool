@@ -46,14 +46,38 @@ export default function CandidateDashboard() {
         } catch (e) { console.error(e); }
     };
 
+    const loadProgress = async (candId) => {
+        // Theory progress
+        try {
+            const theoryRes = await api.get(`/api/theory-lessons/candidate/${candId}`);
+            const tCount = (theoryRes.data || []).filter(l => l.completed).length;
+            setTheoryCompleted(tCount);
+        } catch (e) { /* ignore */ }
+
+        // Phases
+        try {
+            const phaseRes = await api.get(`/api/phases/candidate/${candId}`);
+            setPhases(phaseRes.data);
+        } catch (e) { /* phases optional */ }
+
+        // Feedback eligibility
+        try {
+            const ratedRes = await api.get(`/api/feedbacks/candidate/${candId}/exists`);
+            setAlreadyRated(ratedRes.data);
+        } catch (e) { /* ignore */ }
+    };
+
     useEffect(() => {
+        let candIdRef = null;
+
         const load = async () => {
             try {
-                const candRes = await api.get(`/api/candidates/${userId}`);
+                const candRes = await api.get(`/api/candidates/by-user/${userId}`);
                 const cand = candRes.data;
                 setCandidate(cand);
 
-                const candId = cand.candidate?.candidateId || cand.candidateId;
+                const candId = cand.candidateId;
+                candIdRef = candId;
 
                 await fetchLessons(0);
 
@@ -66,18 +90,7 @@ export default function CandidateDashboard() {
                     setDrivingCompleted(count);
                 } catch (e) { /* ignore */ }
 
-                // Theory progress
-                try {
-                    const theoryRes = await api.get(`/api/theory-lessons/candidate/${candId}`);
-                    const tCount = (theoryRes.data || []).filter(l => l.completed).length;
-                    setTheoryCompleted(tCount);
-                } catch (e) { /* ignore */ }
-
-                // Phases
-                try {
-                    const phaseRes = await api.get(`/api/phases/candidate/${candId}`);
-                    setPhases(phaseRes.data);
-                } catch (e) { /* phases optional */ }
+                await loadProgress(candId);
 
                 // Finance
                 try {
@@ -92,12 +105,6 @@ export default function CandidateDashboard() {
                     setAnnouncements(annRes.data);
                 } catch (e) { /* announcements optional */ }
 
-                // Feedback eligibility
-                try {
-                    const ratedRes = await api.get(`/api/feedbacks/candidate/${candId}/exists`);
-                    setAlreadyRated(ratedRes.data);
-                } catch (e) { /* ignore */ }
-
             } catch (err) {
                 console.error(err);
             } finally {
@@ -105,6 +112,24 @@ export default function CandidateDashboard() {
             }
         };
         load();
+
+        // Osvježi napredak kad se korisnik vrati na tab
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible' && candIdRef) {
+                loadProgress(candIdRef);
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        // Polling svakih 30 sekundi
+        const interval = setInterval(() => {
+            if (candIdRef) loadProgress(candIdRef);
+        }, 30000);
+
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            clearInterval(interval);
+        };
     }, []);
 
     const handleLogout = () => {
