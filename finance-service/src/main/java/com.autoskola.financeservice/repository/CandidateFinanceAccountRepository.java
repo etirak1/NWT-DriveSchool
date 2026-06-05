@@ -10,18 +10,22 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 import java.util.Optional;
 
-public interface CandidateFinanceAccountRepository extends JpaRepository<CandidateFinanceAccount, Integer> {
+public interface CandidateFinanceAccountRepository
+        extends JpaRepository<CandidateFinanceAccount, Integer> {
 
-    //Entity Graph
     @EntityGraph(attributePaths = {"user", "payments"})
     @Query("SELECT a FROM CandidateFinanceAccount a")
     List<CandidateFinanceAccount> findAllWithPayments();
 
-    // Verzija za paginaciju od Controllera
     @EntityGraph(attributePaths = {"user", "payments"})
     @Query("SELECT a FROM CandidateFinanceAccount a")
     Page<CandidateFinanceAccount> findAllWithPayments(Pageable pageable);
 
     @EntityGraph(attributePaths = {"user", "payments"})
     Optional<CandidateFinanceAccount> findById(Integer id);
+
+    // NOVO — za listener
+    Optional<CandidateFinanceAccount> findByCandidateId(Integer candidateId);
+
+    boolean existsByCandidateId(Integer candidateId);
 }

@@ -1,6 +1,6 @@
 package com.autoskola.financeservice.listener;
 
-import com.autoskola.financeservice.dto.LessonEvent; // PROVERI DA LI MAS OVU KLASU U FINANCE SERVISU
+import com.autoskola.financeservice.dto.LessonEvent;
 import com.autoskola.financeservice.config.RabbitMQConfig;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -13,7 +13,7 @@ public class PaymentListener {
     @Autowired
     private RabbitTemplate rabbitTemplate;
 
-    @RabbitListener(queues = RabbitMQConfig.QUEUE_FINANCE)
+    @RabbitListener(queues = RabbitMQConfig.QUEUE_LESSON)
     public void handlePayment(LessonEvent event) {
         System.out.println("Finance-service: Primljen zahtjev za plaćanje časa: " + event.getLessonId());
 
