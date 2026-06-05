@@ -6,9 +6,14 @@ import Dashboard from '../components/Dashboard';
 import { Spinner, ErrorState } from '../components/States';
 
 export default function DashboardPage() {
-    const { data: vehicles, loading: lv, error: ev } = useAsync(() => vehicleApi.getAll());
-    const { data: repairs, loading: lr } = useAsync(() => repairApi.getAll());
-    const { data: instructors, loading: li } = useAsync(() => instructorApi.getAll());
+    const { data: vRes, loading: lv, error: ev } = useAsync(() => vehicleApi.getAll());
+    const { data: rRes, loading: lr } = useAsync(() => repairApi.getAll());
+    const { data: iRes, loading: li } = useAsync(() => instructorApi.getAll());
+
+
+    const vehicles = vRes?.data || [];
+    const repairs = rRes?.data || [];
+    const instructors = iRes?.data || [];
 
     const loading = lv || lr || li;
 
@@ -27,9 +32,9 @@ export default function DashboardPage() {
 
                 <div className="dashboard">
                     <Dashboard
-                        vehicles={vehicles || []}
-                        repairs={repairs || []}
-                        instructors={instructors || []}
+                        vehicles={vehicles}
+                        repairs={repairs}
+                        instructors={instructors}
                     />
                 </div>
             </div>

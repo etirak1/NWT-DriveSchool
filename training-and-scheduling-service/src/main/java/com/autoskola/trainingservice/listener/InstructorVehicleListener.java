@@ -1,10 +1,10 @@
 package com.autoskola.trainingservice.listener;
 
 import com.autoskola.trainingservice.event.InstructorVehicleAssignedEvent;
-import com.autoskola.trainingservice.model.Instructor;
 import com.autoskola.trainingservice.repository.InstructorRepository;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
 public class InstructorVehicleListener {
@@ -15,25 +15,19 @@ public class InstructorVehicleListener {
         this.instructorRepository = instructorRepository;
     }
 
-    @RabbitListener(queues = "instructor_vehicle_queue")
-    public void handleInstructorVehicleAssigned(InstructorVehicleAssignedEvent event) {
-        Instructor instructor = instructorRepository.findByUserId(event.getInstructorUserId())
-                .orElse(null);
+    @RabbitListener(queues = "training_vehicle_assigned_queue")
+    @Transactional
+    public void handleVehicleAssigned(InstructorVehicleAssignedEvent event) {
+        System.out.println("Training service primio event za userId: " + event.getInstructorUserId());
 
-        if (instructor == null) {
-            System.out.println("Instruktor sa userId=" + event.getInstructorUserId()
-                    + " ne postoji u training-service. Preskačem događaj.");
-            return;
-        }
-
-        instructor.setAssignedVehicleId(event.getVehicleId());
-        instructor.setVehicleBrand(event.getVehicleBrand());
-        instructor.setVehicleModel(event.getVehicleModel());
-        instructor.setVehicleRegistrationNumber(event.getVehicleRegistrationNumber());
-        instructor.setVehicleStatus(event.getVehicleStatus());
-        instructorRepository.save(instructor);
-
-        System.out.println("Vozilo " + event.getVehicleId() + " dodijeljeno instruktoru "
-                + instructor.getInstructorId() + " (userId=" + event.getInstructorUserId() + ").");
+        instructorRepository.findByUserId(event.getInstructorUserId()).ifPresent(instructor -> {
+            instructor.setAssignedVehicleId(event.getVehicleId());
+            instructor.setVehicleBrand(event.getVehicleBrand());
+            instructor.setVehicleModel(event.getVehicleModel());
+            instructor.setVehicleRegistrationNumber(event.getVehicleRegistrationNumber());
+            instructor.setVehicleStatus(event.getVehicleStatus());
+            instructorRepository.save(instructor);
+            System.out.println("SAVED! userId: " + event.getInstructorUserId());
+        });
     }
 }

@@ -1,61 +1,73 @@
-const BASE_URL = import.meta.env.VITE_API_URL;
+import axios from 'axios';
 
-const getAuthHeaders = () => {
+// Sve ide kroz API gateway na portu 8080
+const API_BASE = 'http://localhost:8080';
+
+export const api = axios.create({
+    baseURL: API_BASE,
+    headers: { 'Content-Type': 'application/json' },
+});
+
+// Automatski dodaj JWT token na svaki zahtjev ako postoji
+api.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');
-    return {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    };
-};
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
 
+// Auto-logout ako backend vrati 401
+api.interceptors.response.use(
+    (res) => res,
+    (err) => {
+        if (err.response && err.response.status === 401) {
+            localStorage.removeItem('token');
+            if (window.location.pathname !== '/login') {
+                window.location.href = '/login';
+            }
+        }
+        return Promise.reject(err);
+    }
+);
 
-
-const request = async (method, path, body) => {
-    const res = await fetch(`${BASE_URL}${path}`, {
-        method,
-        headers: getAuthHeaders(),
-        ...(body ? { body: JSON.stringify(body) } : {}),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-    if (res.status === 204) return null;
-    return res.json();
-};
-
-// ── Vehicles (/vehicles) ──────────────────────────────────────────────────────
-export const vehicleApi = {
-    getAll: () => request('GET', '/vehicles'),
-    getById: (id) => request('GET', `/vehicles/${id}`),
-    create: (data) => request('POST', '/vehicles', data),
-    update: (id, data) => request('PUT', `/vehicles/${id}`, data),
-    delete: (id) => request('DELETE', `/vehicles/${id}`),
-};
-
-// ── Repairs (/repairs) ────────────────────────────────────────────────────────
-export const repairApi = {
-    getAll: () => request('GET', '/repairs'),
-    getById: (id) => request('GET', `/repairs/${id}`),
-    create: (data) => request('POST', '/repairs', data),
-    update: (id, data) => request('PUT', `/repairs/${id}`, data),
-    patch: (id, data) => request('PATCH', `/repairs/${id}`, data),
-    delete: (id) => request('DELETE', `/repairs/${id}`),
-    getExpensive: (cost) => request('GET', `/repairs/expensive?cost=${cost}`),
-    getPage: (page = 0, size = 10) =>
-        request('GET', `/repairs/page?page=${page}&size=${size}`),
-};
-
-// ── Instructors (/api/instructors) ────────────────────────────────────────────
-export const instructorApi = {
-    getAll: () => request('GET', '/api/instructors'),
-    getById: (id) => request('GET', `/api/instructors/${id}`),
-    create: (data) => request('POST', '/api/instructors', data),
-    updateAvailability: (id, note) => request('PATCH', `/api/instructors/${id}/availability`, { availabilityNote: note }),
-};
-
-// ── Users (/users) ────────────────────────────────────────────────────────────
+// ── USERS (User Microservice) ────────────────────────────────────────────────
 export const userApi = {
-    getAll: () => request('GET', '/users'),
-    getById: (id) => request('GET', `/users/${id}`),
-    create: (data) => request('POST', '/users', data),
-    update: (id, data) => request('PUT', `/users/${id}`, data),
-    delete: (id) => request('DELETE', `/users/${id}`),
+    // Ova funkcija je bila problem - SADA JE TU
+    getActiveInstructors: () => api.get('/api/users/active?role=INSTRUCTOR'),
+    getAll: () => api.get('/api/users'),
+    getById: (id) => api.get(`/api/users/${id}`),
+    create: (data) => api.post('/api/users', data),
+    // JSON Patch verzija za update
+    updateUser: (userId, patchData) => api.patch(`/api/users/${userId}`, patchData, {
+        headers: { 'Content-Type': 'application/json-patch+json' }
+    }),
+    delete: (id) => api.delete(`/api/users/${id}`),
+};
+
+// ── INSTRUCTORS (Resource Microservice) ──────────────────────────────────────
+export const instructorApi = {
+    getAll: () => api.get('/api/instructors'),
+    getById: (id) => api.get(`/api/instructors/${id}`),
+    create: (data) => api.post('/api/instructors', data),
+    updateAvailability: (id, note) => api.patch(`/api/instructors/${id}/availability`, { availabilityNote: note }),
+    assignVehicle: (id, vehicleId) => api.patch(`/api/instructors/${id}/assign-vehicle`, { vehicleId })
+};
+
+// ── VEHICLES (Resource Microservice) ─────────────────────────────────────────
+export const vehicleApi = {
+    getAll: () => api.get('/vehicles'),
+    getById: (id) => api.get(`/vehicles/${id}`),
+    create: (data) => api.post('/vehicles', data),
+    update: (id, data) => api.put(`/vehicles/${id}`, data),
+    delete: (id) => api.delete(`/vehicles/${id}`),
+};
+
+// ── REPAIRS (Resource Microservice) ──────────────────────────────────────────
+export const repairApi = {
+    getAll: () => api.get('/repairs'),
+    getById: (id) => api.get(`/repairs/${id}`),
+    create: (data) => api.post('/repairs', data),
+    update: (id, data) => api.put(`/repairs/${id}`, data),
+    delete: (id) => api.delete(`/repairs/${id}`),
 };

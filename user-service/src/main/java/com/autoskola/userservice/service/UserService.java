@@ -132,6 +132,9 @@ public class UserService {
 
         // Ako nema časova ili nije instruktor, brišemo ga
         userRepository.deleteById(id);
+        rabbitTemplate.convertAndSend("skola_exchange", "user.deleted", id);
+
+        System.out.println("User Service: Poruka o brisanju poslana za ID: " + id);
     }
 
     public User findByEmail(String email) {

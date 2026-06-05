@@ -32,7 +32,7 @@ export default function VehicleForm({ initial, onSubmit, onCancel, loading }) {
         }
     }, [initial]);
 
-    const set = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }));
+    const set = (field) => (e) => setForm(f => ({...f, [field]: e.target.value}));
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -51,11 +51,11 @@ export default function VehicleForm({ initial, onSubmit, onCancel, loading }) {
             <div className="form-row">
                 <div className="form-group">
                     <label>Marka <span className="req">*</span></label>
-                    <input required value={form.brand} onChange={set('brand')} placeholder="npr. Volkswagen" />
+                    <input required value={form.brand} onChange={set('brand')} placeholder="npr. Volkswagen"/>
                 </div>
                 <div className="form-group">
                     <label>Model <span className="req">*</span></label>
-                    <input required value={form.model} onChange={set('model')} placeholder="npr. Golf" />
+                    <input required value={form.model} onChange={set('model')} placeholder="npr. Golf"/>
                 </div>
             </div>
 
@@ -63,26 +63,26 @@ export default function VehicleForm({ initial, onSubmit, onCancel, loading }) {
                 <div className="form-group">
                     <label>Godište</label>
                     <input type="number" value={form.year} onChange={set('year')}
-                           min="1990" max={new Date().getFullYear()} placeholder="2020" />
+                           min="1990" max={new Date().getFullYear()} placeholder="2020"/>
                 </div>
                 <div className="form-group">
                     <label>Registracijski broj <span className="req">*</span></label>
                     <input required value={form.registrationNumber} onChange={set('registrationNumber')}
-                           placeholder="npr. A12-B-345" />
+                           placeholder="npr. A12-B-345"/>
                 </div>
             </div>
 
             <div className="form-row">
                 <div className="form-group">
                     <label>Datum registracije</label>
-                    <input type="date" value={form.registrationDate}onChange={(e) => {
+                    <input type="date" value={form.registrationDate} onChange={(e) => {
                         const regDate = e.target.value;
 
                         setForm(f => ({
                             ...f,
                             registrationDate: regDate
                         }));
-                    }} />
+                    }}/>
                 </div>
             </div>
 
@@ -95,7 +95,7 @@ export default function VehicleForm({ initial, onSubmit, onCancel, loading }) {
                 </div>
                 <div className="form-group">
                     <label>Posljednji tehnički pregled</label>
-                    <input type="date" value={form.lastTechnicalInspection} onChange={set('lastTechnicalInspection')} />
+                    <input type="date" value={form.lastTechnicalInspection} onChange={set('lastTechnicalInspection')}/>
                 </div>
             </div>
 

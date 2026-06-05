@@ -16,4 +16,5 @@ public class InstructorDTO {
     private Long instructorId;
     private UserDTO user;
     private String availabilityNote;
+    private Long assignedVehicleId;
 }
