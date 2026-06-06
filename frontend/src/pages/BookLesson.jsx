@@ -31,7 +31,7 @@ export default function BookLesson() {
     useEffect(() => {
         const loadCandidate = async () => {
             try {
-                const res = await api.get(`/api/candidates/${userId}`);
+                const res = await api.get(`/api/candidates/by-user/${userId}`);
                 setCandidate(res.data);
 
                 try {
@@ -87,10 +87,6 @@ export default function BookLesson() {
         const instructor = getInstructor();
         if (!instructor) {
             setError('Nemate dodijeljen instruktor.');
-            return;
-        }
-        if (!instructor.assignedVehicleId) {
-            setError('Vaš instruktor nema dodijeljeno vozilo. Kontaktirajte administraciju.');
             return;
         }
 

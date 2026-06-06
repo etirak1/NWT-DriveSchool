@@ -109,17 +109,6 @@ public class LessonService {
                     "Kandidat nema dodijeljen instruktor. Molimo odaberite instruktora prije zakazivanja časa.");
         }
 
-        if (instructor.getAssignedVehicleId() == null) {
-            throw new RuntimeException(
-                    "Instruktor nema dodijeljeno vozilo. Kontaktirajte administratora.");
-        }
-
-        if (!"ACTIVE".equalsIgnoreCase(instructor.getVehicleStatus())) {
-            throw new RuntimeException(
-                    "Vozilo instruktora trenutno nije raspoloživo (status: "
-                            + instructor.getVehicleStatus() + ").");
-        }
-
         lesson.setVehicleId(instructor.getAssignedVehicleId());
 
         if (lesson.getDuration() == null) {
@@ -135,10 +124,12 @@ public class LessonService {
             throw new RuntimeException("Instruktor već ima zakazan čas u tom terminu.");
         }
 
-        List<Lesson> vehicleConflicts = lessonRepository
-                .findOverlappingVehicleLessons(lesson.getVehicleId(), newStart, newEnd);
-        if (!vehicleConflicts.isEmpty()) {
-            throw new RuntimeException("Vozilo je već zauzeto u tom terminu.");
+        if (lesson.getVehicleId() != null) {
+            List<Lesson> vehicleConflicts = lessonRepository
+                    .findOverlappingVehicleLessons(lesson.getVehicleId(), newStart, newEnd);
+            if (!vehicleConflicts.isEmpty()) {
+                throw new RuntimeException("Vozilo je već zauzeto u tom terminu.");
+            }
         }
 
         lesson.setCandidate(candidate);

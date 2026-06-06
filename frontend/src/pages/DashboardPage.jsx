@@ -14,7 +14,7 @@ export default function DashboardPage() {
     const email = getCurrentEmail();
     const role = getCurrentRole();
 
-    const { data: vRes, loading: lv, error: ev } = useAsync(() => vehicleApi.getAll());
+    const { data: vRes, loading: lv, error: ev, refetch: refetchV } = useAsync(() => vehicleApi.getAll());
     const { data: rRes, loading: lr } = useAsync(() => repairApi.getAll());
     const { data: iRes, loading: li } = useAsync(() => instructorApi.getAll());
 
@@ -25,7 +25,7 @@ export default function DashboardPage() {
     const loading = lv || lr || li;
 
     if (loading) return <Spinner label="Loading resources..." />;
-    if (ev) return <ErrorState message={ev} />;
+    if (ev) return <ErrorState message={ev} onRetry={refetchV} />;
 
     return (
         <div className="min-h-screen bg-slate-50">

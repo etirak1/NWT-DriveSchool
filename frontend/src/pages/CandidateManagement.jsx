@@ -58,7 +58,6 @@ export default function CandidateManagement() {
             await loadPhases(candidateId);
         }
     };
-
     const assignInstructor = async (candidateId, instructorUserId) => {
         if (!instructorUserId) return;
         try {
@@ -72,19 +71,18 @@ export default function CandidateManagement() {
     };
 
     const addPhase = async (candidateId, phaseType, status) => {
-        try {
-            await api.post('/api/phases', {
-                candidate: { candidateId },
-                phaseType,
-                status,
-                dateCompleted: status === 'POLOŽENO' ? new Date().toISOString().split('T')[0] : null
-            });
-            const res = await api.get(`/api/phases/candidate/${candidateId}`);
-            setPhases(prev => ({ ...prev, [candidateId]: res.data }));
-            showSuccess('Faza uspješno dodana!');
-        } catch (err) {
-            showError(err.response?.data?.message || 'Greška pri dodavanju faze.');
+        const existing = phases[candidateId] || [];
+        if (existing.some(p => p.phaseType === phaseType)) {
+            throw new Error(`Faza "${phaseType}" već postoji za ovog kandidata.`);
         }
+        await api.post('/api/phases', {
+            candidate: { candidateId },
+            phaseType,
+            status,
+            dateCompleted: status === 'POLOŽENO' ? new Date().toISOString().split('T')[0] : null
+        });
+        const res = await api.get(`/api/phases/candidate/${candidateId}`);
+        setPhases(prev => ({ ...prev, [candidateId]: res.data }));
     };
 
     const showSuccess = (msg) => {
@@ -134,7 +132,16 @@ export default function CandidateManagement() {
                     <div className="mb-4 bg-red-50 text-red-700 px-4 py-3 rounded-lg border border-red-100 text-sm">{errorMsg}</div>
                 )}
 
-                <h2 className="text-2xl font-bold text-slate-900 mb-6">Kandidati</h2>
+                <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold text-slate-900">Kandidati</h2>
+                    <Link
+                        to="/theory-plans"
+                        className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold"
+                    >
+                        <BookOpen size={15} />
+                        Plan nastave
+                    </Link>
+                </div>
 
                 <div className="space-y-4">
                     {candidates.map(candidate => (
@@ -174,7 +181,6 @@ export default function CandidateManagement() {
                                         <GraduationCap size={14} />
                                         Teorija
                                     </button>
-
                                     <button
                                         onClick={() => toggleExpand(candidate.candidateId)}
                                         className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-slate-100 hover:bg-slate-200 rounded-lg"
@@ -208,7 +214,7 @@ export default function CandidateManagement() {
                                     ) : (
                                         <p className="text-sm text-slate-400 italic mb-4">Nema dodanih faza.</p>
                                     )}
-                                    <AddPhaseForm candidateId={candidate.candidateId} onAdd={addPhase} />
+                                    <AddPhaseForm candidateId={candidate.candidateId} onAdd={addPhase} existingPhases={phases[candidate.candidateId] || []} />
                                 </div>
                             )}
                         </div>
@@ -222,6 +228,7 @@ export default function CandidateManagement() {
                     onClose={() => setTheoryModalCandidate(null)}
                 />
             )}
+
         </div>
     );
 }
@@ -229,29 +236,54 @@ export default function CandidateManagement() {
 function AddPhaseForm({ candidateId, onAdd }) {
     const [phaseType, setPhaseType] = useState(PHASE_TYPES[0]);
     const [status, setStatus] = useState(PHASE_STATUSES[0]);
+    const [saving, setSaving] = useState(false);
+    const [msg, setMsg] = useState(null);
+
+    const handleAdd = async () => {
+        setSaving(true);
+        setMsg(null);
+        try {
+            await onAdd(candidateId, phaseType, status);
+            setMsg({ text: 'Faza uspješno dodana!', type: 'success' });
+        } catch (err) {
+            const text = err.response?.data?.message || err.message || 'Greška pri dodavanju faze.';
+            setMsg({ text, type: 'error' });
+        } finally {
+            setSaving(false);
+            setTimeout(() => setMsg(null), 3000);
+        }
+    };
 
     return (
-        <div className="flex items-center gap-2 flex-wrap">
-            <select
-                value={phaseType}
-                onChange={e => setPhaseType(e.target.value)}
-                className="text-sm border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-                {PHASE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
-            <select
-                value={status}
-                onChange={e => setStatus(e.target.value)}
-                className="text-sm border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-                {PHASE_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-            <button
-                onClick={() => onAdd(candidateId, phaseType, status)}
-                className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
-            >
-                + Dodaj fazu
-            </button>
+        <div className="space-y-2">
+            <div className="flex items-center gap-2 flex-wrap">
+                <select
+                    value={phaseType}
+                    onChange={e => setPhaseType(e.target.value)}
+                    className="text-sm border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                    {PHASE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+                <select
+                    value={status}
+                    onChange={e => setStatus(e.target.value)}
+                    className="text-sm border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                    {PHASE_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+                <button
+                    onClick={handleAdd}
+                    disabled={saving}
+                    className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                >
+                    {saving ? 'Dodavanje...' : '+ Dodaj fazu'}
+                </button>
+            </div>
+            {msg && (
+                <p className={`text-xs px-2 py-1 rounded ${msg.type === 'success' ? 'text-green-700 bg-green-50' : 'text-red-700 bg-red-50'}`}>
+                    {msg.text}
+                </p>
+            )}
         </div>
     );
 }

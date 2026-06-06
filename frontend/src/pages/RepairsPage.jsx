@@ -7,6 +7,7 @@ import Modal from '../components/Modal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { Spinner, ErrorState } from '../components/States';
 import { useToast } from '../context/ToastContext';
+import { getErrorMessage } from '../utils/helpers';
 
 export default function RepairsPage() {
     const { addToast } = useToast();
@@ -39,7 +40,7 @@ export default function RepairsPage() {
             setEditTarget(null);
             refetch();
         } catch (e) {
-            addToast(`Greška: ${e.message}`, 'error');
+            addToast(getErrorMessage(e), 'error');
         } finally {
             setSaving(false);
         }
@@ -51,7 +52,7 @@ export default function RepairsPage() {
             addToast('Popravka obrisana.', 'success');
             refetch();
         } catch (e) {
-            addToast(`Greška: ${e.message}`, 'error');
+            addToast(getErrorMessage(e), 'error');
         }
     };
 

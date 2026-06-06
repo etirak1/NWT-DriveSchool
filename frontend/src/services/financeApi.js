@@ -1,5 +1,5 @@
 
-const BASE_URL = '';
+const BASE_URL = 'http://localhost:8080';
 
 const getAuthHeaders = () => {
     const token = localStorage.getItem('token');
@@ -20,42 +20,30 @@ const request = async (method, path, body) => {
     return res.json();
 };
 
-
 export const financeApi = {
-    // Svi računi (paginiran)
+    // Svi računi sa obavezama
+    getAll: () => request('GET', '/accounts'),
+
+    // Paginiran
     getAllPaginated: (page = 0, size = 10) =>
         request('GET', `/accounts/paginated?page=${page}&size=${size}&sort=enrollmentDate`),
-
-    // Svi računi (lista)
-    getAll: () => request('GET', '/accounts'),
 
     // Jedan račun po ID-u
     getById: (id) => request('GET', `/accounts/${id}`),
 
-    // Preostali dug kandidata
-    getRemainingDebt: (id) => request('GET', `/accounts/${id}/debt`),
+    // Puni status: obaveze + eligibility
+    getStatus: (candidateId) => request('GET', `/accounts/${candidateId}/status`),
 
-    // Patch računa
-    patchAccount: (id, patchData) =>
-        fetch(`${BASE_URL}/accounts/${id}`, {
-            method: 'PATCH',
-            headers: {
-                ...getAuthHeaders(),
-                'Content-Type': 'application/json-patch+json',
-            },
-            body: JSON.stringify(patchData),
-        }).then(res => {
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            return res.json();
-        }),
+    // Kreiraj račun ako ne postoji
+    ensureAccount: (candidateId) => request('POST', `/accounts/ensure/${candidateId}`),
+
+    // Evidentiraj uplatu — backend raspoređuje automatski
+    recordPayment: (candidateId, amount) =>
+        request('POST', `/accounts/${candidateId}/pay`, { amount }),
 };
 
-
 export const paymentApi = {
-    // Uplate po kandidatu
     getByCandidateId: (candidateId) =>
         request('GET', `/payments/candidate/${candidateId}`),
-
-    // Kreiraj uplatu
     create: (data) => request('POST', '/payments', data),
 };

@@ -46,4 +46,13 @@ public class TheoryLessonController {
         long count = theoryLessonService.getCompletedCount(candidateId);
         return ResponseEntity.ok(Map.of("completed", count, "total", 40L));
     }
+
+    @PatchMapping("/candidate/{candidateId}/bulk")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<TheoryLesson>> bulkComplete(
+            @PathVariable Long candidateId,
+            @RequestBody Map<String, Integer> body) {
+        int targetCount = body.get("count");
+        return ResponseEntity.ok(theoryLessonService.bulkComplete(candidateId, targetCount));
+    }
 }

@@ -3,7 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import {
     GraduationCap, LogOut, CheckCircle, Clock, BookOpen,
     ChevronLeft, ChevronRight, MessageSquare, TrendingUp,
-    DollarSign, AlertCircle, Plus, Car
+    DollarSign, AlertCircle, Plus, Car, XCircle, AlertTriangle,
+    Info
 } from 'lucide-react';
 import { api } from '../api/client';
 import { getCurrentUserId, getCurrentEmail, getCurrentRole } from '../auth/jwt';
@@ -27,6 +28,7 @@ export default function CandidateDashboard() {
     const [phases,           setPhases]           = useState([]);
     const [payments,         setPayments]         = useState([]);
     const [account,          setAccount]          = useState(null);
+    const [financeStatus,    setFinanceStatus]    = useState(null);
     const [announcements,    setAnnouncements]    = useState([]);
     const [pageData,         setPageData]         = useState({ content: [], totalPages: 0, number: 0 });
     const [loading,          setLoading]          = useState(true);
@@ -92,12 +94,16 @@ export default function CandidateDashboard() {
 
                 await loadProgress(candId);
 
-                // Finance
+                // Finance — koristimo candidateId (ne userId!)
                 try {
-                    const accRes = await api.get(`/api/accounts/${userId}`);
-                    setAccount(accRes.data);
-                    setPayments(accRes.data.payments || []);
-                } catch (e) { /* finance optional */ }
+                    const statusRes = await api.get(`/accounts/${candId}/status`);
+                    setFinanceStatus(statusRes.data);
+                } catch (e) { /* finance optional — korisnik mozda nema racun */ }
+                // Historija pojedinacnih uplata
+                try {
+                    const pmtRes = await api.get(`/accounts/${candId}/payments`);
+                    setPayments(pmtRes.data || []);
+                } catch (e) { /* ignore */ }
 
                 // Announcements
                 try {
@@ -147,10 +153,14 @@ export default function CandidateDashboard() {
         p => p.phaseType?.toUpperCase() === 'TEORIJSKI DIO' && p.status?.toUpperCase() === 'POLOŽENO'
     );
 
-    const totalAmount   = account?.totalAmount   ?? 0;
-    const remainingDebt = account?.remainingDebt ?? 0;
-    const amountPaid    = totalAmount - remainingDebt;
-    const paymentPct    = totalAmount > 0 ? Math.round((amountPaid / totalAmount) * 100) : 0;
+    // Finance helpers — oslanjamo se na financeStatus (CandidateStatusDTO)
+    const totalAmount       = Number(financeStatus?.totalAmount   ?? 0);
+    const amountPaid        = Number(financeStatus?.paidAmount    ?? 0);
+    const remainingDebt     = Number(financeStatus?.remainingDebt ?? 0);
+    const paymentPct        = totalAmount > 0 ? Math.round((amountPaid / totalAmount) * 100) : 0;
+    const enrollmentPaid    = financeStatus?.enrollmentEligible ?? false;
+    const examEligible      = financeStatus?.examEligible ?? false;
+    const obligations       = financeStatus?.obligations ?? [];
 
     const navItems = [
         { id: 'overview',      label: 'Overview'      },
@@ -221,6 +231,51 @@ export default function CandidateDashboard() {
                 {/* ── OVERVIEW ── */}
                 {activeSection === 'overview' && (
                     <>
+                        {/* Finance upozorenje — upisnina nije plaćena */}
+                        {financeStatus && !enrollmentPaid && (
+                            <div className="bg-amber-50 border border-amber-300 rounded-xl p-4 flex items-start gap-3">
+                                <AlertTriangle size={20} className="text-amber-500 flex-shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="font-semibold text-amber-800 text-sm">Upisnina nije plaćena</p>
+                                    <p className="text-amber-700 text-sm mt-0.5">
+                                        Niste platili upisninu od <span className="font-bold">300 KM</span>. Bez plaćene upisnine ne možete biti dodani u grupu za teorijsku nastavu. Kontaktirajte administraciju škole.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Finance info — dugovanje */}
+                        {financeStatus && remainingDebt > 0 && (
+                            <div className={`rounded-xl border p-4 flex items-start gap-3 ${
+                                enrollmentPaid
+                                    ? 'bg-blue-50 border-blue-200'
+                                    : 'bg-slate-50 border-slate-200'
+                            }`}>
+                                <Info size={20} className={`flex-shrink-0 mt-0.5 ${enrollmentPaid ? 'text-blue-500' : 'text-slate-400'}`} />
+                                <div>
+                                    <p className="font-semibold text-slate-800 text-sm">Finansijski status</p>
+                                    <p className="text-slate-600 text-sm mt-0.5">
+                                        Ukupno uplaćeno: <span className="font-bold text-green-600">{amountPaid.toFixed(2)} KM</span>
+                                        {' · '}
+                                        Preostalo dugovanje: <span className="font-bold text-red-600">{remainingDebt.toFixed(2)} KM</span>
+                                        {!examEligible && (
+                                            <span className="ml-1 text-slate-500">— za polaganje ispita potrebno je izmiriti sve obaveze.</span>
+                                        )}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Sve plaćeno — pozitivna poruka */}
+                        {financeStatus && remainingDebt === 0 && totalAmount > 0 && (
+                            <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3">
+                                <CheckCircle size={20} className="text-green-500 flex-shrink-0" />
+                                <p className="text-green-800 text-sm font-medium">
+                                    Sve finansijske obaveze su izmirene. Možete pristupiti finalnom ispitu.
+                                </p>
+                            </div>
+                        )}
+
                         {/* Completion banner */}
                         {allDone && (
                             <div className="bg-white rounded-xl border border-slate-200 p-5 flex items-center justify-between">
@@ -420,18 +475,58 @@ export default function CandidateDashboard() {
                 {/* ── FINANCES ── */}
                 {activeSection === 'finances' && (
                     <div className="space-y-6">
+
+                        {/* Status badges */}
+                        {financeStatus && (
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className={`rounded-xl border p-4 flex items-center gap-3 ${
+                                    enrollmentPaid ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'
+                                }`}>
+                                    {enrollmentPaid
+                                        ? <CheckCircle size={22} className="text-green-500 flex-shrink-0" />
+                                        : <XCircle    size={22} className="text-amber-500 flex-shrink-0" />
+                                    }
+                                    <div>
+                                        <p className={`text-sm font-semibold ${enrollmentPaid ? 'text-green-800' : 'text-amber-800'}`}>
+                                            Upisnina (300 KM)
+                                        </p>
+                                        <p className={`text-xs mt-0.5 ${enrollmentPaid ? 'text-green-600' : 'text-amber-600'}`}>
+                                            {enrollmentPaid ? 'Plaćena — možete biti u grupi za teoriju' : 'Nije plaćena — ne možete ući u teorijsku grupu'}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className={`rounded-xl border p-4 flex items-center gap-3 ${
+                                    examEligible ? 'bg-green-50 border-green-200' : 'bg-slate-50 border-slate-200'
+                                }`}>
+                                    {examEligible
+                                        ? <CheckCircle size={22} className="text-green-500 flex-shrink-0" />
+                                        : <XCircle    size={22} className="text-slate-400 flex-shrink-0" />
+                                    }
+                                    <div>
+                                        <p className={`text-sm font-semibold ${examEligible ? 'text-green-800' : 'text-slate-700'}`}>
+                                            Završni ispit
+                                        </p>
+                                        <p className={`text-xs mt-0.5 ${examEligible ? 'text-green-600' : 'text-slate-500'}`}>
+                                            {examEligible ? 'Sve obaveze izmirene' : `Preostaje ${remainingDebt.toFixed(2)} KM`}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Summary kartice */}
                         <div className="bg-white rounded-xl border border-slate-200 p-6">
                             <div className="flex items-center gap-2 mb-4">
                                 <DollarSign size={18} className="text-blue-500" />
-                                <h2 className="text-base font-semibold text-slate-800">Financial overview</h2>
+                                <h2 className="text-base font-semibold text-slate-800">Pregled finansija</h2>
                             </div>
-                            {account ? (
+                            {financeStatus ? (
                                 <>
                                     <div className="grid grid-cols-3 gap-4 mb-5">
                                         {[
-                                            { label: 'Total course price', value: `€${totalAmount.toLocaleString()}`,   color: 'text-slate-800' },
-                                            { label: 'Amount paid',        value: `€${amountPaid.toLocaleString()}`,    color: 'text-green-600' },
-                                            { label: 'Remaining balance',  value: `€${remainingDebt.toLocaleString()}`, color: 'text-red-500'   },
+                                            { label: 'Ukupna cijena obuke', value: `${totalAmount.toFixed(2)} KM`,   color: 'text-slate-800' },
+                                            { label: 'Uplaćeno',            value: `${amountPaid.toFixed(2)} KM`,    color: 'text-green-600' },
+                                            { label: 'Preostalo dugovanje', value: `${remainingDebt.toFixed(2)} KM`, color: remainingDebt > 0 ? 'text-red-500' : 'text-green-600' },
                                         ].map(s => (
                                             <div key={s.label} className="bg-slate-50 rounded-lg p-4 text-center">
                                                 <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
@@ -441,41 +536,102 @@ export default function CandidateDashboard() {
                                     </div>
                                     <div className="space-y-1">
                                         <div className="flex justify-between text-xs text-slate-500">
-                                            <span>Payment progress</span>
-                                            <span className="font-medium text-green-600">{paymentPct}%</span>
+                                            <span>Ukupno plaćeno</span>
+                                            <span className={`font-medium ${paymentPct >= 100 ? 'text-green-600' : 'text-blue-600'}`}>
+                                                {paymentPct}%
+                                            </span>
                                         </div>
                                         <div className="w-full bg-slate-100 rounded-full h-2.5">
-                                            <div className="bg-green-500 h-2.5 rounded-full" style={{ width: `${paymentPct}%` }} />
+                                            <div
+                                                className={`h-2.5 rounded-full transition-all ${paymentPct >= 100 ? 'bg-green-500' : 'bg-blue-500'}`}
+                                                style={{ width: `${Math.min(100, paymentPct)}%` }}
+                                            />
                                         </div>
                                     </div>
                                 </>
                             ) : (
-                                <p className="text-sm text-slate-400 italic">Financial data not available.</p>
+                                <p className="text-sm text-slate-400 italic">Finansijski podaci nisu dostupni. Kontaktirajte administraciju.</p>
                             )}
                         </div>
 
+                        {/* Obligations — upisnina + 4 rate */}
+                        {obligations.length > 0 && (
+                            <div className="bg-white rounded-xl border border-slate-200 p-6">
+                                <h2 className="text-sm font-semibold text-slate-700 mb-1">Raspored uplata</h2>
+                                <p className="text-xs text-slate-400 mb-5">Uplate se raspoređuju automatski po redoslijedu: upisnina → 1. rata → 2. rata → ...</p>
+                                <div className="space-y-4">
+                                    {obligations.map(ob => {
+                                        const pct = Number(ob.totalAmount) > 0
+                                            ? Math.round((Number(ob.paidAmount) / Number(ob.totalAmount)) * 100)
+                                            : 0;
+                                        return (
+                                            <div key={ob.id} className={`rounded-lg border p-4 ${ob.fullyPaid ? 'border-green-200 bg-green-50' : 'border-slate-200 bg-white'}`}>
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <div className="flex items-center gap-2">
+                                                        {ob.fullyPaid
+                                                            ? <CheckCircle size={16} className="text-green-500" />
+                                                            : <Clock size={16} className={ob.paidAmount > 0 ? 'text-blue-400' : 'text-slate-300'} />
+                                                        }
+                                                        <span className="text-sm font-semibold text-slate-800">
+                                                            {ob.label}
+                                                            {ob.type === 'ENROLLMENT' && (
+                                                                <span className="ml-2 text-xs font-normal text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
+                                                                    obavezna za teorijsku grupu
+                                                                </span>
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                                                            ob.fullyPaid
+                                                                ? 'bg-green-100 text-green-700'
+                                                                : ob.paidAmount > 0
+                                                                    ? 'bg-blue-100 text-blue-700'
+                                                                    : 'bg-slate-100 text-slate-500'
+                                                        }`}>
+                                                            {ob.fullyPaid ? 'Plaćeno' : ob.paidAmount > 0 ? 'Djelimično' : 'Nije plaćeno'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex justify-between text-xs text-slate-500 mb-1.5">
+                                                    <span>Uplaćeno: <strong className="text-slate-700">{Number(ob.paidAmount).toFixed(2)} KM</strong></span>
+                                                    <span>Ukupno: <strong className="text-slate-700">{Number(ob.totalAmount).toFixed(2)} KM</strong></span>
+                                                </div>
+                                                <div className="w-full bg-slate-100 rounded-full h-1.5">
+                                                    <div
+                                                        className={`h-1.5 rounded-full transition-all ${ob.fullyPaid ? 'bg-green-500' : 'bg-blue-400'}`}
+                                                        style={{ width: `${pct}%` }}
+                                                    />
+                                                </div>
+                                                {!ob.fullyPaid && Number(ob.remainingAmount) > 0 && (
+                                                    <p className="text-xs text-slate-400 mt-1">
+                                                        Preostaje: <span className="text-red-500 font-medium">{Number(ob.remainingAmount).toFixed(2)} KM</span>
+                                                    </p>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* History uplata */}
                         {payments.length > 0 && (
                             <div className="bg-white rounded-xl border border-slate-200 p-6">
-                                <h2 className="text-sm font-semibold text-slate-700 mb-4">Payment installments</h2>
-                                <div className="space-y-2">
+                                <h2 className="text-sm font-semibold text-slate-700 mb-4">Historija uplata</h2>
+                                <div className="space-y-0">
                                     {payments.map((p, i) => (
                                         <div key={p.paymentId ?? i} className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
                                             <div>
-                                                <p className="text-sm font-medium text-slate-700">#{i + 1} — €{p.amount?.toLocaleString()}</p>
+                                                <p className="text-sm font-medium text-slate-700">
+                                                    Uplata #{i + 1} — <span className="text-green-600 font-bold">{Number(p.amount).toFixed(2)} KM</span>
+                                                </p>
                                                 <p className="text-xs text-slate-400 mt-0.5">
-                                                    Due {p.dueDate ? new Date(p.dueDate).toLocaleDateString('en-GB') : '—'}
-                                                    {p.datePaid && ` · Paid ${new Date(p.datePaid).toLocaleDateString('en-GB')}`}
+                                                    {p.datePaid ? `Plaćeno: ${new Date(p.datePaid).toLocaleDateString('bs-BA')}` : '—'}
                                                 </p>
                                             </div>
-                                            <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
-                                                p.status === 'PAID'      ? 'bg-green-100 text-green-700'   :
-                                                p.status === 'PENDING'   ? 'bg-yellow-100 text-yellow-700' :
-                                                p.status === 'CANCELLED' ? 'bg-red-100 text-red-700'       :
-                                                'bg-slate-100 text-slate-600'
-                                            }`}>
-                                                {p.status === 'PAID'      ? 'Paid'      :
-                                                 p.status === 'PENDING'   ? 'Pending'   :
-                                                 p.status === 'CANCELLED' ? 'Cancelled' : p.status}
+                                            <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-green-100 text-green-700">
+                                                Evidentirano
                                             </span>
                                         </div>
                                     ))}

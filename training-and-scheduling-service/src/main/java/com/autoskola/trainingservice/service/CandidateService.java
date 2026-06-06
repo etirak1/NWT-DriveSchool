@@ -149,7 +149,11 @@ public class CandidateService {
                 .orElseThrow(() -> new RuntimeException("Kandidat nije pronađen"));
 
         Instructor instructor = instructorRepository.findByUserId(instructorUserId)
-                .orElseThrow(() -> new RuntimeException("Instruktor nije pronađen"));
+                .orElseGet(() -> {
+                    Instructor novi = new Instructor();
+                    novi.setUserId(instructorUserId);
+                    return instructorRepository.save(novi);
+                });
 
         candidate.setAssignedInstructor(instructor);
         candidateRepository.save(candidate);

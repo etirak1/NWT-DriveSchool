@@ -13,8 +13,11 @@ const empty = {
     lastTechnicalInspection: '',
 };
 
+const REG_PATTERN = /^[A-Za-z]{1,3}\d{1,3}-[A-Za-z]-\d{3}$/;
+
 export default function VehicleForm({ initial, onSubmit, onCancel, loading }) {
     const [form, setForm] = useState(empty);
+    const [regError, setRegError] = useState('');
 
     useEffect(() => {
         if (initial) {
@@ -36,6 +39,11 @@ export default function VehicleForm({ initial, onSubmit, onCancel, loading }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        if (!REG_PATTERN.test(form.registrationNumber)) {
+            setRegError('Format mora biti: XX123-A-456 (slova, brojevi, crtica, slovo, crtica, 3 broja)');
+            return;
+        }
+        setRegError('');
         onSubmit({
             brand: form.brand,
             model: form.model,
@@ -67,8 +75,14 @@ export default function VehicleForm({ initial, onSubmit, onCancel, loading }) {
                 </div>
                 <div className="form-group">
                     <label>Registracijski broj <span className="req">*</span></label>
-                    <input required value={form.registrationNumber} onChange={set('registrationNumber')}
-                           placeholder="npr. A12-B-345"/>
+                    <input
+                        required
+                        value={form.registrationNumber}
+                        onChange={e => { set('registrationNumber')(e); setRegError(''); }}
+                        placeholder="npr. A12-B-345"
+                        style={regError ? { borderColor: '#ef4444' } : {}}
+                    />
+                    {regError && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>{regError}</p>}
                 </div>
             </div>
 

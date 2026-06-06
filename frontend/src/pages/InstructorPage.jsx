@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { userApi, instructorApi, vehicleApi } from '../services/api';
 import { Spinner, ErrorState } from '../components/States';
 import { useToast } from '../context/ToastContext';
+import { getErrorMessage } from '../utils/helpers';
 import AssignVehicleModal from '../components/AssignVehicleModal';
 
 export default function InstructorsPage() {
@@ -77,7 +78,7 @@ export default function InstructorsPage() {
                     : item
             ));
         } catch (e) {
-            addToast(`Greška: ${e.message}`, 'error');
+            addToast(getErrorMessage(e), 'error');
         } finally {
             setActionLoading(null);
         }
@@ -95,7 +96,7 @@ export default function InstructorsPage() {
             setAssignTarget(null);
             loadCombinedData();
         } catch (e) {
-            addToast(`Greška pri dodjeli vozila: ${e.message}`, 'error');
+            addToast(getErrorMessage(e), 'error');
         } finally {
             setAssigning(false);
         }
