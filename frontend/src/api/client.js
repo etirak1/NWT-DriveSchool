@@ -31,26 +31,30 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    const status = error.response?.status;
-    const isAuthRoute = error.config?.url?.includes('/api/auth/');
+    (response) => response,
+    (error) => {
+        const status = error.response?.status;
+        const isAuthRoute = error.config?.url?.includes('/api/auth/');
 
-    
-    if (isAuthRoute) {
-      return Promise.reject(error);
+        if (isAuthRoute) {
+            return Promise.reject(error);
+        }
+
+        if (status === 401) {
+            localStorage.removeItem('token');
+            window.location.href = '/login?reason=session_expired';
+            return new Promise(() => {});
+        }
+
+        if (!error.response || error.code === 'ECONNABORTED' ||
+            status === 500 || status === 502 || status === 503) {
+            localStorage.removeItem('token');
+            window.location.href = '/login?reason=service_offline';
+            return new Promise(() => {});
+        }
+
+        return Promise.reject(error);
     }
-
-    
-    if (status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login?reason=session_expired';
-      return new Promise(() => {});
-    }
-
-   
-    return Promise.reject(error);
-  }
 );
 
 export const userApi = {

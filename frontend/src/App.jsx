@@ -1,4 +1,6 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
+import { api } from './api/client';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
@@ -43,8 +45,44 @@ function RequireAdmin({ children }) {
     return children;
 }
 
+function UserServiceHealthCheck() {
+    const navigate = useNavigate();
+    const location = useLocation();
+    const isLoginPage = location.pathname === '/login' ||
+        location.pathname === '/register';
+
+    useEffect(() => {
+        if (isLoginPage) return;
+
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const check = async () => {
+            try {
+                await api.get('/api/announcements');
+            } catch (err) {
+                if (!err.response || err.response.status === 500 ||
+                    err.response.status === 502 || err.response.status === 503 ||
+                    err.code === 'ECONNABORTED') {
+                    localStorage.removeItem('token');
+                    navigate('/login', {
+                        state: { message: 'Servis trenutno nije dostupan. Pokušajte kasnije.' }
+                    });
+                }
+            }
+        };
+        check();
+        const interval = setInterval(check, 30000);
+        return () => clearInterval(interval);
+    }, [location.pathname]);
+
+    return null;
+}
+
 export default function App() {
     return (
+        <>
+        <UserServiceHealthCheck />
         <Routes>
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<Login />} />
@@ -103,6 +141,7 @@ export default function App() {
 
             <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
+            </>
     );
 }
 
