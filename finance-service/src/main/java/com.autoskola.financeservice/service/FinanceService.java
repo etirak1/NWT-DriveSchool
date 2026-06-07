@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -50,7 +51,6 @@ public class FinanceService {
         this.modelMapper          = modelMapper;
     }
 
-    // ─── CREATE / ENSURE ────────────────────────────────────────────────────────
 
     @Transactional
     public CandidateStatusDTO getOrCreateByCandidateId(Integer candidateId) {
@@ -69,18 +69,16 @@ public class FinanceService {
         return buildStatus(candidateId, obligations);
     }
 
-    // ─── STATUS ─────────────────────────────────────────────────────────────────
+
 
     @Transactional
     public CandidateStatusDTO getStatus(Integer candidateId) {
         CandidateFinanceAccount account = accountRepository.findByCandidateId(candidateId)
                 .orElseThrow(() -> new RuntimeException("Racun nije pronadjen za kandidata: " + candidateId));
-        // getOrCreateObligations ce kreirati obligations i primijeniti stare uplate ako obligations jos ne postoje
         List<Obligation> obligations = getOrCreateObligations(account);
         return buildStatus(candidateId, obligations);
     }
 
-    // ─── RECORD PAYMENT ─────────────────────────────────────────────────────────
 
     @Transactional
     public CandidateStatusDTO recordPayment(Integer candidateId, BigDecimal amount) {
@@ -93,7 +91,6 @@ public class FinanceService {
 
         List<Obligation> obligations = getOrCreateObligations(account);
 
-        // Distribute payment in order: upisnina → rata1 → rata2 → rata3 → rata4
         BigDecimal remaining = amount;
         for (Obligation obligation : obligations) {
             if (remaining.compareTo(BigDecimal.ZERO) <= 0) break;
@@ -106,7 +103,6 @@ public class FinanceService {
         }
         obligationRepository.saveAll(obligations);
 
-        // Audit trail — record the raw payment
         Payment payment = new Payment();
         payment.setAmount(amount);
         payment.setStatus("PAID");
@@ -115,7 +111,6 @@ public class FinanceService {
         payment.setCandidateAccount(account);
         paymentRepository.save(payment);
 
-        // Update remainingDebt on account
         BigDecimal totalPaid = obligations.stream()
                 .map(Obligation::getPaidAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -125,12 +120,20 @@ public class FinanceService {
         return buildStatus(candidateId, obligations);
     }
 
-    // ─── READ ────────────────────────────────────────────────────────────────────
 
     public List<CandidateFinanceAccountDTO> getAllAccounts() {
-        return accountRepository.findAllWithPayments()
+        List<CandidateFinanceAccount> accounts = accountRepository.findAllWithPayments();
+
+        List<Integer> accountIds = accounts.stream()
+                .map(CandidateFinanceAccount::getId)
+                .collect(Collectors.toList());
+        Map<Integer, List<Obligation>> obligationsByAccount = obligationRepository
+                .findByAccount_IdInOrderByAccount_IdAscOrderIndexAsc(accountIds)
                 .stream()
-                .map(this::convertToDto)
+                .collect(Collectors.groupingBy(o -> o.getAccount().getId()));
+
+        return accounts.stream()
+                .map(account -> convertToDto(account, obligationsByAccount.getOrDefault(account.getId(), List.of())))
                 .collect(Collectors.toList());
     }
 
@@ -151,7 +154,6 @@ public class FinanceService {
                 .collect(Collectors.toList());
     }
 
-    // ─── PATCH ──────────────────────────────────────────────────────────────────
 
     @Transactional
     public CandidateFinanceAccountDTO applyPatchToAccount(Integer id, JsonPatch patch) {
@@ -183,13 +185,11 @@ public class FinanceService {
         private List<com.autoskola.financeservice.model.Payment> payments;
     }
 
-    // ─── HELPERS ────────────────────────────────────────────────────────────────
 
     private List<Obligation> getOrCreateObligations(CandidateFinanceAccount account) {
         if (obligationRepository.existsByAccount_CandidateId(account.getCandidateId())) {
             return obligationRepository.findByAccountOrderByOrderIndex(account);
         }
-        // Kreiraj obligations i odmah primijeni sve vec evidentirane uplate (migracija starih podataka)
         List<Obligation> obligations = createObligationsForAccount(account);
         migrateExistingPayments(account, obligations);
         return obligations;
@@ -200,7 +200,6 @@ public class FinanceService {
                 .findByCandidateAccount_CandidateIdOrderByDatePaidDesc(account.getCandidateId());
         if (existing.isEmpty()) return;
 
-        // Primijeni kronoloski (najstarija prva)
         java.util.Collections.reverse(existing);
         for (Payment payment : existing) {
             BigDecimal remaining = payment.getAmount();
@@ -287,11 +286,11 @@ public class FinanceService {
     }
 
     private CandidateFinanceAccountDTO convertToDto(CandidateFinanceAccount account) {
-        // Rucno gradimo DTO — izbjegavamo ModelMapper beskonacnu petlju
-        // (Obligation.account → CandidateFinanceAccount.obligations → Obligation ...)
-        // Uvijek ucitavamo iz repo-a da izbjegnemo LazyInitializationException
-        // (obligations nije u @EntityGraph jer Hibernate ne moze fetcha dvije List kolekcije odjednom)
         List<Obligation> obligations = obligationRepository.findByAccountOrderByOrderIndex(account);
+        return convertToDto(account, obligations);
+    }
+
+    private CandidateFinanceAccountDTO convertToDto(CandidateFinanceAccount account, List<Obligation> obligations) {
 
         List<ObligationDTO> obligationDTOs = obligations.stream().map(o -> {
             ObligationDTO odto = new ObligationDTO();
@@ -314,13 +313,11 @@ public class FinanceService {
         boolean enrollmentEligible = !obligationDTOs.isEmpty() && obligationDTOs.get(0).isFullyPaid();
         boolean examEligible = remainingDebt.compareTo(BigDecimal.ZERO) == 0 && !obligationDTOs.isEmpty();
 
-        // Mapiramo user DTO ako postoji
         com.autoskola.financeservice.dto.UserDTO userDTO = null;
         if (account.getUser() != null) {
             userDTO = modelMapper.map(account.getUser(), com.autoskola.financeservice.dto.UserDTO.class);
         }
 
-        // Mapiramo payments ako postoje
         List<com.autoskola.financeservice.dto.PaymentDTO> paymentDTOs = null;
         if (account.getPayments() != null) {
             paymentDTOs = account.getPayments().stream()

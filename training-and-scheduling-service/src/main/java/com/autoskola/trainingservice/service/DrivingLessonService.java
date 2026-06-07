@@ -5,6 +5,7 @@ import com.autoskola.trainingservice.model.DrivingLesson;
 import com.autoskola.trainingservice.model.TrainingPhase;
 import com.autoskola.trainingservice.repository.CandidateRepository;
 import com.autoskola.trainingservice.repository.DrivingLessonRepository;
+import com.autoskola.trainingservice.repository.TheoryLessonRepository;
 import com.autoskola.trainingservice.repository.TrainingPhaseRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
@@ -19,13 +20,16 @@ public class DrivingLessonService {
     private final DrivingLessonRepository drivingLessonRepository;
     private final CandidateRepository candidateRepository;
     private final TrainingPhaseRepository trainingPhaseRepository;
+    private final TheoryLessonRepository theoryLessonRepository;
 
     public DrivingLessonService(DrivingLessonRepository drivingLessonRepository,
                                 CandidateRepository candidateRepository,
-                                TrainingPhaseRepository trainingPhaseRepository) {
+                                TrainingPhaseRepository trainingPhaseRepository,
+                                TheoryLessonRepository theoryLessonRepository) {
         this.drivingLessonRepository = drivingLessonRepository;
         this.candidateRepository = candidateRepository;
         this.trainingPhaseRepository = trainingPhaseRepository;
+        this.theoryLessonRepository = theoryLessonRepository;
     }
 
     public List<DrivingLesson> getLessonsForCandidate(Long candidateId) {
@@ -37,17 +41,20 @@ public class DrivingLessonService {
         if (drivingLessonRepository.findByCandidateCandidateIdAndLessonNumber(candidateId, lessonNumber).isPresent()) {
             throw new IllegalArgumentException("Čas broj " + lessonNumber + " već postoji za ovog kandidata.");
         }
-        List<TrainingPhase> theoryPhases = trainingPhaseRepository
-                .findByCandidateCandidateIdAndPhaseTypeIgnoreCase(candidateId, "TEORIJSKI DIO");
-        boolean theoryPassed = theoryPhases.stream()
-                .anyMatch(p -> "POLOŽENO".equalsIgnoreCase(p.getStatus()));
-        if (!theoryPassed) {
-            throw new IllegalArgumentException("Kandidat mora imati položenu teoriju prije nego što može zakazati čas vožnje.");
+        boolean theoryExamPassed =
+                trainingPhaseRepository.findByCandidateCandidateIdAndPhaseTypeIgnoreCase(candidateId, "TEORIJSKI ISPIT")
+                        .stream().anyMatch(p -> "POLOŽENO".equalsIgnoreCase(p.getStatus()))
+                || trainingPhaseRepository.findByCandidateCandidateIdAndPhaseTypeIgnoreCase(candidateId, "TEORIJSKI DIO")
+                        .stream().anyMatch(p -> "POLOŽENO".equalsIgnoreCase(p.getStatus()))
+                || theoryLessonRepository.countByCandidateCandidateIdAndCompletedTrue(candidateId) >= 40;
+
+        if (!theoryExamPassed) {
+            throw new IllegalArgumentException("Kandidat mora položiti teorijski ispit prije nego što može zakazati čas vožnje.");
         }
 
 
         Candidate candidate = candidateRepository.findById(candidateId)
-                .orElseThrow(() -> new RuntimeException("Kandidat nije pronađen."));
+                .orElseThrow(() -> new IllegalArgumentException("Kandidat sa ID-om " + candidateId + " nije pronađen."));
 
         DrivingLesson lesson = new DrivingLesson(candidate, lessonNumber, date, notes);
         DrivingLesson saved = drivingLessonRepository.save(lesson);

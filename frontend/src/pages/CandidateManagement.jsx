@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../api/client';
-import { GraduationCap, LogOut, UserCheck, BookOpen, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react';
+import { LogOut, UserCheck, BookOpen, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react';
 import { getCurrentEmail, getCurrentRole } from '../auth/jwt';
 import TheoryLessonsModal from '../components/TheoryLessonsModal';
+import TrainingTimeline from '../components/TrainingTimeline';
 
-const PHASE_TYPES = ['TEORIJSKI DIO', 'PRAKTIČNA VOŽNJA', 'POLIGON', 'GRADSKA VOŽNJA', 'ISPIT'];
-const PHASE_STATUSES = ['U TOKU', 'POLOŽENO', 'NEPOLOŽENO', 'ZAKAZANO'];
 
 export default function CandidateManagement() {
     const navigate = useNavigate();
@@ -17,10 +16,11 @@ export default function CandidateManagement() {
     const [instructors, setInstructors] = useState([]);
     const [loading, setLoading] = useState(true);
     const [expandedCandidate, setExpandedCandidate] = useState(null);
-    const [phases, setPhases] = useState({});
     const [successMsg, setSuccessMsg] = useState('');
     const [errorMsg, setErrorMsg] = useState('');
     const [theoryModalCandidate, setTheoryModalCandidate] = useState(null);
+    const [timelineRefreshCount, setTimelineRefreshCount] = useState(0);
+    const [inlineErrors, setInlineErrors] = useState({});
 
     useEffect(() => {
         const loadData = async () => {
@@ -40,49 +40,22 @@ export default function CandidateManagement() {
         loadData();
     }, []);
 
-    const loadPhases = async (candidateId) => {
-        if (phases[candidateId]) return;
-        try {
-            const res = await api.get(`/api/phases/candidate/${candidateId}`);
-            setPhases(prev => ({ ...prev, [candidateId]: res.data }));
-        } catch (err) {
-            setPhases(prev => ({ ...prev, [candidateId]: [] }));
-        }
-    };
-
-    const toggleExpand = async (candidateId) => {
-        if (expandedCandidate === candidateId) {
-            setExpandedCandidate(null);
-        } else {
-            setExpandedCandidate(candidateId);
-            await loadPhases(candidateId);
-        }
+    const toggleExpand = (candidateId) => {
+        setExpandedCandidate(prev => prev === candidateId ? null : candidateId);
     };
     const assignInstructor = async (candidateId, instructorUserId) => {
         if (!instructorUserId) return;
+        setInlineErrors(prev => ({ ...prev, [candidateId]: null }));
         try {
             await api.patch(`/api/candidates/${candidateId}/assign-instructor/${instructorUserId}`);
             const res = await api.get('/api/candidates');
             setCandidates(res.data);
             showSuccess('Instruktor uspješno dodijeljen!');
         } catch (err) {
-            showError('Greška pri dodjeljivanju instruktora.');
+            const msg = err.response?.data?.message || 'Greška pri dodjeljivanju instruktora.';
+            setInlineErrors(prev => ({ ...prev, [candidateId]: msg }));
+            setTimeout(() => setInlineErrors(prev => ({ ...prev, [candidateId]: null })), 6000);
         }
-    };
-
-    const addPhase = async (candidateId, phaseType, status) => {
-        const existing = phases[candidateId] || [];
-        if (existing.some(p => p.phaseType === phaseType)) {
-            throw new Error(`Faza "${phaseType}" već postoji za ovog kandidata.`);
-        }
-        await api.post('/api/phases', {
-            candidate: { candidateId },
-            phaseType,
-            status,
-            dateCompleted: status === 'POLOŽENO' ? new Date().toISOString().split('T')[0] : null
-        });
-        const res = await api.get(`/api/phases/candidate/${candidateId}`);
-        setPhases(prev => ({ ...prev, [candidateId]: res.data }));
     };
 
     const showSuccess = (msg) => {
@@ -147,46 +120,47 @@ export default function CandidateManagement() {
                     {candidates.map(candidate => (
                         <div key={candidate.candidateId} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                             <div className="p-5 flex items-center justify-between">
-                                <div>
-                                    <p className="font-semibold text-slate-800">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-blue-100 w-9 h-9 rounded-full flex items-center justify-center shrink-0">
+                                        <span className="text-blue-600 font-bold text-sm">
+                                            {(candidate.user?.firstName?.[0] || '').toUpperCase()}{(candidate.user?.lastName?.[0] || '').toUpperCase()}
+                                        </span>
+                                    </div>
+                                    <p className="font-semibold text-slate-800 uppercase tracking-wide">
                                         {candidate.user?.firstName} {candidate.user?.lastName}
-                                    </p>
-                                    <p className="text-sm text-slate-500">{candidate.user?.email || '-'}</p>
-                                    <p className="text-xs text-slate-400 mt-1">
-                                        Napredak: <span className="font-medium text-blue-600">{candidate.progressPercentage}%</span>
                                     </p>
                                 </div>
 
                                 <div className="flex items-center gap-3">
-                                    <div className="flex items-center gap-2">
-                                        <UserCheck size={16} className="text-slate-400" />
-                                        <select
-                                            className="text-sm border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            value={candidate.assignedInstructor?.user?.userId || ''}
-                                            onChange={e => assignInstructor(candidate.candidateId, e.target.value)}
-                                        >
-                                            <option value="">Odaberi instruktora</option>
-                                            {instructors.map(inst => (
-                                                <option key={inst.instructorId} value={inst.user?.userId}>
-                                                    {inst.user?.firstName} {inst.user?.lastName}
-                                                </option>
-                                            ))}
-                                        </select>
+                                    <div className="flex flex-col gap-1">
+                                        <div className="flex items-center gap-2">
+                                            <UserCheck size={16} className="text-slate-400" />
+                                            <select
+                                                className={`text-sm border rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 ${inlineErrors[candidate.candidateId] ? 'border-red-400' : 'border-slate-200'}`}
+                                                value={candidate.assignedInstructor?.user?.userId || ''}
+                                                onChange={e => assignInstructor(candidate.candidateId, e.target.value)}
+                                            >
+                                                <option value="">Odaberi instruktora</option>
+                                                {instructors.map(inst => (
+                                                    <option key={inst.instructorId} value={inst.user?.userId}>
+                                                        {inst.user?.firstName} {inst.user?.lastName}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        {inlineErrors[candidate.candidateId] && (
+                                            <p className="text-xs text-red-600 max-w-xs leading-snug">
+                                                ⚠️ {inlineErrors[candidate.candidateId]}
+                                            </p>
+                                        )}
                                     </div>
 
-                                    <button
-                                        onClick={() => setTheoryModalCandidate(candidate)}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg font-medium"
-                                    >
-                                        <GraduationCap size={14} />
-                                        Teorija
-                                    </button>
                                     <button
                                         onClick={() => toggleExpand(candidate.candidateId)}
                                         className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-slate-100 hover:bg-slate-200 rounded-lg"
                                     >
                                         <BookOpen size={14} />
-                                        Faze
+                                        Tok obuke
                                         {expandedCandidate === candidate.candidateId ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                                     </button>
                                 </div>
@@ -194,27 +168,12 @@ export default function CandidateManagement() {
 
                             {expandedCandidate === candidate.candidateId && (
                                 <div className="border-t border-slate-100 p-5 bg-slate-50">
-                                    <h4 className="text-sm font-semibold text-slate-700 mb-3">Faze obuke</h4>
-                                    {phases[candidate.candidateId]?.length > 0 ? (
-                                        <div className="space-y-2 mb-4">
-                                            {phases[candidate.candidateId].map(phase => (
-                                                <div key={phase.phaseId} className="flex items-center justify-between bg-white rounded-lg px-4 py-2 border border-slate-200">
-                                                    <span className="text-sm font-medium text-slate-700">{phase.phaseType}</span>
-                                                    <span className={`text-xs px-2 py-1 rounded-full font-semibold ${
-                                                        phase.status === 'POLOŽENO' ? 'bg-green-100 text-green-700' :
-                                                        phase.status === 'NEPOLOŽENO' ? 'bg-red-100 text-red-700' :
-                                                        phase.status === 'U TOKU' ? 'bg-blue-100 text-blue-700' :
-                                                        'bg-yellow-100 text-yellow-700'
-                                                    }`}>
-                                                        {phase.status}
-                                                    </span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <p className="text-sm text-slate-400 italic mb-4">Nema dodanih faza.</p>
-                                    )}
-                                    <AddPhaseForm candidateId={candidate.candidateId} onAdd={addPhase} existingPhases={phases[candidate.candidateId] || []} />
+                                    <h4 className="text-sm font-semibold text-slate-700 mb-3">Tok obuke</h4>
+                                    <TrainingTimeline
+                                        candidate={candidate}
+                                        onOpenTheory={(c) => setTheoryModalCandidate(c)}
+                                        refreshToken={timelineRefreshCount}
+                                    />
                                 </div>
                             )}
                         </div>
@@ -225,7 +184,14 @@ export default function CandidateManagement() {
             {theoryModalCandidate && (
                 <TheoryLessonsModal
                     candidate={theoryModalCandidate}
-                    onClose={() => setTheoryModalCandidate(null)}
+                    onClose={() => { setTheoryModalCandidate(null); setTimelineRefreshCount(c => c + 1); }}
+                    onProgressUpdate={(candidateId, newPct) => {
+                        setCandidates(prev => prev.map(c =>
+                            c.candidateId === candidateId
+                                ? { ...c, progressPercentage: newPct }
+                                : c
+                        ));
+                    }}
                 />
             )}
 
@@ -233,57 +199,3 @@ export default function CandidateManagement() {
     );
 }
 
-function AddPhaseForm({ candidateId, onAdd }) {
-    const [phaseType, setPhaseType] = useState(PHASE_TYPES[0]);
-    const [status, setStatus] = useState(PHASE_STATUSES[0]);
-    const [saving, setSaving] = useState(false);
-    const [msg, setMsg] = useState(null);
-
-    const handleAdd = async () => {
-        setSaving(true);
-        setMsg(null);
-        try {
-            await onAdd(candidateId, phaseType, status);
-            setMsg({ text: 'Faza uspješno dodana!', type: 'success' });
-        } catch (err) {
-            const text = err.response?.data?.message || err.message || 'Greška pri dodavanju faze.';
-            setMsg({ text, type: 'error' });
-        } finally {
-            setSaving(false);
-            setTimeout(() => setMsg(null), 3000);
-        }
-    };
-
-    return (
-        <div className="space-y-2">
-            <div className="flex items-center gap-2 flex-wrap">
-                <select
-                    value={phaseType}
-                    onChange={e => setPhaseType(e.target.value)}
-                    className="text-sm border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                    {PHASE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-                <select
-                    value={status}
-                    onChange={e => setStatus(e.target.value)}
-                    className="text-sm border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                    {PHASE_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-                <button
-                    onClick={handleAdd}
-                    disabled={saving}
-                    className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                >
-                    {saving ? 'Dodavanje...' : '+ Dodaj fazu'}
-                </button>
-            </div>
-            {msg && (
-                <p className={`text-xs px-2 py-1 rounded ${msg.type === 'success' ? 'text-green-700 bg-green-50' : 'text-red-700 bg-red-50'}`}>
-                    {msg.text}
-                </p>
-            )}
-        </div>
-    );
-}

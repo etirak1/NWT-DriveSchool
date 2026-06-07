@@ -7,7 +7,9 @@ import com.autoskola.trainingservice.dto.LessonEvent;
 import com.autoskola.trainingservice.model.Candidate;
 import com.autoskola.trainingservice.model.Instructor;
 import com.autoskola.trainingservice.model.Lesson;
+import com.autoskola.trainingservice.model.DrivingLesson;
 import com.autoskola.trainingservice.repository.CandidateRepository;
+import com.autoskola.trainingservice.repository.DrivingLessonRepository;
 import com.autoskola.trainingservice.repository.LessonRepository;
 import com.autoskola.trainingservice.config.RabbitMQConfig;
 import com.autoskola.trainingservice.repository.TrainingPhaseRepository;
@@ -15,6 +17,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,17 +32,20 @@ public class LessonService {
     private final CandidateRepository candidateRepository;
     private final RabbitTemplate rabbitTemplate;
     private final TrainingPhaseRepository phaseRepository;
+    private final DrivingLessonRepository drivingLessonRepository;
 
     public LessonService(LessonRepository lessonRepository,
                          UserClient userClient,
                          CandidateRepository candidateRepository,
                          RabbitTemplate rabbitTemplate,
-                         TrainingPhaseRepository phaseRepository) {
+                         TrainingPhaseRepository phaseRepository,
+                         DrivingLessonRepository drivingLessonRepository) {
         this.lessonRepository = lessonRepository;
         this.userClient = userClient;
         this.candidateRepository = candidateRepository;
         this.rabbitTemplate = rabbitTemplate;
         this.phaseRepository = phaseRepository;
+        this.drivingLessonRepository = drivingLessonRepository;
     }
 
     private UserDTO safeGetUser(Long userId, String fallbackRole) {
@@ -73,16 +79,17 @@ public class LessonService {
 
         String tip = lesson.getLessonType() == null ? "" : lesson.getLessonType().toUpperCase();
         if ("VOŽNJA".equals(tip)) {
-            List<com.autoskola.trainingservice.model.TrainingPhase> teorijskaFaze =
+            boolean polozenaTeorija =
                     phaseRepository.findByCandidateCandidateIdAndPhaseTypeIgnoreCase(
-                            candidate.getCandidateId(), "TEORIJSKI DIO");
-
-            boolean polozenaTeorija = teorijskaFaze.stream()
-                    .anyMatch(p -> "POLOŽENO".equalsIgnoreCase(p.getStatus()));
+                                    candidate.getCandidateId(), "TEORIJSKI DIO")
+                            .stream().anyMatch(p -> "POLOŽENO".equalsIgnoreCase(p.getStatus()))
+                    || phaseRepository.findByCandidateCandidateIdAndPhaseTypeIgnoreCase(
+                                    candidate.getCandidateId(), "TEORIJSKI ISPIT")
+                            .stream().anyMatch(p -> "POLOŽENO".equalsIgnoreCase(p.getStatus()));
 
             if (!polozenaTeorija) {
                 throw new RuntimeException(
-                        "Ne možete zakazati čas vožnje dok ne položite teorijski dio obuke.");
+                        "Ne možete zakazati čas vožnje dok ne položite teorijski ispit.");
             }
 
             Integer limit = (candidate.getRule() != null && candidate.getRule().getMaxLessonsPerWeek() != null)
@@ -191,6 +198,24 @@ public class LessonService {
         if (topicCovered != null && !topicCovered.isBlank()) lesson.setTopic(topicCovered);
         if (teacherNotes != null && !teacherNotes.isBlank()) lesson.setNotes(teacherNotes);
         lessonRepository.save(lesson);
+
+        if ("VOŽNJA".equalsIgnoreCase(lesson.getLessonType())) {
+            Candidate candidate = lesson.getCandidate();
+            long existingCount = drivingLessonRepository.countByCandidateCandidateId(candidate.getCandidateId());
+            int nextNumber = (int) existingCount + 1;
+            boolean alreadyExists = drivingLessonRepository
+                    .findByCandidateCandidateIdAndLessonNumber(candidate.getCandidateId(), nextNumber)
+                    .isPresent();
+            if (!alreadyExists && nextNumber <= 40) {
+                String notes = lesson.getNotes() != null ? lesson.getNotes()
+                        : (lesson.getTopic() != null ? lesson.getTopic() : null);
+                drivingLessonRepository.save(new DrivingLesson(
+                        candidate, nextNumber,
+                        lesson.getDateTime().toLocalDate(),
+                        notes));
+            }
+        }
+
         return "Čas uspješno završen";
 
 
@@ -267,6 +292,92 @@ public class LessonService {
                 });
     }
     @Transactional
+    public LessonDTO proposeLesson(Long candidateId, LocalDateTime dateTime, Integer duration, String notes) {
+        Candidate candidate = candidateRepository.findById(candidateId)
+                .orElseThrow(() -> new RuntimeException("Kandidat nije pronađen"));
+
+        Instructor instructor = candidate.getAssignedInstructor();
+        if (instructor == null) {
+            throw new RuntimeException("Kandidat nema dodijeljen instruktor.");
+        }
+
+        int dur = (duration != null && duration > 0) ? duration : 45;
+        LocalDateTime endTime = dateTime.plusMinutes(dur);
+
+        List<Lesson> instructorConflicts = lessonRepository
+                .findOverlappingInstructorLessons(instructor.getInstructorId(), dateTime, endTime);
+        if (!instructorConflicts.isEmpty()) {
+            throw new RuntimeException("Instruktor već ima zakazan čas u tom terminu.");
+        }
+
+        Long vehicleId = instructor.getAssignedVehicleId();
+        if (vehicleId != null) {
+            List<Lesson> vehicleConflicts = lessonRepository
+                    .findOverlappingVehicleLessons(vehicleId, dateTime, endTime);
+            if (!vehicleConflicts.isEmpty()) {
+                throw new RuntimeException("Vozilo je već zauzeto u tom terminu.");
+            }
+        }
+
+        Lesson lesson = new Lesson();
+        lesson.setCandidate(candidate);
+        lesson.setInstructor(instructor);
+        lesson.setVehicleId(vehicleId);
+        lesson.setDateTime(dateTime);
+        lesson.setDuration(dur);
+        lesson.setStatus("PENDING");
+        lesson.setLessonType("VOŽNJA");
+        lesson.setNotes(notes);
+
+        Lesson saved = lessonRepository.save(lesson);
+        return getLessonDetails(saved.getLessonId());
+    }
+
+    @Transactional
+    public LessonDTO confirmLesson(Long lessonId, Long userId) {
+        Lesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new RuntimeException("Čas nije pronađen"));
+
+        if (!"PENDING".equalsIgnoreCase(lesson.getStatus())) {
+            throw new RuntimeException("Može se potvrditi samo čas koji čeka potvrdu.");
+        }
+        if (!lesson.getCandidate().getUserId().equals(userId)) {
+            throw new RuntimeException("Nemate dozvolu za potvrdu ovog časa.");
+        }
+
+        lesson.setStatus("ZAKAZANO");
+        lessonRepository.save(lesson);
+        return getLessonDetails(lessonId);
+    }
+
+    @Transactional
+    public LessonDTO rejectLesson(Long lessonId, Long userId) {
+        Lesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new RuntimeException("Čas nije pronađen"));
+
+        if (!"PENDING".equalsIgnoreCase(lesson.getStatus())) {
+            throw new RuntimeException("Može se odbiti samo čas koji čeka potvrdu.");
+        }
+        if (!lesson.getCandidate().getUserId().equals(userId)) {
+            throw new RuntimeException("Nemate dozvolu za odbijanje ovog časa.");
+        }
+
+        lesson.setStatus("OTKAZANO");
+        lessonRepository.save(lesson);
+        return getLessonDetails(lessonId);
+    }
+
+    public List<LessonDTO> getPendingForCandidate(Long userId) {
+        return lessonRepository.findPendingByCandidate(userId).stream()
+                .map(l -> {
+                    UserDTO inst = safeGetUser(l.getInstructor().getUserId(), "INSTRUCTOR");
+                    UserDTO cand = safeGetUser(l.getCandidate().getUserId(), "CANDIDATE");
+                    return new LessonDTO(l, inst, cand);
+                })
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    @Transactional
     public LessonDTO rescheduleLesson(Long lessonId, LocalDateTime newDateTime, Long userId) {
         Lesson lesson = lessonRepository.findById(lessonId)
                 .orElseThrow(() -> new RuntimeException("Čas nije pronađen"));
@@ -286,7 +397,6 @@ public class LessonService {
         Instructor instructor = lesson.getInstructor();
         java.time.LocalDateTime newEnd = newDateTime.plusMinutes(lesson.getDuration());
 
-        // Provjera konflikta instruktora (isključi trenutni čas)
         List<Lesson> conflicts = lessonRepository
                 .findOverlappingInstructorLessons(instructor.getInstructorId(), newDateTime, newEnd)
                 .stream()
@@ -297,7 +407,6 @@ public class LessonService {
             throw new RuntimeException("Instruktor već ima zakazan čas u tom terminu.");
         }
 
-        // Provjera konflikta vozila (isključi trenutni čas)
         if (lesson.getVehicleId() != null) {
             List<Lesson> vehicleConflicts = lessonRepository
                     .findOverlappingVehicleLessons(lesson.getVehicleId(), newDateTime, newEnd)

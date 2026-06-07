@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
-import { BookOpen, Plus, Users, Calendar, Clock, ArrowLeft, LogOut, ChevronRight } from 'lucide-react';
+import { BookOpen, Plus, Users, Calendar, Clock, ArrowLeft, LogOut, ChevronRight, Trash2 } from 'lucide-react';
 import { getCurrentEmail, getCurrentRole } from '../auth/jwt';
 import TheoryPlanCreateModal from '../components/TheoryPlanCreateModal';
 import TheoryPlanViewModal from '../components/TheoryPlanViewModal';
@@ -19,6 +19,7 @@ export default function TheoryPlansPage() {
     const [error, setError] = useState('');
     const [createOpen, setCreateOpen] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState(null);
+    const [deletingPlanId, setDeletingPlanId] = useState(null);
 
     const loadData = async () => {
         setLoading(true);
@@ -49,6 +50,17 @@ export default function TheoryPlansPage() {
     };
 
     useEffect(() => { loadData(); }, []);
+
+    const deletePlan = async (planId) => {
+        try {
+            await api.delete(`/api/theory-plans/${planId}`);
+            setDeletingPlanId(null);
+            loadData();
+        } catch (e) {
+            setError(e.response?.data?.message || 'Greška pri brisanju grupe.');
+            setDeletingPlanId(null);
+        }
+    };
 
     const DAY_LABELS = {
         MONDAY: 'Ponedjeljak', TUESDAY: 'Utorak', WEDNESDAY: 'Srijeda',
@@ -175,13 +187,22 @@ export default function TheoryPlansPage() {
                                                 )}
                                             </div>
 
-                                            <button
-                                                onClick={() => setSelectedPlan(plan)}
-                                                className="flex items-center gap-1.5 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-sm font-semibold shrink-0"
-                                            >
-                                                Pregled
-                                                <ChevronRight size={14} />
-                                            </button>
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <button
+                                                    onClick={() => setSelectedPlan(plan)}
+                                                    className="flex items-center gap-1.5 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-sm font-semibold"
+                                                >
+                                                    Pregled
+                                                    <ChevronRight size={14} />
+                                                </button>
+                                                <button
+                                                    onClick={() => setDeletingPlanId(plan.id)}
+                                                    className="flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-sm font-semibold"
+                                                    title="Obriši grupu"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -206,6 +227,31 @@ export default function TheoryPlansPage() {
                     plan={selectedPlan}
                     onClose={() => setSelectedPlan(null)}
                 />
+            )}
+
+            {deletingPlanId && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+                        <h3 className="font-bold text-slate-800 mb-2">Obriši grupu?</h3>
+                        <p className="text-sm text-slate-500 mb-5">
+                            Ova akcija će obrisati grupu i sve njene termine. Ne može se poništiti.
+                        </p>
+                        <div className="flex justify-end gap-2">
+                            <button
+                                onClick={() => setDeletingPlanId(null)}
+                                className="px-4 py-2 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg"
+                            >
+                                Odustani
+                            </button>
+                            <button
+                                onClick={() => deletePlan(deletingPlanId)}
+                                className="px-4 py-2 text-sm text-white bg-red-600 hover:bg-red-700 rounded-lg font-semibold"
+                            >
+                                Obriši
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

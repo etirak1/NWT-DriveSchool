@@ -24,8 +24,6 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
     @Override
     public GatewayFilter apply(Config config) {
         return (exchange, chain) -> {
-            // CORS preflight (OPTIONS) zahtjev nema Authorization header — pusti ga da prođe,
-            // inače browser nikad ne pošalje pravi POST/GET zahtjev.
             if (exchange.getRequest().getMethod() == HttpMethod.OPTIONS) {
                 return chain.filter(exchange);
             }

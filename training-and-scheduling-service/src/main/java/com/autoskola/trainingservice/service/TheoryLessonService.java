@@ -138,15 +138,12 @@ public class TheoryLessonService {
         return theoryLessonRepository.countByCandidateCandidateIdAndCompletedTrue(candidateId);
     }
 
-    /**
-     * Marks only lessons in the range [fromLesson, toLesson] as completed.
-     * Used by session attendance — does NOT fill gaps from previously missed sessions.
-     */
+
     @Transactional
     public void markSessionRange(Long candidateId, int fromLesson, int toLesson) {
         if (fromLesson < 1 || toLesson > TOTAL_LESSONS || fromLesson > toLesson) return;
 
-        getLessonsForCandidate(candidateId); // ensure initialized
+        getLessonsForCandidate(candidateId);
 
         List<TheoryLesson> toMark = theoryLessonRepository
                 .findByCandidateCandidateIdOrderByLessonNumber(candidateId)

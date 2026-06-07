@@ -24,10 +24,10 @@ public class TheoryPlan {
     private LocalDate startDate;
 
     @Column(nullable = false)
-    private String day1OfWeek; // npr. "TUESDAY"
+    private String day1OfWeek;
 
     @Column(nullable = false)
-    private String day2OfWeek; // npr. "THURSDAY"
+    private String day2OfWeek;
 
     @Column(nullable = false)
     private LocalTime startTime;

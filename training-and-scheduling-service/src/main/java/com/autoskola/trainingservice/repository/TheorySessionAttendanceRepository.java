@@ -22,4 +22,20 @@ public interface TheorySessionAttendanceRepository extends JpaRepository<TheoryS
     @Query("SELECT COUNT(a) FROM TheorySessionAttendance a " +
            "WHERE a.session.plan.id = :planId AND a.candidate.candidateId = :candidateId AND a.present = true")
     long countAttendedByPlanAndCandidate(@Param("planId") Long planId, @Param("candidateId") Long candidateId);
+
+    @Query("SELECT COALESCE(SUM(a.session.lessonTo - a.session.lessonFrom + 1), 0) " +
+           "FROM TheorySessionAttendance a " +
+           "WHERE a.candidate.candidateId = :candidateId AND a.present = true AND a.session.status = 'ODRZANO'")
+    long sumAttendedLessonsByCandidate(@Param("candidateId") Long candidateId);
+
+    @Query("SELECT COALESCE(SUM(a.session.lessonTo - a.session.lessonFrom + 1), 0) " +
+           "FROM TheorySessionAttendance a " +
+           "WHERE a.session.plan.id = :planId AND a.candidate.candidateId = :candidateId " +
+           "AND a.present = true AND a.session.status = 'ODRZANO'")
+    long sumAttendedLessonsByPlanAndCandidate(@Param("planId") Long planId, @Param("candidateId") Long candidateId);
+
+    @Query("SELECT a FROM TheorySessionAttendance a " +
+           "WHERE a.candidate.candidateId = :candidateId " +
+           "ORDER BY a.session.date ASC, a.session.sessionNumber ASC")
+    List<TheorySessionAttendance> findByCandidateIdOrderBySession(@Param("candidateId") Long candidateId);
 }

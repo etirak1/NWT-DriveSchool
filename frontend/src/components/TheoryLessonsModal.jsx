@@ -47,7 +47,7 @@ const LESSON_TITLES = [
     'Ponavljanje i priprema za ispit',
 ];
 
-export default function TheoryLessonsModal({ candidate, onClose }) {
+export default function TheoryLessonsModal({ candidate, onClose, onProgressUpdate }) {
     const [lessons, setLessons] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(null);
@@ -79,6 +79,12 @@ export default function TheoryLessonsModal({ candidate, onClose }) {
     const completedCount = lessons.filter(l => l.completed).length;
     const allDone = completedCount === TOTAL;
     const progressPct = Math.round((completedCount / TOTAL) * 100);
+
+    useEffect(() => {
+        if (onProgressUpdate && lessons.length > 0) {
+            onProgressUpdate(candidateId, progressPct);
+        }
+    }, [completedCount]);
 
     const isInteractive = (lesson) =>
         lesson.lessonNumber === completedCount + 1 ||

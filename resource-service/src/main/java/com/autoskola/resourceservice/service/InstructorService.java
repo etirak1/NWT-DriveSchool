@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -47,13 +48,24 @@ public class InstructorService {
     }
 
     public List<InstructorDTO> getAllInstructors() {
-        return instructorRepository.findAll().stream()
+        List<Instructor> instructors = instructorRepository.findAll();
+
+        // Jedan upit za sve korisnike umjesto N upita
+        List<Long> userIds = instructors.stream()
+                .map(Instructor::getUserId)
+                .collect(Collectors.toList());
+        Map<Long, UserDTO> userMap = userRepository.findAllById(userIds).stream()
+                .collect(Collectors.toMap(
+                        user -> user.getUserId(),
+                        user -> new UserDTO(user.getUserId(), user.getFirstName(),
+                                user.getLastName(), user.getEmail(), user.getRole())
+                ));
+
+        return instructors.stream()
                 .map(inst -> {
-                    UserDTO userDTO = userRepository.findById(inst.getUserId())
-                            .map(user -> new UserDTO(user.getUserId(), user.getFirstName(),
-                                    user.getLastName(), user.getEmail(), user.getRole()))
-                            .orElse(new UserDTO(inst.getUserId(), "N/A", "N/A", "N/A", "INSTRUCTOR"));
-                    return new InstructorDTO(inst.getInstructorId(), userDTO, inst.getAvailabilityNote(),  inst.getAssignedVehicleId() );
+                    UserDTO userDTO = userMap.getOrDefault(inst.getUserId(),
+                            new UserDTO(inst.getUserId(), "N/A", "N/A", "N/A", "INSTRUCTOR"));
+                    return new InstructorDTO(inst.getInstructorId(), userDTO, inst.getAvailabilityNote(), inst.getAssignedVehicleId());
                 })
                 .collect(Collectors.toList());
     }
@@ -92,10 +104,7 @@ public class InstructorService {
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
                 .orElseThrow(() -> new ResourceNotFoundException("Vozilo nije pronađeno"));
 
-        instructorRepository.findAll().stream()
-                .filter(i -> !i.getInstructorId().equals(instructorId))
-                .filter(i -> vehicleId.equals(i.getAssignedVehicleId()))
-                .findFirst()
+        instructorRepository.findByAssignedVehicleIdAndInstructorIdNot(vehicleId, instructorId)
                 .ifPresent(i -> {
                     throw new RuntimeException(
                             "Vozilo je već dodijeljeno drugom instruktoru (ID " + i.getInstructorId() + ").");

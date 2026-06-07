@@ -13,4 +13,6 @@ public interface ObligationRepository extends JpaRepository<Obligation, Integer>
     List<Obligation> findByAccountOrderByOrderIndex(CandidateFinanceAccount account);
 
     boolean existsByAccount_CandidateId(Integer candidateId);
+
+    List<Obligation> findByAccount_IdInOrderByAccount_IdAscOrderIndexAsc(List<Integer> accountIds);
 }

@@ -31,8 +31,21 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
     const [attendanceMap, setAttendanceMap] = useState({});
     const [savingSession, setSavingSession] = useState(null);
     const [error, setError] = useState('');
+    const [candidateNameMap, setCandidateNameMap] = useState({});
 
     const candidates = plan?.candidates || [];
+
+    useEffect(() => {
+        api.get('/api/candidates').then(res => {
+            const map = {};
+            res.data.forEach(c => {
+                if (c.user) {
+                    map[c.candidateId] = `${c.user.firstName} ${c.user.lastName}`;
+                }
+            });
+            setCandidateNameMap(map);
+        }).catch(() => {});
+    }, []);
 
     useEffect(() => { loadSessions(); }, [plan]);
 
@@ -109,9 +122,7 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
     const planned = sessions.filter(isPlanned).length;
 
     const getCandidateName = (candidateId) => {
-        const c = candidates.find(c => c.candidateId === candidateId);
-        if (!c) return `Kandidat #${candidateId}`;
-        return c.user ? `${c.user.firstName} ${c.user.lastName}` : `Kandidat #${candidateId}`;
+        return candidateNameMap[candidateId] || `Kandidat #${candidateId}`;
     };
 
     return (
@@ -238,9 +249,7 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
                                                     </p>
                                                     <div className="space-y-1">
                                                         {candidates.map(c => {
-                                                            const name = c.user
-                                                                ? `${c.user.firstName} ${c.user.lastName}`
-                                                                : `Kandidat #${c.candidateId}`;
+                                                            const name = getCandidateName(c.candidateId);
                                                             const present = (attendanceMap[session.id] || []).includes(c.candidateId);
                                                             return (
                                                                 <label key={c.candidateId} className="flex items-center gap-2 cursor-pointer">
@@ -299,7 +308,7 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
                         ) : (
                             <>
                                 <p className="text-xs text-slate-500 mb-3">
-                                    Minimum 60% prisustva za pravo izlaska na teorijski ispit.
+                                    Minimum 60% odsušanih časova (od ukupno {plan.totalLessons}) za pravo izlaska na teorijski ispit.
                                     Odrzano termina: <strong>{maintained}</strong>.
                                 </p>
                                 <div className="space-y-2">
@@ -320,23 +329,24 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
                                                     <p className="text-xs text-slate-500 mt-0.5">
                                                         Prisutan/a: {s.attended}/{s.heldSessions} termina
                                                     </p>
+                                                    <p className="text-xs text-slate-400">
+                                                        {s.attendedLessons}/{s.totalLessons} časova
+                                                    </p>
                                                 </div>
 
                                                 <div className="text-right shrink-0">
                                                     <p className={`text-lg font-bold ${eligible ? 'text-green-700' : 'text-red-700'}`}>
                                                         {pct}%
                                                     </p>
-                                                    <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${
-                                                        eligible
-                                                            ? 'bg-green-100 text-green-700'
-                                                            : 'bg-red-100 text-red-700'
-                                                    }`}>
-                                                        {eligible ? (
-                                                            <><CheckCircle size={10} /> Moze na ispit</>
-                                                        ) : (
-                                                            <><AlertTriangle size={10} /> Nema pravo</>
-                                                        )}
-                                                    </span>
+                                                    {eligible ? (
+                                                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+                                                            <CheckCircle size={10} /> Može na ispit
+                                                        </span>
+                                                    ) : (
+                                                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+                                                            <AlertTriangle size={10} /> {pct < 60 ? `${s.attendedLessons}/${s.totalLessons} čas.` : 'Nema pravo'}
+                                                        </span>
+                                                    )}
                                                 </div>
 
                                                 {/* Mini progress bar */}

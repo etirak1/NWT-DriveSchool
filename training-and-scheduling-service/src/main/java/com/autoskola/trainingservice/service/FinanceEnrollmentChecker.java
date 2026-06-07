@@ -6,10 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-/**
- * Provjerava je li kandidat platio upisninu (300 KM) pozivom finance-service.
- * Ako finance-service nije dostupan, provjera se preskace (fail-open).
- */
+
 @Component
 public class FinanceEnrollmentChecker {
 
@@ -20,9 +17,6 @@ public class FinanceEnrollmentChecker {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    /**
-     * @return true ako je upisnina placena ILI ako finance-service nije dostupan
-     */
     public boolean isEnrollmentPaid(Long candidateId) {
         try {
             String url = financeServiceUrl + "/accounts/" + candidateId + "/status";
@@ -31,11 +25,10 @@ public class FinanceEnrollmentChecker {
             return status.isEnrollmentEligible();
         } catch (Exception e) {
             log.warn("Finance-service nije dostupan, provjera upisnine preskocena za kandidata {}: {}", candidateId, e.getMessage());
-            return true; // fail-open: ako finance-service nije dostupan, ne blokiramo
+            return true;
         }
     }
 
-    /** Minimalni DTO koji nam treba iz finance-service odgovora */
     public static class CandidateStatusResponse {
         private boolean enrollmentEligible;
         private boolean examEligible;

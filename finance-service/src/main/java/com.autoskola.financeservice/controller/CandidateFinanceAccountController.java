@@ -23,44 +23,37 @@ public class CandidateFinanceAccountController {
         this.financeService = financeService;
     }
 
-    /** Svi računi sa obavezama */
     @GetMapping
     public List<CandidateFinanceAccountDTO> getAll() {
         return financeService.getAllAccounts();
     }
 
-    /** Jedan račun po internom ID-u */
     @GetMapping("/{id}")
     public CandidateFinanceAccountDTO getById(@PathVariable Integer id) {
         return financeService.getAccountById(id);
     }
 
-    /** Paginiran listing */
     @GetMapping("/paginated")
     public Page<CandidateFinanceAccountDTO> getAllPaginated(
             @PageableDefault(size = 10, sort = "enrollmentDate") Pageable pageable) {
         return financeService.getAllAccountsPaginated(pageable);
     }
 
-    /** Preostali dug */
     @GetMapping("/{id}/debt")
     public BigDecimal getRemainingDebt(@PathVariable Integer id) {
         return financeService.getAccountById(id).getRemainingDebt();
     }
 
-    /** Puni status kandidata: obaveze + eligibility — javno za inter-service pozive */
     @GetMapping("/{candidateId}/status")
     public ResponseEntity<CandidateStatusDTO> getStatus(@PathVariable Integer candidateId) {
         return ResponseEntity.ok(financeService.getStatus(candidateId));
     }
 
-    /** Kreiraj racun ako ne postoji, vrati status */
     @PostMapping("/ensure/{candidateId}")
     public ResponseEntity<CandidateStatusDTO> ensureAccount(@PathVariable Integer candidateId) {
         return ResponseEntity.ok(financeService.getOrCreateByCandidateId(candidateId));
     }
 
-    /** Evidentiraj uplatu — backend automatski rasporeduje po obavezama */
     @PostMapping("/{candidateId}/pay")
     public ResponseEntity<CandidateStatusDTO> recordPayment(
             @PathVariable Integer candidateId,
@@ -68,13 +61,11 @@ public class CandidateFinanceAccountController {
         return ResponseEntity.ok(financeService.recordPayment(candidateId, req.getAmount()));
     }
 
-    /** Historija uplata za kandidata */
     @GetMapping("/{candidateId}/payments")
     public ResponseEntity<?> getPayments(@PathVariable Integer candidateId) {
         return ResponseEntity.ok(financeService.getPaymentsByCandidate(candidateId));
     }
 
-    /** JSON Patch */
     @PatchMapping(path = "/{id}", consumes = "application/json-patch+json")
     public CandidateFinanceAccountDTO patchAccount(@PathVariable Integer id, @RequestBody JsonPatch patch) {
         return financeService.applyPatchToAccount(id, patch);

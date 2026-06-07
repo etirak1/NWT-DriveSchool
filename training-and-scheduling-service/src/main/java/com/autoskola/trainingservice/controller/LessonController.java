@@ -136,6 +136,46 @@ public class LessonController {
     }
 
 
+    @PostMapping("/propose")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
+    public ResponseEntity<?> proposeLesson(@RequestBody java.util.Map<String, Object> body) {
+        try {
+            Long candidateId = Long.valueOf(body.get("candidateId").toString());
+            LocalDateTime dateTime = LocalDateTime.parse(body.get("dateTime").toString());
+            Integer duration = body.containsKey("duration") ? Integer.valueOf(body.get("duration").toString()) : 45;
+            String notes = body.containsKey("notes") ? (String) body.get("notes") : null;
+            return ResponseEntity.ok(lessonService.proposeLesson(candidateId, dateTime, duration, notes));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PatchMapping("/{id}/confirm")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CANDIDATE')")
+    public ResponseEntity<?> confirmLesson(@PathVariable Long id, @RequestParam Long userId) {
+        try {
+            return ResponseEntity.ok(lessonService.confirmLesson(id, userId));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PatchMapping("/{id}/reject")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CANDIDATE')")
+    public ResponseEntity<?> rejectLesson(@PathVariable Long id, @RequestParam Long userId) {
+        try {
+            return ResponseEntity.ok(lessonService.rejectLesson(id, userId));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/pending")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CANDIDATE')")
+    public ResponseEntity<java.util.List<LessonDTO>> getPending(@RequestParam Long userId) {
+        return ResponseEntity.ok(lessonService.getPendingForCandidate(userId));
+    }
+
     @PatchMapping("/{id}/reschedule")
     @PreAuthorize("hasAnyRole('ADMIN', 'CANDIDATE')")
     public ResponseEntity<?> rescheduleLesson(

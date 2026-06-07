@@ -65,6 +65,20 @@ public class TheoryPlanController {
         );
     }
 
+    @DeleteMapping("/{planId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deletePlan(@PathVariable Long planId) {
+        theoryPlanService.deletePlan(planId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/candidate/{candidateId}/session-attendance")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR', 'CANDIDATE')")
+    public ResponseEntity<List<Map<String, Object>>> getCandidateSessionAttendance(
+            @PathVariable Long candidateId) {
+        return ResponseEntity.ok(theoryPlanService.getCandidateSessionAttendance(candidateId));
+    }
+
     @GetMapping("/sessions/{sessionId}/attendance")
     @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
     public ResponseEntity<List<TheorySessionAttendance>> getAttendance(

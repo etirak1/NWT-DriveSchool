@@ -4,7 +4,7 @@ import {
     GraduationCap, LogOut, CheckCircle, Clock, BookOpen,
     ChevronLeft, ChevronRight, MessageSquare, TrendingUp,
     DollarSign, AlertCircle, Plus, Car, XCircle, AlertTriangle,
-    Info
+    Info, Calendar
 } from 'lucide-react';
 import { api } from '../api/client';
 import { getCurrentUserId, getCurrentEmail, getCurrentRole } from '../auth/jwt';
@@ -38,6 +38,8 @@ export default function CandidateDashboard() {
     const [drivingCompleted,  setDrivingCompleted]  = useState(0);
     const [theoryCompleted,   setTheoryCompleted]   = useState(0);
     const [rescheduleLesson,  setRescheduleLesson]  = useState(null);
+    const [timeline,          setTimeline]          = useState([]);
+    const [pendingLessons,    setPendingLessons]    = useState([]);
 
     const fetchLessons = async (page = 0) => {
         try {
@@ -56,11 +58,17 @@ export default function CandidateDashboard() {
             setTheoryCompleted(tCount);
         } catch (e) { /* ignore */ }
 
-        // Phases
+        // Phases (stari zapisi — za theoryPassed provjeru)
         try {
             const phaseRes = await api.get(`/api/phases/candidate/${candId}`);
             setPhases(phaseRes.data);
         } catch (e) { /* phases optional */ }
+
+        // Timeline (novi computed prikaz — za Progress tab)
+        try {
+            const tlRes = await api.get(`/api/phases/candidate/${candId}/timeline`);
+            setTimeline(tlRes.data);
+        } catch (e) { /* timeline optional */ }
 
         // Feedback eligibility
         try {
@@ -83,13 +91,10 @@ export default function CandidateDashboard() {
 
                 await fetchLessons(0);
 
-                // Driving progress
+                // Driving progress — koristi driving_lessons tabelu (ista kao timeline)
                 try {
-                    const allLessons = await api.get(
-                        `/api/lessons/my-lessons?userId=${userId}&page=0&size=100&sortBy=dateTime&sortDir=desc`
-                    );
-                    const count = (allLessons.data.content || []).filter(l => l.status === 'ODRAĐENO').length;
-                    setDrivingCompleted(count);
+                    const drivingRes = await api.get(`/api/driving-lessons/candidate/${cand.candidateId}/count`);
+                    setDrivingCompleted(drivingRes.data.completed || 0);
                 } catch (e) { /* ignore */ }
 
                 await loadProgress(candId);
@@ -110,6 +115,12 @@ export default function CandidateDashboard() {
                     const annRes = await api.get('/api/announcements');
                     setAnnouncements(annRes.data);
                 } catch (e) { /* announcements optional */ }
+
+                // Pending prijedlozi od instruktora
+                try {
+                    const pendRes = await api.get(`/api/lessons/pending?userId=${userId}`);
+                    setPendingLessons(pendRes.data || []);
+                } catch (e) { /* ignore */ }
 
             } catch (err) {
                 console.error(err);
@@ -143,15 +154,29 @@ export default function CandidateDashboard() {
         navigate('/login');
     };
 
+    const respondToLesson = async (lessonId, action) => {
+        try {
+            await api.patch(`/api/lessons/${lessonId}/${action}?userId=${userId}`);
+            const pendRes = await api.get(`/api/lessons/pending?userId=${userId}`);
+            setPendingLessons(pendRes.data || []);
+            await fetchLessons(0);
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
     const rule               = candidate?.rule;
     const theoryTotal        = rule?.minTheoryLessons    ?? 40;
     const drivingTotal       = rule?.minPracticalLessons ?? 40;
     const theoryPct          = theoryTotal  > 0 ? Math.round((theoryCompleted  / theoryTotal)  * 100) : 0;
-    const drivingPct         = drivingTotal > 0 ? Math.round((drivingCompleted / drivingTotal) * 100) : 0;
+    // Koristimo timeline kao autoritativan izvor — isti podaci kao u "Tok obuke" prikazu
+    const theoryExamPhase   = timeline.find(p => p.key === 'TEORIJSKI_ISPIT');
+    const practicalExamPhase = timeline.find(p => p.key === 'PRAKTICNI_ISPIT');
+    const theoryPassed    = theoryExamPhase?.examStatus?.toUpperCase()   === 'POLOŽENO';
+    const drivingExamPassed = practicalExamPhase?.examStatus?.toUpperCase() === 'POLOŽENO';
+    const effectiveDrivingCompleted = drivingExamPassed ? drivingTotal : drivingCompleted;
+    const drivingPct         = drivingTotal > 0 ? Math.round((effectiveDrivingCompleted / drivingTotal) * 100) : 0;
     const allDone            = theoryPct >= 100 && drivingPct >= 100;
-    const theoryPassed       = phases.some(
-        p => p.phaseType?.toUpperCase() === 'TEORIJSKI DIO' && p.status?.toUpperCase() === 'POLOŽENO'
-    );
 
     // Finance helpers — oslanjamo se na financeStatus (CandidateStatusDTO)
     const totalAmount       = Number(financeStatus?.totalAmount   ?? 0);
@@ -266,13 +291,86 @@ export default function CandidateDashboard() {
                             </div>
                         )}
 
-                        {/* Sve plaćeno — pozitivna poruka */}
-                        {financeStatus && remainingDebt === 0 && totalAmount > 0 && (
+                        {/* Sve plaćeno + sve faze završene — može finalni ispit */}
+                        {financeStatus && remainingDebt === 0 && totalAmount > 0 && drivingExamPassed && (
                             <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3">
                                 <CheckCircle size={20} className="text-green-500 flex-shrink-0" />
                                 <p className="text-green-800 text-sm font-medium">
-                                    Sve finansijske obaveze su izmirene. Možete pristupiti finalnom ispitu.
+                                    Sve finansijske obaveze su izmirene i obuka je završena. Možete pristupiti finalnom ispitu.
                                 </p>
+                            </div>
+                        )}
+
+                        {/* Sve plaćeno ALI obuka nije završena */}
+                        {financeStatus && remainingDebt === 0 && totalAmount > 0 && !drivingExamPassed && (
+                            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center gap-3">
+                                <CheckCircle size={20} className="text-blue-500 flex-shrink-0" />
+                                <p className="text-blue-800 text-sm font-medium">
+                                    Sve finansijske obaveze su izmirene. Nastavite sa obukom — finalni ispit je dostupan nakon završetka svih faza.
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Obavještenje: teorijski ispit položen — može zakazati čas vožnje */}
+                        {theoryPassed && effectiveDrivingCompleted < drivingTotal && (
+                            <div className="bg-green-50 border border-green-300 rounded-xl p-4 flex items-start gap-3">
+                                <CheckCircle size={20} className="text-green-500 flex-shrink-0 mt-0.5" />
+                                <div className="flex-1">
+                                    <p className="font-semibold text-green-800 text-sm">Položili ste teorijski ispit! 🎉</p>
+                                    <p className="text-green-700 text-sm mt-0.5">
+                                        Imate pravo zakazati časove praktične vožnje. Kontaktirajte instruktora ili zakažite čas direktno.
+                                    </p>
+                                </div>
+                                <Link
+                                    to="/book-lesson"
+                                    className="shrink-0 flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium"
+                                >
+                                    <Car size={14} /> Zakaži čas
+                                </Link>
+                            </div>
+                        )}
+
+                        {/* Prijedlozi termina od instruktora */}
+                        {pendingLessons.length > 0 && (
+                            <div className="bg-white rounded-xl border border-indigo-200 overflow-hidden">
+                                <div className="px-5 py-3 bg-indigo-50 border-b border-indigo-100 flex items-center gap-2">
+                                    <Calendar size={16} className="text-indigo-600" />
+                                    <span className="font-semibold text-indigo-800 text-sm">
+                                        Prijedlozi termina od instruktora ({pendingLessons.length})
+                                    </span>
+                                </div>
+                                <div className="divide-y divide-slate-100">
+                                    {pendingLessons.map(lesson => (
+                                        <div key={lesson.lessonId} className="px-5 py-4 flex items-center justify-between gap-4">
+                                            <div>
+                                                <p className="text-sm font-semibold text-slate-800">
+                                                    {new Date(lesson.dateTime).toLocaleString('bs-BA', {
+                                                        weekday: 'long', day: '2-digit', month: 'long',
+                                                        hour: '2-digit', minute: '2-digit'
+                                                    })}
+                                                </p>
+                                                <p className="text-xs text-slate-500 mt-0.5">
+                                                    Instruktor: {lesson.instructor?.firstName} {lesson.instructor?.lastName}
+                                                    {lesson.notes && ` · ${lesson.notes}`}
+                                                </p>
+                                            </div>
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <button
+                                                    onClick={() => respondToLesson(lesson.lessonId, 'confirm')}
+                                                    className="flex items-center gap-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs rounded-lg font-medium"
+                                                >
+                                                    <CheckCircle size={13} /> Prihvati
+                                                </button>
+                                                <button
+                                                    onClick={() => respondToLesson(lesson.lessonId, 'reject')}
+                                                    className="flex items-center gap-1 px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs rounded-lg font-medium"
+                                                >
+                                                    <XCircle size={13} /> Odbij
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         )}
 
@@ -340,9 +438,9 @@ export default function CandidateDashboard() {
                             </h2>
                             <div className="grid grid-cols-3 gap-4 mb-5">
                                 {[
-                                    { label: 'Completed',      value: drivingCompleted,               color: 'text-green-600' },
-                                    { label: 'Total required', value: drivingTotal,                    color: 'text-slate-800' },
-                                    { label: 'Remaining',      value: Math.max(0, drivingTotal - drivingCompleted), color: 'text-blue-600'  },
+                                    { label: 'Completed',      value: effectiveDrivingCompleted,               color: 'text-green-600' },
+                                    { label: 'Total required', value: drivingTotal,                                  color: 'text-slate-800' },
+                                    { label: 'Remaining',      value: Math.max(0, drivingTotal - effectiveDrivingCompleted), color: 'text-blue-600'  },
                                 ].map(s => (
                                     <div key={s.label} className="bg-slate-50 rounded-lg p-4 text-center">
                                         <p className={`text-3xl font-bold ${s.color}`}>{s.value}</p>
@@ -399,78 +497,101 @@ export default function CandidateDashboard() {
                 )}
 
                 {/* ── PROGRESS ── */}
-                {activeSection === 'progress' && (
-                    <div className="bg-white rounded-xl border border-slate-200 p-6">
-                        <div className="flex items-center gap-2 mb-1">
-                            <TrendingUp size={18} className="text-blue-500" />
-                            <h2 className="text-base font-semibold text-slate-800">Training progress</h2>
-                        </div>
-                        <p className="text-sm text-slate-500 mb-5">Track your journey to becoming a certified driver</p>
+                {activeSection === 'progress' && (() => {
+                    const completedCount = timeline.filter(p => p.status === 'ZAVRŠENO').length;
+                    const totalCount = timeline.length || 6;
+                    const overallPct = Math.round((completedCount / totalCount) * 100);
 
-                        {/* Overall bar */}
-                        {(() => {
-                            const completedPhases = phases.filter(p => p.status === 'POLOŽENO').length;
-                            const phaseProgress = phases.length > 0 ? Math.round((completedPhases / phases.length) * 100) : 0;
-                            return (
-                                <div className="mb-6 space-y-1">
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-slate-600">Overall progress</span>
-                                        <span className="font-semibold text-blue-600">{phaseProgress}%</span>
-                                    </div>
-                                    <div className="w-full bg-slate-100 rounded-full h-2.5">
-                                        <div
-                                            className="bg-blue-500 h-2.5 rounded-full"
-                                            style={{ width: `${phaseProgress}%` }}
-                                        />
-                                    </div>
-                                    <p className="text-xs text-slate-400">
-                                        {completedPhases} of {phases.length} phases completed
-                                    </p>
+                    const statusStyle = {
+                        'ZAVRŠENO':      { bar: 'bg-green-500',  badge: 'bg-green-100 text-green-700',   label: 'Završeno'       },
+                        'U TOKU':        { bar: 'bg-blue-500',   badge: 'bg-blue-100 text-blue-700',     label: 'U toku'         },
+                        'NIJE ZAPOČETO': { bar: 'bg-slate-200',  badge: 'bg-slate-100 text-slate-500',   label: 'Nije započeto'  },
+                        'ZAKLJUČANO':    { bar: 'bg-slate-100',  badge: 'bg-slate-100 text-slate-400',   label: 'Zaključano'     },
+                    };
+
+                    return (
+                        <div className="bg-white rounded-xl border border-slate-200 p-6">
+                            <div className="flex items-center gap-2 mb-1">
+                                <TrendingUp size={18} className="text-blue-500" />
+                                <h2 className="text-base font-semibold text-slate-800">Tok obuke</h2>
+                            </div>
+                            <p className="text-sm text-slate-500 mb-5">Pratite napredak kroz sve faze obuke</p>
+
+                            {/* Overall bar */}
+                            <div className="mb-6 space-y-1">
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-slate-600">Ukupni napredak</span>
+                                    <span className="font-semibold text-blue-600">{overallPct}%</span>
                                 </div>
-                            );
-                        })()}
+                                <div className="w-full bg-slate-100 rounded-full h-2.5">
+                                    <div className="bg-blue-500 h-2.5 rounded-full transition-all" style={{ width: `${overallPct}%` }} />
+                                </div>
+                                <p className="text-xs text-slate-400">{completedCount} od {totalCount} faza završeno</p>
+                            </div>
 
-                        {/* Phase cards */}
-                        {phases.length === 0 ? (
-                            <p className="text-sm text-slate-400 italic">No training phases found.</p>
-                        ) : (
-                            <div className="space-y-3">
-                                {phases.map(phase => {
-                                    const done = phase.status === 'POLOŽENO';
-                                    return (
-                                        <div
-                                            key={phase.phaseId}
-                                            className={`rounded-lg border p-4 ${done ? 'border-green-200 bg-green-50' : 'border-slate-200 bg-white'}`}
-                                        >
-                                            <div className="flex items-start justify-between">
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${done ? 'border-green-500 bg-green-500' : 'border-slate-300'}`}>
-                                                        {done && <CheckCircle size={12} className="text-white" />}
-                                                    </div>
-                                                    <div>
-                                                        <p className="font-medium text-slate-800 text-sm">{phase.phaseType}</p>
-                                                        {phase.dateCompleted && (
-                                                            <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
-                                                                <Clock size={10} />
-                                                                Completed on {new Date(phase.dateCompleted).toLocaleDateString('en-GB')}
+                            {/* Phase cards */}
+                            {timeline.length === 0 ? (
+                                <p className="text-sm text-slate-400 italic">Nema podataka o toku obuke.</p>
+                            ) : (
+                                <div className="space-y-3">
+                                    {timeline.map((phase, idx) => {
+                                        const s = statusStyle[phase.status] || statusStyle['NIJE ZAPOČETO'];
+                                        const locked = phase.status === 'ZAKLJUČANO';
+                                        return (
+                                            <div key={phase.key}
+                                                className={`rounded-lg border p-4 ${
+                                                    phase.status === 'ZAVRŠENO' ? 'border-green-200 bg-green-50' :
+                                                    phase.status === 'U TOKU'   ? 'border-blue-200 bg-blue-50'  :
+                                                    locked                       ? 'border-slate-100 bg-slate-50 opacity-60' :
+                                                    'border-slate-200 bg-white'
+                                                }`}
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold
+                                                            ${phase.status === 'ZAVRŠENO' ? 'border-green-500 bg-green-500 text-white' :
+                                                              phase.status === 'U TOKU'   ? 'border-blue-500 bg-blue-500 text-white'   :
+                                                              'border-slate-300 text-slate-400'}`}>
+                                                            {phase.status === 'ZAVRŠENO' ? '✓' : idx + 1}
+                                                        </div>
+                                                        <div>
+                                                            <p className={`font-medium text-sm ${locked ? 'text-slate-400' : 'text-slate-800'}`}>
+                                                                {phase.label}
                                                             </p>
+                                                            {phase.progress && (
+                                                                <p className="text-xs text-slate-500 mt-0.5">{phase.progress}</p>
+                                                            )}
+                                                            {phase.examDate && (
+                                                                <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
+                                                                    <Clock size={10} /> {phase.examDate}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex flex-col items-end gap-1">
+                                                        <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${s.badge}`}>
+                                                            {s.label}
+                                                        </span>
+                                                        {phase.examStatus && (
+                                                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                                                                phase.examStatus === 'POLOŽENO'   ? 'bg-green-100 text-green-700'  :
+                                                                phase.examStatus === 'NEPOLOŽENO' ? 'bg-red-100 text-red-700'     :
+                                                                'bg-yellow-100 text-yellow-700'
+                                                            }`}>
+                                                                {phase.examStatus === 'POLOŽENO'   ? 'Položeno'   :
+                                                                 phase.examStatus === 'NEPOLOŽENO' ? 'Nepoloženo' : 'Zakazano'}
+                                                            </span>
                                                         )}
                                                     </div>
                                                 </div>
-                                                <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${PHASE_COLORS[phase.status] || 'bg-slate-100 text-slate-600'}`}>
-                                                    {phase.status === 'POLOŽENO'   ? 'Completed'   :
-                                                     phase.status === 'U TOKU'     ? 'In progress' :
-                                                     phase.status === 'NEPOLOŽENO' ? 'Failed'      :
-                                                     phase.status === 'ZAKAZANO'   ? 'Scheduled'   : phase.status}
-                                                </span>
                                             </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </div>
-                )}
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    );
+                })()}
 
                 {/* ── FINANCES ── */}
                 {activeSection === 'finances' && (
@@ -495,22 +616,37 @@ export default function CandidateDashboard() {
                                         </p>
                                     </div>
                                 </div>
-                                <div className={`rounded-xl border p-4 flex items-center gap-3 ${
-                                    examEligible ? 'bg-green-50 border-green-200' : 'bg-slate-50 border-slate-200'
-                                }`}>
-                                    {examEligible
-                                        ? <CheckCircle size={22} className="text-green-500 flex-shrink-0" />
-                                        : <XCircle    size={22} className="text-slate-400 flex-shrink-0" />
-                                    }
-                                    <div>
-                                        <p className={`text-sm font-semibold ${examEligible ? 'text-green-800' : 'text-slate-700'}`}>
-                                            Završni ispit
-                                        </p>
-                                        <p className={`text-xs mt-0.5 ${examEligible ? 'text-green-600' : 'text-slate-500'}`}>
-                                            {examEligible ? 'Sve obaveze izmirene' : `Preostaje ${remainingDebt.toFixed(2)} KM`}
-                                        </p>
-                                    </div>
-                                </div>
+                                {/* Finalni ispit — uslovljeno I finansijama I završenim fazama */}
+                                {(() => {
+                                    const fullyReady = examEligible && drivingExamPassed;
+                                    const financeOkButNotDone = examEligible && !drivingExamPassed;
+                                    return (
+                                        <div className={`rounded-xl border p-4 flex items-center gap-3 ${
+                                            fullyReady ? 'bg-green-50 border-green-200' :
+                                            financeOkButNotDone ? 'bg-blue-50 border-blue-200' :
+                                            'bg-slate-50 border-slate-200'
+                                        }`}>
+                                            {fullyReady
+                                                ? <CheckCircle size={22} className="text-green-500 flex-shrink-0" />
+                                                : financeOkButNotDone
+                                                    ? <CheckCircle size={22} className="text-blue-400 flex-shrink-0" />
+                                                    : <XCircle size={22} className="text-slate-400 flex-shrink-0" />
+                                            }
+                                            <div>
+                                                <p className={`text-sm font-semibold ${fullyReady ? 'text-green-800' : financeOkButNotDone ? 'text-blue-800' : 'text-slate-700'}`}>
+                                                    Završni ispit
+                                                </p>
+                                                <p className={`text-xs mt-0.5 ${fullyReady ? 'text-green-600' : financeOkButNotDone ? 'text-blue-600' : 'text-slate-500'}`}>
+                                                    {fullyReady
+                                                        ? 'Finansije i obuka završene — pristup dozvoljen'
+                                                        : financeOkButNotDone
+                                                            ? 'Finansije OK — završite sve faze obuke'
+                                                            : `Preostaje ${remainingDebt.toFixed(2)} KM`}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
                             </div>
                         )}
 
@@ -679,12 +815,6 @@ export default function CandidateDashboard() {
                     onRescheduled={() => {
                         setRescheduleLesson(null);
                         fetchLessons(pageData.number);
-                        // Refresh driving count
-                        api.get(`/api/lessons/my-lessons?userId=${getCurrentUserId()}&page=0&size=100&sortBy=dateTime&sortDir=desc`)
-                            .then(res => {
-                                const count = (res.data.content || []).filter(l => l.status === 'ODRAĐENO').length;
-                                setDrivingCompleted(count);
-                            }).catch(() => {});
                     }}
                 />
             )}

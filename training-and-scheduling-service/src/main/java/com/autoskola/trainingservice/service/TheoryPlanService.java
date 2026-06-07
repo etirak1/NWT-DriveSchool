@@ -239,6 +239,47 @@ public class TheoryPlanService {
         return attendanceRepository.findBySessionId(sessionId);
     }
 
+    public List<java.util.Map<String, Object>> getCandidateSessionAttendance(Long candidateId) {
+        Candidate candidate = candidateRepository.findById(candidateId)
+                .orElseThrow(() -> new RuntimeException("Kandidat nije pronađen: " + candidateId));
+
+        List<TheoryPlan> plans = planRepository.findByCandidatesContainingOrderByStartDateDesc(candidate);
+        List<java.util.Map<String, Object>> result = new ArrayList<>();
+
+        for (TheoryPlan plan : plans) {
+            List<TheorySession> sessions = sessionRepository.findByPlanIdOrderBySessionNumber(plan.getId());
+            for (TheorySession session : sessions) {
+                if (!"ODRZANO".equals(session.getStatus())) continue;
+                boolean present = attendanceRepository
+                        .findBySessionAndCandidate(session.getId(), candidateId)
+                        .map(a -> a.isPresent())
+                        .orElse(false);
+                java.util.Map<String, Object> row = new java.util.LinkedHashMap<>();
+                row.put("sessionNumber", session.getSessionNumber());
+                row.put("date", session.getDate());
+                row.put("topic", session.getTopic());
+                row.put("lessonFrom", session.getLessonFrom());
+                row.put("lessonTo", session.getLessonTo());
+                row.put("present", present);
+                row.put("groupName", plan.getGroupName());
+                result.add(row);
+            }
+        }
+        return result;
+    }
+
+    @Transactional
+    public void deletePlan(Long planId) {
+        TheoryPlan plan = planRepository.findById(planId)
+                .orElseThrow(() -> new RuntimeException("Plan nije pronađen: " + planId));
+        List<TheorySession> sessions = sessionRepository.findByPlanIdOrderBySessionNumber(planId);
+        for (TheorySession session : sessions) {
+            attendanceRepository.deleteBySessionId(session.getId());
+        }
+        sessionRepository.deleteAll(sessions);
+        planRepository.delete(plan);
+    }
+
     public List<CandidateAttendanceSummary> getAttendanceSummary(Long planId) {
         TheoryPlan plan = planRepository.findById(planId)
                 .orElseThrow(() -> new RuntimeException("Plan nije pronađen"));
@@ -247,12 +288,16 @@ public class TheoryPlanService {
         long heldCount = sessions.stream()
                 .filter(s -> "ODRZANO".equals(s.getStatus()))
                 .count();
+        long totalLessons = plan.getTotalLessons() != null ? plan.getTotalLessons() : 40L;
 
         return plan.getCandidates().stream()
                 .map(c -> {
                     long attended = attendanceRepository
                             .countAttendedByPlanAndCandidate(planId, c.getCandidateId());
-                    return new CandidateAttendanceSummary(c.getCandidateId(), attended, heldCount);
+                    long attendedLessons = attendanceRepository
+                            .sumAttendedLessonsByPlanAndCandidate(planId, c.getCandidateId());
+                    return new CandidateAttendanceSummary(
+                            c.getCandidateId(), attended, heldCount, attendedLessons, totalLessons);
                 })
                 .collect(Collectors.toList());
     }

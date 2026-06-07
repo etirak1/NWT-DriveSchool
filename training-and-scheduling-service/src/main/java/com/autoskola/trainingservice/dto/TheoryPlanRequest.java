@@ -11,10 +11,10 @@ public class TheoryPlanRequest {
     private String groupName;
     private List<Long> candidateIds;
     private LocalDate startDate;
-    private String day1OfWeek;  // npr. "TUESDAY"
-    private String day2OfWeek;  // npr. "THURSDAY"
+    private String day1OfWeek;
+    private String day2OfWeek;
     private LocalTime startTime;
-    private Integer durationMinutes;    // default 45
-    private Integer totalLessons;       // default 40
-    private Integer lessonsPerSession;  // default 3
+    private Integer durationMinutes;
+    private Integer totalLessons;
+    private Integer lessonsPerSession;
 }

@@ -18,7 +18,6 @@ public class TrainingDataInitializer {
 
     @Transactional
     public void init() {
-        // Samo seed ako ne postoji nijedno pravilo — nikad ne brisati podatke
         if (ruleRepository.count() == 0) {
             ruleRepository.save(new TrainingRule(
                     null, 30, 35, 45, new BigDecimal("1200.00"), 4));

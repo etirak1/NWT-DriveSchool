@@ -50,6 +50,9 @@ public interface LessonRepository extends JpaRepository<Lesson, Long> {
     Page<Lesson> findByCandidateUserId(Long userId, Pageable pageable);
     Page<Lesson> findByInstructorUserId(Long userId, Pageable pageable);
 
+    @Query("SELECT l FROM Lesson l WHERE l.candidate.userId = :userId AND l.status = 'PENDING' ORDER BY l.dateTime ASC")
+    List<Lesson> findPendingByCandidate(@Param("userId") Long userId);
+
 
     List<Lesson> findByCandidateCandidateIdAndLessonTypeIgnoreCase(Long candidateId, String lessonType);
 
