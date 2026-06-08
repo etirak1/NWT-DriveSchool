@@ -6,7 +6,7 @@ import {
     CheckCircle, Send, Bell, X, ChevronLeft, ChevronRight,
     User, Clock, BookOpen, TrendingUp
 } from 'lucide-react';
-import { getCurrentEmail, getCurrentRole, getCurrentUserId } from '../auth/jwt';
+import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../hooks/useNotifications';
 
 const DAYS = ['Ned', 'Pon', 'Uto', 'Sri', 'Čet', 'Pet', 'Sub'];
@@ -17,9 +17,10 @@ const MONTHS = [
 
 export default function InstructorDashboard() {
     const navigate = useNavigate();
-    const email = getCurrentEmail();
-    const role = getCurrentRole();
-    const userId = getCurrentUserId();
+    const { user, logout } = useAuth();
+    const userId = user.userId;
+    const email  = user.email;
+    const role   = user.role;
 
     const [candidates, setCandidates] = useState([]);
     const [loading, setLoading] = useState(true);

@@ -20,6 +20,7 @@ const FeedbackModal = ({ candidate, onClose, onSubmitted }) => {
         setError('');
         setLoading(true);
 
+
         try {
             await api.post('/api/feedbacks', {
                 candidate: { candidateId: candidate.candidateId },
@@ -63,7 +64,6 @@ const FeedbackModal = ({ candidate, onClose, onSubmitted }) => {
                     </button>
                 </div>
 
-                {/* Info o instruktoru */}
                 <div className="flex items-center gap-3 bg-gray-50 rounded-xl p-4 mb-6">
                     <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm">
                         {instructor?.user?.firstName?.[0]}{instructor?.user?.lastName?.[0]}

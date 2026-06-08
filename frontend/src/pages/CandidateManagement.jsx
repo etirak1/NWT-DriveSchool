@@ -2,15 +2,16 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../api/client';
 import { LogOut, UserCheck, BookOpen, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react';
-import { getCurrentEmail, getCurrentRole } from '../auth/jwt';
+import { useAuth } from '../context/AuthContext';
 import TheoryLessonsModal from '../components/TheoryLessonsModal';
 import TrainingTimeline from '../components/TrainingTimeline';
 
 
 export default function CandidateManagement() {
     const navigate = useNavigate();
-    const email = getCurrentEmail();
-    const role = getCurrentRole();
+    const { user, logout } = useAuth();
+    const email  = user.email;
+    const role   = user.role;
 
     const [candidates, setCandidates] = useState([]);
     const [instructors, setInstructors] = useState([]);

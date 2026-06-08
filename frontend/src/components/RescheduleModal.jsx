@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Calendar, Clock, CheckCircle } from 'lucide-react';
 import { api } from '../api/client';
-import { getCurrentUserId } from '../auth/jwt';
+import { useAuth } from '../context/AuthContext';
 
 const TIME_SLOTS = [];
 for (let h = 8; h <= 16; h++) {
@@ -10,7 +10,8 @@ for (let h = 8; h <= 16; h++) {
 }
 
 export default function RescheduleModal({ lesson, onClose, onRescheduled }) {
-    const userId = getCurrentUserId();
+    const { user, logout } = useAuth();
+    const userId = user.userId;
 
     const [date, setDate]         = useState('');
     const [time, setTime]         = useState('');

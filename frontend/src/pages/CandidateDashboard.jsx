@@ -7,9 +7,9 @@ import {
     Info, Calendar
 } from 'lucide-react';
 import { api } from '../api/client';
-import { getCurrentUserId, getCurrentEmail, getCurrentRole } from '../auth/jwt';
 import FeedbackModal from '../components/FeedbackModal';
 import RescheduleModal from '../components/RescheduleModal';
+import { useAuth } from '../context/AuthContext';
 
 const PHASE_COLORS = {
     'POLOŽENO':   'bg-green-100 text-green-700',
@@ -20,9 +20,10 @@ const PHASE_COLORS = {
 
 export default function CandidateDashboard() {
     const navigate = useNavigate();
-    const userId = getCurrentUserId();
-    const email  = getCurrentEmail();
-    const role   = getCurrentRole();
+    const { user, logout } = useAuth();
+    const userId = user.userId;
+    const email  = user.email;
+    const role   = user.role;
 
     const [candidate,        setCandidate]        = useState(null);
     const [phases,           setPhases]           = useState([]);
@@ -150,7 +151,7 @@ export default function CandidateDashboard() {
     }, []);
 
     const handleLogout = () => {
-        localStorage.removeItem('token');
+        logout();
         navigate('/login');
     };
 

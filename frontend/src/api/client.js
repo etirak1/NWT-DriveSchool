@@ -3,31 +3,29 @@ import axios from 'axios';
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 export const api = axios.create({
-  baseURL: API_BASE,
-  headers: { 'Content-Type': 'application/json' },
-  timeout: 30000,
+    baseURL: API_BASE,
+    headers: { 'Content-Type': 'application/json' },
+    timeout: 30000,
 });
 
-
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      if (payload.exp && payload.exp * 1000 < Date.now()) {
-        localStorage.removeItem('token');
-        window.location.href = '/login';
-        return Promise.reject(new Error('Token istekao'));
-      }
-    } catch (e) {
-     
-      localStorage.removeItem('token');
-      window.location.href = '/login';
-      return Promise.reject(new Error('Token neispravan'));
+    const token = localStorage.getItem('token');
+    if (token) {
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            if (payload.exp && payload.exp * 1000 < Date.now()) {
+                localStorage.removeItem('token');
+                window.dispatchEvent(new Event('auth:logout'));
+                return Promise.reject(new Error('Token istekao'));
+            }
+        } catch (e) {
+            localStorage.removeItem('token');
+            window.dispatchEvent(new Event('auth:logout'));
+            return Promise.reject(new Error('Token neispravan'));
+        }
+        config.headers.Authorization = `Bearer ${token}`;
     }
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
+    return config;
 });
 
 api.interceptors.response.use(
@@ -42,6 +40,7 @@ api.interceptors.response.use(
 
         if (status === 401) {
             localStorage.removeItem('token');
+            window.dispatchEvent(new Event('auth:logout'));
             window.location.href = '/login?reason=session_expired';
             return new Promise(() => {});
         }
@@ -57,7 +56,19 @@ api.interceptors.response.use(
             return new Promise(() => {});
         }
 
-
         return Promise.reject(error);
     }
 );
+
+export const userApi = {
+    getActiveInstructors: () => api.get('/api/users/active?role=INSTRUCTOR'),
+    updateUser: (userId, patchData) => api.patch(`/api/users/${userId}`, patchData, {
+        headers: { 'Content-Type': 'application/json-patch+json' },
+    }),
+};
+
+export const instructorApi = {
+    getAll:               ()         => api.get('/api/instructors'),
+    updateAvailability:   (id, note) => api.patch(`/api/instructors/${id}/availability`, { availabilityNote: note }),
+    assignVehicle:        (id, vid)  => api.patch(`/api/instructors/${id}/assign-vehicle`, { vehicleId: vid }),
+};

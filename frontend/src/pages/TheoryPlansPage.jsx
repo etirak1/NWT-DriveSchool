@@ -2,15 +2,16 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { BookOpen, Plus, Users, Calendar, Clock, ArrowLeft, LogOut, ChevronRight, Trash2 } from 'lucide-react';
-import { getCurrentEmail, getCurrentRole } from '../auth/jwt';
+import { useAuth } from '../context/AuthContext';
 import TheoryPlanCreateModal from '../components/TheoryPlanCreateModal';
 import TheoryPlanViewModal from '../components/TheoryPlanViewModal';
 import { financeApi } from '../services/financeApi';
 
 export default function TheoryPlansPage() {
     const navigate = useNavigate();
-    const email = getCurrentEmail();
-    const role = getCurrentRole();
+    const { user, logout } = useAuth();
+    const email  = user.email;
+    const role   = user.role;
 
     const [plans, setPlans] = useState([]);
     const [candidates, setCandidates] = useState([]);
