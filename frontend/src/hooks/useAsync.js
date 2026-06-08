@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { getErrorMessage } from '../utils/helpers';
 
 export function useAsync(asyncFn, deps = []) {
     const [data, setData] = useState(null);
@@ -13,7 +14,7 @@ export function useAsync(asyncFn, deps = []) {
             const result = await asyncFn();
             setData(result);
         } catch (e) {
-            setError(e.message);
+            setError(getErrorMessage(e));
         } finally {
             setLoading(false);
         }

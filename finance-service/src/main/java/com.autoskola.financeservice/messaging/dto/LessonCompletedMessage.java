@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 public class LessonCompletedMessage implements Serializable {
     private Integer    candidateId;
     private Integer    lessonId;
-    private String     lessonType;   // "THEORY" ili "DRIVING"
+    private String     lessonType;
     private BigDecimal lessonPrice;
 
     public LessonCompletedMessage() {}

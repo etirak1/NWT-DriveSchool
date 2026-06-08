@@ -24,7 +24,6 @@ public interface CandidateFinanceAccountRepository
     @EntityGraph(attributePaths = {"user", "payments"})
     Optional<CandidateFinanceAccount> findById(Integer id);
 
-    // NOVO — za listener
     Optional<CandidateFinanceAccount> findByCandidateId(Integer candidateId);
 
     boolean existsByCandidateId(Integer candidateId);

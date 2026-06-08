@@ -5,7 +5,7 @@ const API_BASE = 'http://localhost:8080';
 export const api = axios.create({
   baseURL: API_BASE,
   headers: { 'Content-Type': 'application/json' },
-  timeout: 5000,
+  timeout: 30000,
 });
 
 
@@ -16,13 +16,13 @@ api.interceptors.request.use((config) => {
       const payload = JSON.parse(atob(token.split('.')[1]));
       if (payload.exp && payload.exp * 1000 < Date.now()) {
         localStorage.removeItem('token');
-        window.location.href = '/login?reason=session_expired';
+        window.location.href = '/login';
         return Promise.reject(new Error('Token istekao'));
       }
     } catch (e) {
      
       localStorage.removeItem('token');
-      window.location.href = '/login?reason=session_expired';
+      window.location.href = '/login';
       return Promise.reject(new Error('Token neispravan'));
     }
     config.headers.Authorization = `Bearer ${token}`;

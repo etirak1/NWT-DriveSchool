@@ -13,9 +13,5 @@ public class VehicleFinanceListener {
         System.out.println("[Finance] Servis vozila: " + msg.getVehiclePlate()
                 + " | Trošak: " + msg.getRepairCost()
                 + " | Datum: " + msg.getServiceDate());
-
-        // Ovdje možeš sačuvati trošak u posebnoj tabeli VehicleExpense
-        // vehicleExpenseRepository.save(new VehicleExpense(msg));
-        // Za sada samo logiramo — dodaj tabelu kad budeš imao model
     }
 }

@@ -18,13 +18,11 @@ public class CandidateFinanceAccount {
     @Column(name = "candidate_id")
     private Integer id;
 
-    // NOVO — referenca na kandidata iz User servicea
     @Column(name = "candidate_ref_id")
     private Integer candidateId;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    @NotNull(message = "Korisnik mora biti povezan sa nalogom")
     private User user;
 
     private LocalDate enrollmentDate;
@@ -40,14 +38,17 @@ public class CandidateFinanceAccount {
     @DecimalMin(value = "0.0", message = "Cijena ne može biti negativna")
     private BigDecimal totalAmount;
 
-    // NOVO — preostali dug
     @DecimalMin(value = "0.0", message = "Dug ne može biti negativan")
     private BigDecimal remainingDebt;
 
     @OneToMany(mappedBy = "candidateAccount", cascade = CascadeType.ALL)
     private List<Payment> payments;
 
-    // Konstruktor koji koristi DataInitializer
+    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OrderBy("orderIndex ASC")
+    private List<Obligation> obligations;
+
+
     public CandidateFinanceAccount(Integer id, User user, LocalDate enrollmentDate,
                                    BigDecimal progressPercentage, Integer assignedInstructorId,
                                    Integer ruleId, BigDecimal totalAmount, List<Payment> payments) {

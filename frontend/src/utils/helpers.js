@@ -53,6 +53,32 @@ export const vehicleStatusColor = (status) => {
 export const instructorStatusColor = (available) =>
     available ? 'status-active' : 'status-inactive';
 
+export const getErrorMessage = (error) => {
+    if (!error) return 'Došlo je do neočekivane greške.';
+
+    const serverMsg =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        (typeof error.response?.data === 'string' ? error.response.data : null);
+
+    if (serverMsg) return serverMsg;
+
+    const statusMessages = {
+        400: 'Uneseni podaci nisu ispravni. Provjerite unos.',
+        403: 'Nemate dozvolu za ovu akciju.',
+        404: 'Traženi resurs nije pronađen.',
+        409: 'Resurs već postoji.',
+        503: 'Servis trenutno nije dostupan. Pokušajte ponovo.',
+        500: 'Serverska greška. Pokušajte ponovo.',
+    };
+
+    const status = error.response?.status;
+    if (status && statusMessages[status]) return statusMessages[status];
+    if (!error.response) return 'Nije moguće uspostaviti vezu sa serverom.';
+
+    return 'Došlo je do neočekivane greške.';
+};
+
 export const repairStatusLabel = (status) => {
     const map = {
         PENDING: 'Na čekanju',

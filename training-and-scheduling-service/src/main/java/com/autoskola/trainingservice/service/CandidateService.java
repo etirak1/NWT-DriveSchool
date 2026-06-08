@@ -7,6 +7,7 @@ import com.autoskola.trainingservice.model.TrainingRule;
 import com.autoskola.trainingservice.client.UserClient;
 import com.autoskola.trainingservice.repository.CandidateRepository;
 import com.autoskola.trainingservice.repository.InstructorRepository;
+import com.autoskola.trainingservice.repository.TrainingPhaseRepository;
 import com.autoskola.trainingservice.repository.TrainingRuleRepository;
 import org.springframework.stereotype.Service;
 
@@ -21,15 +22,20 @@ public class CandidateService {
     private final InstructorService instructorService;
     private final InstructorRepository instructorRepository;
     private final TrainingRuleRepository ruleRepository;
+    private final TrainingPhaseRepository trainingPhaseRepository;
 
     public CandidateService(CandidateRepository candidateRepository,
                             UserClient userClient,
-                            InstructorService instructorService, InstructorRepository instructorRepository, TrainingRuleRepository ruleRepository) {
+                            InstructorService instructorService,
+                            InstructorRepository instructorRepository,
+                            TrainingRuleRepository ruleRepository,
+                            TrainingPhaseRepository trainingPhaseRepository) {
         this.candidateRepository = candidateRepository;
         this.userClient = userClient;
         this.instructorService = instructorService;
         this.instructorRepository = instructorRepository;
         this.ruleRepository = ruleRepository;
+        this.trainingPhaseRepository = trainingPhaseRepository;
     }
 
     public CandidateDTO getCandidateByUserId(Long userId) {
@@ -148,8 +154,22 @@ public class CandidateService {
         Candidate candidate = candidateRepository.findById(candidateId)
                 .orElseThrow(() -> new RuntimeException("Kandidat nije pronađen"));
 
+        boolean theoryPassed =
+                trainingPhaseRepository.findByCandidateCandidateIdAndPhaseTypeIgnoreCase(candidateId, "TEORIJSKI ISPIT")
+                        .stream().anyMatch(p -> "POLOŽENO".equalsIgnoreCase(p.getStatus()))
+                || trainingPhaseRepository.findByCandidateCandidateIdAndPhaseTypeIgnoreCase(candidateId, "TEORIJSKI DIO")
+                        .stream().anyMatch(p -> "POLOŽENO".equalsIgnoreCase(p.getStatus()));
+
+        if (!theoryPassed) {
+            throw new RuntimeException("Kandidat nije položio teorijski ispit. Instruktor se može dodijeliti tek nakon položene teorije.");
+        }
+
         Instructor instructor = instructorRepository.findByUserId(instructorUserId)
-                .orElseThrow(() -> new RuntimeException("Instruktor nije pronađen"));
+                .orElseGet(() -> {
+                    Instructor novi = new Instructor();
+                    novi.setUserId(instructorUserId);
+                    return instructorRepository.save(novi);
+                });
 
         candidate.setAssignedInstructor(instructor);
         candidateRepository.save(candidate);

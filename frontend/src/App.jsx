@@ -10,6 +10,7 @@ import BookLesson from './pages/BookLesson';
 import {isAdmin, getCurrentRole, isTokenValid} from './auth/jwt';
 import DashboardPage from './pages/DashboardPage';
 import CandidateManagement from './pages/CandidateManagement';
+import TheoryPlansPage from './pages/TheoryPlansPage';
 import InstructorDashboard from './pages/InstructorDashboard';
 import FinanceDashboard from './pages/FinanceDashboard'; // ← NOVO
 import Layout from './layouts/DashboardLayout.jsx'
@@ -123,6 +124,10 @@ export default function App() {
             <Route
                 path="/candidates"
                 element={<RequireAdmin><CandidateManagement /></RequireAdmin>}
+            />
+            <Route
+                path="/theory-plans"
+                element={<RequireAdmin><TheoryPlansPage /></RequireAdmin>}
             />
             <Route
                 path="/instructor-dashboard"

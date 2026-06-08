@@ -5,9 +5,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -48,6 +50,16 @@ public interface LessonRepository extends JpaRepository<Lesson, Long> {
     Page<Lesson> findByCandidateUserId(Long userId, Pageable pageable);
     Page<Lesson> findByInstructorUserId(Long userId, Pageable pageable);
 
+    @Query("SELECT l FROM Lesson l WHERE l.candidate.userId = :userId AND l.status = 'PENDING' ORDER BY l.dateTime ASC")
+    List<Lesson> findPendingByCandidate(@Param("userId") Long userId);
+
+
+    List<Lesson> findByCandidateCandidateIdAndLessonTypeIgnoreCase(Long candidateId, String lessonType);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE Lesson l SET l.status = 'ODRAĐENO' WHERE l.candidate.candidateId = :candidateId AND UPPER(l.lessonType) = 'VOŽNJA'")
+    int markAllDrivingLessonsCompleted(@Param("candidateId") Long candidateId);
 
     @Query("SELECT COUNT(l) FROM Lesson l " +
             "WHERE l.candidate.candidateId = :candidateId " +

@@ -24,7 +24,6 @@ public class PaymentController {
         this.accountRepository = accountRepository;
     }
 
-    // GET /payments/candidate/{candidateId}
     @GetMapping("/candidate/{candidateId}")
     public List<Payment> getPaymentsByCandidate(@PathVariable Integer candidateId) {
         return paymentRepository.findByCandidateAccount_Id(candidateId);

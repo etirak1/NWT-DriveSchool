@@ -14,13 +14,10 @@ export default function BookLesson() {
 
     const [date, setDate] = useState('');
     const [time, setTime] = useState('');
-    const [notes, setNotes] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
     const [eligibility, setEligibility] = useState(null);
-    const [lessonType, setLessonType] = useState('VOŽNJA');
-    const [topic, setTopic] = useState('');
 
     const TIME_SLOTS = [];
     for (let h = 8; h <= 16; h++) {
@@ -31,7 +28,7 @@ export default function BookLesson() {
     useEffect(() => {
         const loadCandidate = async () => {
             try {
-                const res = await api.get(`/api/candidates/${userId}`);
+                const res = await api.get(`/api/candidates/by-user/${userId}`);
                 setCandidate(res.data);
 
                 try {
@@ -89,10 +86,6 @@ export default function BookLesson() {
             setError('Nemate dodijeljen instruktor.');
             return;
         }
-        if (!instructor.assignedVehicleId) {
-            setError('Vaš instruktor nema dodijeljeno vozilo. Kontaktirajte administraciju.');
-            return;
-        }
 
         setSubmitting(true);
         try {
@@ -102,9 +95,7 @@ export default function BookLesson() {
                 dateTime,
                 duration: 45,
                 status: 'ZAKAZANO',
-                lessonType: lessonType,
-                topic: topic.trim() || null,
-                notes: notes.trim() || null
+                lessonType: 'VOŽNJA',
             };
             await api.post('/api/lessons', payload);
             setSuccess(true);
@@ -299,34 +290,6 @@ export default function BookLesson() {
                                     Instruktor nema dodijeljeno vozilo — kontaktirajte administraciju.
                                 </div>
                             )}
-
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-800 mb-1.5">
-                                    Tema/gradivo (opcionalno)
-                                </label>
-                                <input
-                                    type="text"
-                                    value={topic}
-                                    onChange={(e) => setTopic(e.target.value)}
-                                    maxLength={200}
-                                    placeholder="Npr. parking, vožnja u gradu, kružni tok..."
-                                    className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-800 mb-1.5">
-                                    Napomena (opcionalno)
-                                </label>
-                                <textarea
-                                    rows={3}
-                                    value={notes}
-                                    onChange={(e) => setNotes(e.target.value)}
-                                    maxLength={500}
-                                    placeholder="Npr. želim raditi parking ili vožnju u gradu..."
-                                    className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 resize-none"
-                                />
-                            </div>
 
                             {error && (
                                 <div className="bg-red-50 text-red-700 text-sm px-3 py-2 rounded-lg border border-red-100">

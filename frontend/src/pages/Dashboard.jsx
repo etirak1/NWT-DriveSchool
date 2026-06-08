@@ -89,6 +89,7 @@ export default function Dashboard() {
                       Candidates
                     </Link>
 
+
                     {/* ── NOVO: Finansijski servis ── */}
                     <Link
                         to="/finance"
