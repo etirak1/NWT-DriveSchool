@@ -1,49 +1,28 @@
+import { api } from '../api/client';
 
-const BASE_URL = 'http://localhost:8080';
-
-const getAuthHeaders = () => {
-    const token = localStorage.getItem('token');
-    return {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    };
-};
-
-const request = async (method, path, body) => {
-    const res = await fetch(`${BASE_URL}${path}`, {
-        method,
-        headers: getAuthHeaders(),
-        ...(body ? { body: JSON.stringify(body) } : {}),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-    if (res.status === 204) return null;
-    return res.json();
-};
 
 export const financeApi = {
-    // Svi računi sa obavezama
-    getAll: () => request('GET', '/accounts'),
+    // Svi računi
+    getAll: () =>
+        api.get('/accounts'),
 
-    // Paginiran
+    // Paginirani računi
     getAllPaginated: (page = 0, size = 10) =>
-        request('GET', `/accounts/paginated?page=${page}&size=${size}&sort=enrollmentDate`),
+        api.get(`/accounts/paginated?page=${page}&size=${size}&sort=enrollmentDate`),
 
-    // Jedan račun po ID-u
-    getById: (id) => request('GET', `/accounts/${id}`),
+    // Račun po ID-u
+    getById: (id) =>
+        api.get(`/accounts/${id}`),
 
-    // Puni status: obaveze + eligibility
-    getStatus: (candidateId) => request('GET', `/accounts/${candidateId}/status`),
+    // Status računa (obaveze + eligibility)
+    getStatus: (candidateId) =>
+        api.get(`/accounts/${candidateId}/status`),
 
     // Kreiraj račun ako ne postoji
-    ensureAccount: (candidateId) => request('POST', `/accounts/ensure/${candidateId}`),
+    ensureAccount: (candidateId) =>
+        api.post(`/accounts/ensure/${candidateId}`),
 
-    // Evidentiraj uplatu — backend raspoređuje automatski
+    // Uplata
     recordPayment: (candidateId, amount) =>
-        request('POST', `/accounts/${candidateId}/pay`, { amount }),
-};
-
-export const paymentApi = {
-    getByCandidateId: (candidateId) =>
-        request('GET', `/payments/candidate/${candidateId}`),
-    create: (data) => request('POST', '/payments', data),
+        api.post(`/accounts/${candidateId}/pay`, { amount }),
 };
