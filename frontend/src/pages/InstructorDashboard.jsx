@@ -256,7 +256,7 @@ export default function InstructorDashboard() {
                             onClick={() => { localStorage.removeItem('token'); navigate('/login'); }}
                             className="flex items-center gap-1.5 px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
                         >
-                            <LogOut size={16} /> Logout
+                            <LogOut size={16} /> Odjava
                         </button>
                     </div>
                 </div>
@@ -748,7 +748,7 @@ export default function InstructorDashboard() {
                                 </div>
                             </div>
                             <div>
-                                <label className="text-sm font-medium text-slate-700 block mb-1">Napomena (opciono)</label>
+                                <label className="text-sm font-medium text-slate-700 block mb-1">Napomena (opcionalno)</label>
                                 <input type="text" value={proposing.notes} placeholder="Npr. parking, gradska vožnja..."
                                     onChange={e => setProposing(p => ({ ...p, notes: e.target.value }))}
                                     className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30" />
@@ -771,13 +771,13 @@ export default function InstructorDashboard() {
                         <h3 className="font-bold text-slate-800 mb-4">Označi čas kao odrađen</h3>
                         <div className="space-y-3">
                             <div>
-                                <label className="text-sm font-medium text-slate-700 block mb-1">Tema / gradivo (opciono)</label>
+                                <label className="text-sm font-medium text-slate-700 block mb-1">Tema / gradivo (opcionalno)</label>
                                 <input type="text" value={completingLesson.topic} placeholder="Npr. parking, kružni tok..."
                                     onChange={e => setCompletingLesson(p => ({ ...p, topic: e.target.value }))}
                                     className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/30" />
                             </div>
                             <div>
-                                <label className="text-sm font-medium text-slate-700 block mb-1">Napomena (opciono)</label>
+                                <label className="text-sm font-medium text-slate-700 block mb-1">Napomena (opcionalno)</label>
                                 <textarea rows={2} value={completingLesson.notes} placeholder="Opcionalna napomena..."
                                     onChange={e => setCompletingLesson(p => ({ ...p, notes: e.target.value }))}
                                     className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/30 resize-none" />
@@ -814,7 +814,7 @@ function AddDrivingLessonForm({ candidateId, existingNumbers, onAdd }) {
             </select>
             <input type="date" value={date} onChange={e => setDate(e.target.value)}
                 className="text-sm border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
-            <input type="text" placeholder="Bilješka (opciono)" value={notes} onChange={e => setNotes(e.target.value)}
+            <input type="text" placeholder="Bilješka (opcionalno)" value={notes} onChange={e => setNotes(e.target.value)}
                 className="text-sm border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white flex-1 min-w-28" />
             <button onClick={() => onAdd(candidateId, lessonNumber, date, notes)}
                 className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">

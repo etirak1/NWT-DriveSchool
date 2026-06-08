@@ -377,7 +377,7 @@ export default function FinanceDashboard() {
             <header className="bg-white border-b border-slate-200">
                 <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
                     <Link to="/dashboard" className="flex items-center gap-1.5 text-slate-600 hover:text-slate-900 text-sm">
-                        <ArrowLeft size={16} /> Dashboard
+                        <ArrowLeft size={16} /> Nazad na početnu
                     </Link>
                     <div className="flex items-center gap-4">
                         <div className="text-right hidden sm:block">
@@ -386,7 +386,7 @@ export default function FinanceDashboard() {
                         </div>
                         <button onClick={() => { localStorage.removeItem('token'); navigate('/login'); }}
                                 className="flex items-center gap-1.5 px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">
-                            <LogOut size={16} />
+                            <LogOut size={16} /> Odjava
                         </button>
                     </div>
                 </div>
@@ -396,7 +396,7 @@ export default function FinanceDashboard() {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                     <div>
                         <h2 className="text-2xl font-bold text-slate-900">Finansije</h2>
-                        <p className="text-slate-500 text-sm mt-0.5">Evidencija uplata kandidata · Auto-škola 1.900 KM</p>
+                        <p className="text-slate-500 text-sm mt-0.5">Evidencija uplata kandidata</p>
                     </div>
                     <button onClick={() => generateReport(rows)} disabled={withAccounts.length === 0}
                             className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-40 shadow-sm">

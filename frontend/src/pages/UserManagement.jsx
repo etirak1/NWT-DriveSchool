@@ -132,7 +132,7 @@ export default function UserManagement() {
               to="/dashboard"
               className="flex items-center gap-1.5 text-slate-600 hover:text-slate-900 text-sm"
           >
-            <ArrowLeft size={16} /> Back to Dashboard
+            <ArrowLeft size={16} /> Nazad na početnu
           </Link>
 
           <div className="flex items-center gap-4">
@@ -146,7 +146,7 @@ export default function UserManagement() {
                 onClick={() => { localStorage.removeItem('token'); navigate('/login'); }}
                 className="flex items-center gap-1.5 px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
             >
-              <LogOut size={16} /> Logout
+              <LogOut size={16} /> Odjava
             </button>
           </div>
         </div>
@@ -157,10 +157,10 @@ export default function UserManagement() {
           {/* Title */}
           <div className="flex items-center gap-2 mb-1">
             <Users className="text-blue-500" size={24} />
-            <h2 className="text-xl font-bold text-slate-900">User Management</h2>
+            <h2 className="text-xl font-bold text-slate-900">Upravljanje korisnicima</h2>
           </div>
           <p className="text-slate-500 text-sm mb-5">
-            Manage candidate and instructor accounts
+            Upravljanje profilima korisnika i instruktora
           </p>
 
           {/* Toolbar */}
@@ -186,7 +186,7 @@ export default function UserManagement() {
             >
               {ROLES.map((r) => (
                 <option key={r} value={r}>
-                  {r === 'ALL' ? 'All Users' : r}
+                  {r === 'ALL' ? 'Svi korisnici' : r}
                 </option>
               ))}
             </select>
@@ -199,17 +199,17 @@ export default function UserManagement() {
               }}
               className="px-3 py-2.5 border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
             >
-              <option value="userId">Sort: ID</option>
-              <option value="firstName">Sort: First Name</option>
-              <option value="lastName">Sort: Last Name</option>
-              <option value="email">Sort: Email</option>
+              <option value="userId">Sortiranje: ID</option>
+              <option value="firstName">Sortiranje: Ime</option>
+              <option value="lastName">Sortiranje: Prezime</option>
+              <option value="email">Sortiranje: Email</option>
             </select>
 
             <button
               onClick={() => setShowAdd(true)}
               className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2.5 rounded-lg font-semibold whitespace-nowrap"
             >
-              <UserPlus size={18} /> Add User
+              <UserPlus size={18} /> Dodaj korisnika
             </button>
           </div>
 
@@ -229,11 +229,11 @@ export default function UserManagement() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-left text-xs font-bold text-slate-500 uppercase border-b border-slate-200">
-                      <th className="py-3 px-2">Name</th>
+                      <th className="py-3 px-2">Ime</th>
                       <th className="py-3 px-2">Email</th>
-                      <th className="py-3 px-2">Role</th>
+                      <th className="py-3 px-2">Uloga</th>
                       <th className="py-3 px-2">Status</th>
-                      <th className="py-3 px-2 text-right">Actions</th>
+                      <th className="py-3 px-2 text-right">Akcije</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -418,7 +418,7 @@ function AddUserModal({ onClose, onCreated }) {
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl shadow-xl max-w-md w-full">
         <div className="flex items-center justify-between p-5 border-b border-slate-200">
-          <h3 className="text-lg font-bold text-slate-900">Add New User</h3>
+          <h3 className="text-lg font-bold text-slate-900">Dodaj novog korisnika</h3>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-700">
             <X size={22} />
           </button>
@@ -427,7 +427,7 @@ function AddUserModal({ onClose, onCreated }) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-semibold text-slate-800 mb-1.5">
-                First Name
+                Ime
               </label>
               <input
                 required
@@ -438,7 +438,7 @@ function AddUserModal({ onClose, onCreated }) {
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-800 mb-1.5">
-                Last Name
+                Prezime
               </label>
               <input
                 required
@@ -456,14 +456,14 @@ function AddUserModal({ onClose, onCreated }) {
               required
               value={form.email}
               onChange={update('email')}
-              placeholder="user@example.com"
+              placeholder="korisnik@example.com"
               className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
             />
           </div>
 
           <div>
             <label className="block text-sm font-semibold text-slate-800 mb-1.5">
-              Password
+              Lozinka
             </label>
             <input
               type="password"
@@ -477,7 +477,7 @@ function AddUserModal({ onClose, onCreated }) {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-800 mb-1.5">Role</label>
+            <label className="block text-sm font-semibold text-slate-800 mb-1.5">Uloga</label>
             <select
               value={form.role}
               onChange={update('role')}
@@ -501,14 +501,14 @@ function AddUserModal({ onClose, onCreated }) {
               onClick={onClose}
               className="flex-1 px-4 py-2.5 border border-slate-200 rounded-lg font-semibold text-slate-700 hover:bg-slate-50"
             >
-              Cancel
+              Odustani
             </button>
             <button
               type="submit"
               disabled={submitting}
               className="flex-1 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white rounded-lg font-semibold"
             >
-              {submitting ? 'Kreiram…' : 'Create User'}
+              {submitting ? 'Kreiram…' : 'Kreiraj korisnika'}
             </button>
           </div>
         </form>
@@ -526,7 +526,7 @@ function ConfirmDeleteModal({ user, onCancel, onConfirm }) {
             <Trash2 className="text-red-600" size={18} />
           </div>
           <div>
-            <h3 className="font-bold text-slate-900">Delete User</h3>
+            <h3 className="font-bold text-slate-900">Obriši korisnika</h3>
             <p className="text-sm text-slate-600 mt-1">
               Da li ste sigurni da želite obrisati korisnika{' '}
               <span className="font-semibold">
@@ -541,13 +541,13 @@ function ConfirmDeleteModal({ user, onCancel, onConfirm }) {
             onClick={onCancel}
             className="flex-1 px-4 py-2.5 border border-slate-200 rounded-lg font-semibold text-slate-700 hover:bg-slate-50"
           >
-            Cancel
+            Odustani
           </button>
           <button
             onClick={onConfirm}
             className="flex-1 px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold"
           >
-            Delete
+            Obriši
           </button>
         </div>
       </div>

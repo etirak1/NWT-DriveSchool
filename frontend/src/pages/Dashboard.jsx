@@ -61,7 +61,7 @@ export default function Dashboard() {
               </div>
               <div>
                 <h1 className="text-lg font-bold text-slate-900">DriveSchool</h1>
-                <p className="text-xs text-slate-500">Dashboard & Announcements</p>
+                <p className="text-xs text-slate-500">Početna & obavještenja</p>
               </div>
             </div>
 
@@ -72,30 +72,29 @@ export default function Dashboard() {
                         to="/users"
                         className="flex items-center gap-1.5 px-3 py-2 text-sm bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-lg font-semibold"
                     >
-                      Manage Users
+                      Korisnici
                     </Link>
 
                     <Link
                         to="/resources"
                         className="flex items-center gap-1.5 px-3 py-2 text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg font-semibold"
                     >
-                      Resource Management
+                      Resursi
                     </Link>
 
                     <Link
                         to="/candidates"
                         className="flex items-center gap-1.5 px-3 py-2 text-sm bg-green-50 text-green-700 hover:bg-green-100 rounded-lg font-semibold"
                     >
-                      Candidates
+                      Kandidati
                     </Link>
 
 
-                    {/* ── NOVO: Finansijski servis ── */}
                     <Link
                         to="/finance"
                         className="flex items-center gap-1.5 px-3 py-2 text-sm bg-amber-50 text-amber-700 hover:bg-amber-100 rounded-lg font-semibold"
                     >
-                      💰 Finance
+                      Finansije
                     </Link>
                   </div>
               )}
@@ -119,7 +118,7 @@ export default function Dashboard() {
                   onClick={handleLogout}
                   className="flex items-center gap-1.5 px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
               >
-                <LogOut size={16} /> Logout
+                <LogOut size={16} /> Odjava
               </button>
             </div>
           </div>
@@ -127,10 +126,10 @@ export default function Dashboard() {
 
         {isMenuOpen && userIsAdmin && (
             <div className="sm:hidden border-t border-slate-100 bg-white px-4 py-3 flex flex-col gap-2">
-              <Link to="/users">Manage Users</Link>
-          <Link to="/resources">Resource Management</Link>
-          <Link to="/candidates">Candidates</Link>
-          <Link to="/finance">Finance</Link>
+              <Link to="/users">Korisnici</Link>
+          <Link to="/resources">Resursi</Link>
+          <Link to="/candidates">Kandidati</Link>
+          <Link to="/finance">Finansije</Link>
           </div>
           )}
 
@@ -139,7 +138,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
               <Megaphone className="text-blue-500" size={26} />
-              <h2 className="text-2xl font-bold text-slate-900">Recent Announcements</h2>
+              <h2 className="text-2xl font-bold text-slate-900">Nedavna Obavještenja</h2>
             </div>
 
             {userIsAdmin && (
@@ -147,13 +146,13 @@ export default function Dashboard() {
                     onClick={() => setShowModal(true)}
                     className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold shadow-sm"
                 >
-                  <Plus size={18} /> New Announcement
+                  <Plus size={18} /> Nova Obavještenja
                 </button>
             )}
           </div>
 
           <p className="text-slate-500 text-sm mb-5">
-            Stay updated with the latest news and important notices
+            Budite u toku s najnovijim vijestima i važnim obavještenjima.
           </p>
 
           {loading && (
@@ -173,9 +172,9 @@ export default function Dashboard() {
                 <div className="inline-flex w-14 h-14 rounded-full bg-slate-100 items-center justify-center mb-3">
                   <Megaphone className="text-slate-400" size={24} />
                 </div>
-                <h3 className="font-semibold text-slate-800">No announcements yet</h3>
+                <h3 className="font-semibold text-slate-800">Nema obavještenja</h3>
                 <p className="text-slate-500 text-sm mt-1">
-                  Check back later for updates and important notices
+                  Provjerite ponovo kasnije za nove informacije i važna obavještenja.
                 </p>
               </div>
           )}
@@ -230,7 +229,6 @@ function AnnouncementCard({ announcement }) {
             </span>
               {announcement.createdBy && (
                   <span className="flex items-center gap-1">
-                <User size={12} /> by user #{announcement.createdBy}
               </span>
               )}
             </div>
@@ -279,7 +277,7 @@ function CreateAnnouncementModal({ onClose, onCreated }) {
       <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
         <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full">
           <div className="flex items-center justify-between p-5 border-b border-slate-200">
-            <h3 className="text-lg font-bold text-slate-900">Create New Announcement</h3>
+            <h3 className="text-lg font-bold text-slate-900">Kreirajte novo obavještenje</h3>
             <button onClick={onClose} className="text-slate-400 hover:text-slate-700">
               <X size={22} />
             </button>
@@ -287,31 +285,31 @@ function CreateAnnouncementModal({ onClose, onCreated }) {
 
           <form onSubmit={handleSubmit} className="p-5 space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-slate-800 mb-1.5">Title</label>
+              <label className="block text-sm font-semibold text-slate-800 mb-1.5">Naslov</label>
               <input
                   required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Enter announcement title"
+                  placeholder="Unesite naslov obavještenja"
                   className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-800 mb-1.5">Message</label>
+              <label className="block text-sm font-semibold text-slate-800 mb-1.5">Poruka</label>
               <textarea
                   required
                   rows={4}
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  placeholder="Enter announcement message"
+                  placeholder="Unesite poruku obavještenja"
                   className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 resize-none"
               />
             </div>
 
             <div>
               <label className="block text-sm font-semibold text-slate-800 mb-1.5">
-                Expiration Date (optional)
+                Datum isteka (opcionalno)
               </label>
               <input
                   type="date"
@@ -333,14 +331,14 @@ function CreateAnnouncementModal({ onClose, onCreated }) {
                   onClick={onClose}
                   className="flex-1 px-4 py-2.5 border border-slate-200 rounded-lg font-semibold text-slate-700 hover:bg-slate-50"
               >
-                Cancel
+                Odustani
               </button>
               <button
                   type="submit"
                   disabled={submitting}
                   className="flex-1 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white rounded-lg font-semibold"
               >
-                {submitting ? 'Kreiram…' : 'Create Announcement'}
+                {submitting ? 'Kreiram…' : 'Kreiraj obavještenje'}
               </button>
             </div>
           </form>

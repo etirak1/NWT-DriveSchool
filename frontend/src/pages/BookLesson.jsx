@@ -83,7 +83,7 @@ export default function BookLesson() {
 
         const instructor = getInstructor();
         if (!instructor) {
-            setError('Nemate dodijeljen instruktor.');
+            setError('Nemate dodijeljenog instruktora.');
             return;
         }
 
@@ -128,7 +128,7 @@ export default function BookLesson() {
                 <div className="max-w-xl mx-auto">
                     <button onClick={() => navigate('/dashboard')}
                         className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-4">
-                        <ArrowLeft size={16} /> Nazad
+                        <ArrowLeft size={16} /> Nazad na početnu
                     </button>
                     <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
                         <h2 className="font-bold text-amber-800 mb-2">Nema dodijeljenog instruktora</h2>
@@ -148,7 +148,7 @@ export default function BookLesson() {
                 <div className="max-w-xl mx-auto">
                     <button onClick={() => navigate('/dashboard')}
                         className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-4">
-                        <ArrowLeft size={16} /> Nazad
+                        <ArrowLeft size={16} /> Nazad na početnu
                     </button>
                     <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
                         <h2 className="font-bold text-amber-800 mb-2">Teorijski dio nije položen</h2>
@@ -168,7 +168,7 @@ export default function BookLesson() {
                 <div className="max-w-xl mx-auto">
                     <button onClick={() => navigate('/dashboard')}
                         className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-4">
-                        <ArrowLeft size={16} /> Nazad
+                        <ArrowLeft size={16} /> Nazad na početnu
                     </button>
                     <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
                         <h2 className="font-bold text-amber-800 mb-2">Sedmični limit dostignut</h2>
@@ -195,7 +195,7 @@ export default function BookLesson() {
             <div className="max-w-2xl mx-auto">
                 <button onClick={() => navigate('/dashboard')}
                     className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-4">
-                    <ArrowLeft size={16} /> Nazad na dashboard
+                    <ArrowLeft size={16} /> Nazad na početnu
                 </button>
 
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
@@ -217,7 +217,7 @@ export default function BookLesson() {
                                 <CheckCircle className="text-emerald-600" size={32} />
                             </div>
                             <h3 className="font-bold text-slate-900 text-lg">Čas uspješno zakazan!</h3>
-                            <p className="text-sm text-slate-500 mt-1">Vraćam vas na dashboard...</p>
+                            <p className="text-sm text-slate-500 mt-1">Vraćam vas na početnu...</p>
                         </div>
                     ) : (
                         <form onSubmit={handleSubmit} className="space-y-5">

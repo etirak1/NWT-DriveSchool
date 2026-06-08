@@ -75,7 +75,7 @@ export default function TheoryPlansPage() {
                         to="/dashboard"
                         className="flex items-center gap-1.5 text-slate-600 hover:text-slate-900 text-sm"
                     >
-                        <ArrowLeft size={16} /> Nazad na dashboard
+                        <ArrowLeft size={16} /> Nazad na početnu
                     </Link>
                     <div className="flex items-center gap-4">
                         <div className="text-right hidden sm:block">
@@ -86,7 +86,7 @@ export default function TheoryPlansPage() {
                             onClick={() => { localStorage.removeItem('token'); navigate('/login'); }}
                             className="flex items-center gap-1.5 px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
                         >
-                            <LogOut size={16} /> Logout
+                            <LogOut size={16} /> Odjava
                         </button>
                     </div>
                 </div>
@@ -116,7 +116,7 @@ export default function TheoryPlansPage() {
                 )}
 
                 {loading ? (
-                    <div className="text-center py-16 text-slate-400">Ucitavanje...</div>
+                    <div className="text-center py-16 text-slate-400">Učitavanje...</div>
                 ) : plans.length === 0 ? (
                     <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center">
                         <div className="inline-flex w-14 h-14 rounded-full bg-indigo-50 items-center justify-center mb-3">
@@ -151,7 +151,7 @@ export default function TheoryPlansPage() {
                                                 <div className="flex flex-wrap gap-3 mt-2 text-xs text-slate-500">
                                                     <span className="flex items-center gap-1">
                                                         <Calendar size={12} />
-                                                        Pocetak: {plan.startDate}
+                                                        Početak: {plan.startDate}
                                                     </span>
                                                     <span className="flex items-center gap-1">
                                                         <Clock size={12} />
@@ -159,7 +159,7 @@ export default function TheoryPlansPage() {
                                                     </span>
                                                     <span className="flex items-center gap-1">
                                                         <BookOpen size={12} />
-                                                        {plan.totalLessons} casova, {plan.lessonsPerSession} po terminu
+                                                        {plan.totalLessons} časova, {plan.lessonsPerSession} po terminu
                                                     </span>
                                                 </div>
 

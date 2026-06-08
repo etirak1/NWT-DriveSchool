@@ -29,7 +29,7 @@ export default function Register() {
   email: form.email,
   passwordHash: form.password,
 });
-      setSuccess('Nalog kreiran. Preusmjeravam na login...');
+      setSuccess('Nalog kreiran. Preusmjeravam na prijavu...');
       setTimeout(() => navigate('/login'), 1200);
     } catch (err) {
       const msg =
@@ -51,14 +51,14 @@ export default function Register() {
               <UserPlus className="text-white" size={28} />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-center text-slate-900">Create Account</h1>
-          <p className="text-center text-slate-500 mt-2">Join the driving school</p>
+          <h1 className="text-3xl font-bold text-center text-slate-900">Kreirajte račun</h1>
+          <p className="text-center text-slate-500 mt-2">Pridruži se auto-školi</p>
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-semibold text-slate-800 mb-1.5">
-                  First Name
+                  Ime
                 </label>
                 <input
                   required
@@ -69,7 +69,7 @@ export default function Register() {
               </div>
               <div>
                 <label className="block text-sm font-semibold text-slate-800 mb-1.5">
-                  Last Name
+                  Prezime
                 </label>
                 <input
                   required
@@ -82,7 +82,7 @@ export default function Register() {
 
             <div>
               <label className="block text-sm font-semibold text-slate-800 mb-1.5">
-                Email Address
+                E-mail adresa
               </label>
               <input
                 type="email"
@@ -96,7 +96,7 @@ export default function Register() {
 
             <div>
               <label className="block text-sm font-semibold text-slate-800 mb-1.5">
-                Password
+                Lozinka
               </label>
               <input
                 type="password"
@@ -110,7 +110,7 @@ export default function Register() {
             </div>
 
             <div className="bg-blue-50 text-blue-700 text-xs px-3 py-2 rounded-lg border border-blue-100">
-  You're registering as a <strong>candidate</strong>. Instructor and admin accounts are created by school administration.
+ Registrovani ste kao <strong>kandidat</strong>. Računi instruktora i admina se isključivo kreiraju od strane administracije auto-škole.
 </div>
 
             {error && (
@@ -129,14 +129,14 @@ export default function Register() {
               disabled={loading}
               className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-semibold py-3 rounded-lg transition-colors"
             >
-              {loading ? 'Kreiram nalog...' : 'Sign Up'}
+              {loading ? 'Kreiram nalog...' : 'Registruj se'}
             </button>
           </form>
 
           <p className="text-center text-slate-600 mt-6">
-            Already have an account?{' '}
+            Već imate račun?{' '}
             <Link to="/login" className="text-blue-500 font-semibold hover:underline">
-              Sign in
+              Prijavi se
             </Link>
           </p>
         </div>

@@ -188,16 +188,16 @@ export default function CandidateDashboard() {
     const obligations       = financeStatus?.obligations ?? [];
 
     const navItems = [
-        { id: 'overview',      label: 'Overview'      },
-        { id: 'progress',      label: 'Progress'      },
-        { id: 'finances',      label: 'Finances'      },
-        { id: 'announcements', label: 'Announcements' },
+        { id: 'overview',      label: 'Pregled'      },
+        { id: 'progress',      label: 'Napredak'      },
+        { id: 'finances',      label: 'Finansije'      },
+        { id: 'announcements', label: 'Obavještenja' },
     ];
 
     if (loading) {
         return (
             <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-                <p className="text-slate-500 text-sm">Loading...</p>
+                <p className="text-slate-500 text-sm">Učitavanje...</p>
             </div>
         );
     }
@@ -213,7 +213,7 @@ export default function CandidateDashboard() {
                         </div>
                         <div>
                             <h1 className="text-lg font-bold text-slate-900">DriveSchool</h1>
-                            <p className="text-xs text-slate-500">Candidate Dashboard</p>
+                            <p className="text-xs text-slate-500">Nadzorna ploča kandidata</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-4">
@@ -227,7 +227,7 @@ export default function CandidateDashboard() {
                             onClick={handleLogout}
                             className="flex items-center gap-1.5 px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
                         >
-                            <LogOut size={16} /> Logout
+                            <LogOut size={16} /> Odjava
                         </button>
                     </div>
                 </div>
@@ -378,11 +378,11 @@ export default function CandidateDashboard() {
                         {allDone && (
                             <div className="bg-white rounded-xl border border-slate-200 p-5 flex items-center justify-between">
                                 <div>
-                                    <p className="font-semibold text-slate-800">Training complete!</p>
+                                    <p className="font-semibold text-slate-800">Obuka je završena!</p>
                                     <p className="text-sm text-slate-500 mt-0.5">
                                         {alreadyRated
-                                            ? 'You have already rated your instructor.'
-                                            : 'Rate your instructor and share your experience.'}
+                                            ? 'Već ste ocijenili vašeg instruktora.'
+                                            : 'Ocijenite vašeg instruktora i podijelite vaše iskustvo.'}
                                     </p>
                                 </div>
                                 {!alreadyRated && (
@@ -390,7 +390,7 @@ export default function CandidateDashboard() {
                                         onClick={() => setShowFeedback(true)}
                                         className="flex items-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
                                     >
-                                        <MessageSquare size={16} /> Rate instructor
+                                        <MessageSquare size={16} /> Ocijeni instruktora
                                     </button>
                                 )}
                             </div>
@@ -400,13 +400,13 @@ export default function CandidateDashboard() {
                         <div className="bg-white rounded-xl border border-slate-200 p-6">
                             <h2 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
                                 <BookOpen size={16} className="text-purple-500" />
-                                Theory lessons
+                                Časovi teorije
                             </h2>
                             <div className="grid grid-cols-3 gap-4 mb-5">
                                 {[
-                                    { label: 'Completed',      value: theoryCompleted,               color: 'text-green-600'  },
-                                    { label: 'Total required', value: theoryTotal,                    color: 'text-slate-800'  },
-                                    { label: 'Remaining',      value: Math.max(0, theoryTotal - theoryCompleted), color: 'text-purple-600' },
+                                    { label: 'Završeno',      value: theoryCompleted,               color: 'text-green-600'  },
+                                    { label: 'Ukupno potrebno', value: theoryTotal,                    color: 'text-slate-800'  },
+                                    { label: 'Preostalo',      value: Math.max(0, theoryTotal - theoryCompleted), color: 'text-purple-600' },
                                 ].map(s => (
                                     <div key={s.label} className="bg-slate-50 rounded-lg p-4 text-center">
                                         <p className={`text-3xl font-bold ${s.color}`}>{s.value}</p>
@@ -416,9 +416,9 @@ export default function CandidateDashboard() {
                             </div>
                             <div className="space-y-1">
                                 <div className="flex justify-between text-xs text-slate-500">
-                                    <span>Theory progress</span>
+                                    <span>Napredak u teoriji</span>
                                     <span className={`font-medium ${theoryPct >= 100 ? 'text-green-600' : 'text-purple-600'}`}>
-                                        {theoryPct}% completed
+                                        {theoryPct}% završeno
                                     </span>
                                 </div>
                                 <div className="w-full bg-slate-100 rounded-full h-2.5">
@@ -434,13 +434,13 @@ export default function CandidateDashboard() {
                         <div className="bg-white rounded-xl border border-slate-200 p-6">
                             <h2 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
                                 <Car size={16} className="text-blue-500" />
-                                Driving lessons
+                                Časovi vožnje
                             </h2>
                             <div className="grid grid-cols-3 gap-4 mb-5">
                                 {[
-                                    { label: 'Completed',      value: effectiveDrivingCompleted,               color: 'text-green-600' },
-                                    { label: 'Total required', value: drivingTotal,                                  color: 'text-slate-800' },
-                                    { label: 'Remaining',      value: Math.max(0, drivingTotal - effectiveDrivingCompleted), color: 'text-blue-600'  },
+                                    { label: 'Završeno',      value: effectiveDrivingCompleted,               color: 'text-green-600' },
+                                    { label: 'Ukupno potrebno', value: drivingTotal,                                  color: 'text-slate-800' },
+                                    { label: 'Preostalo',      value: Math.max(0, drivingTotal - effectiveDrivingCompleted), color: 'text-blue-600'  },
                                 ].map(s => (
                                     <div key={s.label} className="bg-slate-50 rounded-lg p-4 text-center">
                                         <p className={`text-3xl font-bold ${s.color}`}>{s.value}</p>
@@ -450,9 +450,9 @@ export default function CandidateDashboard() {
                             </div>
                             <div className="space-y-1">
                                 <div className="flex justify-between text-xs text-slate-500">
-                                    <span>Driving progress</span>
+                                    <span>Napredak u vožnji</span>
                                     <span className={`font-medium ${drivingPct >= 100 ? 'text-green-600' : 'text-blue-600'}`}>
-                                        {drivingPct}% completed
+                                        {drivingPct}% završeno
                                     </span>
                                 </div>
                                 <div className="w-full bg-slate-100 rounded-full h-2.5">
@@ -467,7 +467,7 @@ export default function CandidateDashboard() {
                         {/* Instructor card */}
                         {candidate?.assignedInstructor && (
                             <div className="bg-white rounded-xl border border-slate-200 p-6">
-                                <h2 className="text-sm font-semibold text-slate-700 mb-3">Your instructor</h2>
+                                <h2 className="text-sm font-semibold text-slate-700 mb-3">Vaš instruktor</h2>
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm">
                                         {candidate.assignedInstructor?.user?.firstName?.[0]}
@@ -780,13 +780,13 @@ export default function CandidateDashboard() {
                 {/* ── ANNOUNCEMENTS ── */}
                 {activeSection === 'announcements' && (
                     <div className="bg-white rounded-xl border border-slate-200 p-6">
-                        <h2 className="text-base font-semibold text-slate-800 mb-1">Announcements</h2>
-                        <p className="text-sm text-slate-500 mb-5">Stay updated with the latest news and important notices</p>
+                        <h2 className="text-base font-semibold text-slate-800 mb-1">Obavještenja</h2>
+                        <p className="text-sm text-slate-500 mb-5">Budite u toku s najnovijim vijestima i važnim obavještenjima.</p>
                         {announcements.length === 0 ? (
                             <div className="flex flex-col items-center py-12 gap-3">
                                 <AlertCircle size={36} className="text-slate-300" />
-                                <p className="text-slate-400 text-sm">No announcements yet</p>
-                                <p className="text-slate-400 text-xs">Check back later for updates and important notices</p>
+                                <p className="text-slate-400 text-sm">Nema obavještenja</p>
+                                <p className="text-slate-400 text-xs">Provjerite kasnije za nove informacije i važna obavještenja</p>
                             </div>
                         ) : (
                             <div className="divide-y divide-slate-100">
@@ -841,30 +841,30 @@ function LessonTable({ pageData, onPageChange, onReschedule, theoryPassed }) {
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
                     <BookOpen size={16} className="text-blue-500" />
-                    Lesson history
+                    Historija časova
                 </h2>
                 {theoryPassed ? (
                     <Link
                         to="/book-lesson"
                         className="flex items-center gap-1.5 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg font-medium text-sm transition"
                     >
-                        <Plus size={14} /> Book a lesson
+                        <Plus size={14} /> Zakaži čas
                     </Link>
                 ) : (
-                    <span className="text-xs text-slate-400 italic">Theory exam required</span>
+                    <span className="text-xs text-slate-400 italic">Teorijski ispit potreban</span>
                 )}
             </div>
 
             {pageData.content.length === 0 ? (
-                <div className="px-6 py-10 text-center text-sm text-slate-400 italic">No lessons found.</div>
+                <div className="px-6 py-10 text-center text-sm text-slate-400 italic">Nema pronađenih časova.</div>
             ) : (
                 <table className="w-full text-left">
                     <thead className="bg-slate-50 text-slate-500 text-xs">
                         <tr>
-                            <th className="px-6 py-3 font-medium">Date & time</th>
-                            <th className="px-6 py-3 font-medium">Instructor</th>
+                            <th className="px-6 py-3 font-medium">Datum & vrijeme</th>
+                            <th className="px-6 py-3 font-medium">Instruktor</th>
                             <th className="px-6 py-3 font-medium">Status</th>
-                            <th className="px-6 py-3 font-medium">Notes</th>
+                            <th className="px-6 py-3 font-medium">Napomena</th>
                             <th className="px-6 py-3 font-medium"></th>
                         </tr>
                     </thead>
@@ -901,7 +901,7 @@ function LessonTable({ pageData, onPageChange, onReschedule, theoryPassed }) {
                                             onClick={() => onReschedule(lesson)}
                                             className="text-xs px-2.5 py-1 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 font-medium transition"
                                         >
-                                            Reschedule
+                                            Promijeni termin
                                         </button>
                                     )}
                                 </td>
