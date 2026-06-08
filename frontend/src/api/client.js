@@ -46,8 +46,7 @@ api.interceptors.response.use(
             return new Promise(() => {});
         }
 
-        if (!error.response || error.code === 'ECONNABORTED' ||
-            status === 500 || status === 502 || status === 503) {
+        if (!error.response || error.code === 'ECONNABORTED') {
             localStorage.removeItem('token');
             window.location.href = '/login?reason=service_offline';
             return new Promise(() => {});

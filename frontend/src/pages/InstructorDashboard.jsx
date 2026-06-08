@@ -70,7 +70,10 @@ export default function InstructorDashboard() {
                     `/api/lessons/instructor-lessons?userId=${userId}&size=200&sortBy=dateTime&sortDir=asc`
                 );
                 setScheduledLessons(res.data.content || []);
-            } catch { console.error('Greška pri učitavanju zakazanih časova'); }
+            } catch (e) {
+                console.error('Greška pri učitavanju zakazanih časova:', e?.response?.status, e?.message);
+                setScheduledLessons([]);
+            }
         };
         loadScheduled();
     }, []);
@@ -81,7 +84,10 @@ export default function InstructorDashboard() {
                 `/api/lessons/instructor-lessons?userId=${userId}&size=200&sortBy=dateTime&sortDir=asc`
             );
             setScheduledLessons(res.data.content || []);
-        } catch {}
+        } catch (e) {
+            console.error('Greška pri refreshu zakazanih časova:', e?.response?.status, e?.message);
+            setScheduledLessons([]);
+        }
     };
 
     const loadLessons = async (candidateId, force = false) => {
