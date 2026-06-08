@@ -20,6 +20,7 @@ public class InstructorNotification {
     private String title;
     private String body;
 
+    @Column(name = "is_read")
     private boolean read = false;
 
     private LocalDateTime timestamp = LocalDateTime.now();

@@ -25,9 +25,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ErrorResponse> handleRuntime(RuntimeException ex) {
-        return new ResponseEntity<>(new ErrorResponse("INTERNAL_ERROR", ex.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+        String msg = ex.getMessage() != null ? ex.getMessage() : "Interna greška";
+        if (msg.contains("nije pronađen") || msg.contains("not found")) {
+            return new ResponseEntity<>(new ErrorResponse("NOT_FOUND", msg), HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(new ErrorResponse("INTERNAL_ERROR", msg), HttpStatus.INTERNAL_SERVER_ERROR);
     }
-
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
     public ResponseEntity<Map<String, String>> handleAccessDenied(Exception ex) {
         Map<String, String> response = new HashMap<>();

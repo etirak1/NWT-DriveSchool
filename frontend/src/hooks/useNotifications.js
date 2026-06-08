@@ -3,15 +3,17 @@ import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { api } from '../api/client';
 
-// Direktno na training-service — gateway ima probleme sa SockJS HTTP polling transportom
-const WS_URL = 'http://localhost:8083/ws';
+const WS_URL = 'http://localhost:8083/ws'; 
+if (import.meta.env.DEV) {
+    console.warn('[useNotifications] WebSocket ide direktno na :8083, ne kroz gateway. Promijeni za produkciju.');
+}
 
 export function useNotifications(userId) {
     const [notifications, setNotifications] = useState([]);
     const [connected, setConnected] = useState(false);
     const clientRef = useRef(null);
 
-    // Učitaj postojeće notifikacije iz baze pri mountu
+  
     useEffect(() => {
         if (!userId) return;
         api.get(`/api/notifications/instructor/${userId}`)
@@ -29,7 +31,7 @@ export function useNotifications(userId) {
             .catch(() => {});
     }, [userId]);
 
-    // WebSocket za real-time — dodaje nove notifikacije bez zamjene postojećih
+    
     useEffect(() => {
         if (!userId) return;
 
@@ -70,9 +72,9 @@ export function useNotifications(userId) {
 
     const markAllRead = useCallback(() => {
         if (!userId) return;
-        // Označi u bazi
+       
         api.put(`/api/notifications/instructor/${userId}/read-all`).catch(() => {});
-        // Lokalno
+        
         setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     }, [userId]);
 

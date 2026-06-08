@@ -18,6 +18,8 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class FeedbackService {
@@ -29,6 +31,8 @@ public class FeedbackService {
     private final InstructorService instructorService;
     private final SimpMessagingTemplate messagingTemplate;
     private final InstructorNotificationRepository notificationRepository;
+    private static final Logger log = LoggerFactory.getLogger(FeedbackService.class);
+
 
     public FeedbackService(FeedbackRepository feedbackRepository, CandidateRepository candidateRepository,
                            InstructorRepository instructorRepository,
@@ -67,13 +71,12 @@ public class FeedbackService {
 
         if (candidate.getProgressPercentage() == null ||
                 candidate.getProgressPercentage().compareTo(new BigDecimal("100")) < 0) {
-            throw new RuntimeException("Kandidat mora završiti obuku prije ocjenjivanja instruktora.");
+            throw new IllegalArgumentException("Kandidat mora završiti obuku prije ocjenjivanja instruktora.");
         }
 
         if (feedbackRepository.existsByCandidateCandidateId(candidate.getCandidateId())) {
-            throw new RuntimeException("Već ste ostavili ocjenu za svog instruktora.");
+            throw new IllegalArgumentException("Već ste ostavili ocjenu za svog instruktora.");
         }
-
         Instructor instructor = instructorRepository.findById(feedback.getInstructor().getInstructorId())
                 .orElseThrow(() -> new RuntimeException("Instruktor nije pronađen"));
 
@@ -81,35 +84,38 @@ public class FeedbackService {
         feedback.setInstructor(instructor);
         Feedback savedFeedback = feedbackRepository.save(feedback);
 
+
+        String candidateName = "Kandidat";
         try {
             UserDTO candidateUser = candidateService.getCandidateFullDetails(candidate.getCandidateId()).getUser();
-            String candidateName = candidateUser != null
-                    ? candidateUser.getFirstName() + " " + candidateUser.getLastName()
-                    : "Kandidat";
-            String stars = "★".repeat(savedFeedback.getRating()) + "☆".repeat(5 - savedFeedback.getRating());
-            String body = candidateName + " je ostavio/la ocjenu " + stars;
+            if (candidateUser != null) {
+                candidateName = candidateUser.getFirstName() + " " + candidateUser.getLastName();
+            }
+        } catch (Exception e) {
+            log.warn("Nije moguće dohvatiti ime kandidata, koristi se fallback: {}", e.getMessage());
+        }
 
-            // Snimi u bazu — notifikacija je dostupna i kad instruktor nije online
-            InstructorNotification saved = new InstructorNotification();
-            saved.setInstructorUserId(instructor.getUserId());
-            saved.setType("NEW_FEEDBACK");
-            saved.setTitle("Nova ocjena");
-            saved.setBody(body);
-            notificationRepository.save(saved);
+        String stars = "★".repeat(savedFeedback.getRating()) + "☆".repeat(5 - savedFeedback.getRating());
+        String body = candidateName + " je ostavio/la ocjenu " + stars;
 
-            // Pošalji i WebSocket poruku za real-time (ako je konekcija aktivna)
+        InstructorNotification saved = new InstructorNotification();
+        saved.setInstructorUserId(instructor.getUserId());
+        saved.setType("NEW_FEEDBACK");
+        saved.setTitle("Nova ocjena");
+        saved.setBody(body);
+        notificationRepository.save(saved);
+
+        try {
             NotificationMessage notification = new NotificationMessage(
                     "NEW_FEEDBACK", "Nova ocjena", body,
                     Map.of("feedbackId", savedFeedback.getFeedbackId(),
-                           "rating", savedFeedback.getRating(),
-                           "candidateName", candidateName,
-                           "notificationId", saved.getId())
+                            "rating", savedFeedback.getRating(),
+                            "candidateName", candidateName,
+                            "notificationId", saved.getId())
             );
-            messagingTemplate.convertAndSend(
-                    "/topic/instructor." + instructor.getUserId(),
-                    notification
-            );
-        } catch (Exception ignored) {
+            messagingTemplate.convertAndSend("/topic/instructor." + instructor.getUserId(), notification);
+        } catch (Exception e) {
+            log.error("Greška pri slanju WebSocket notifikacije: {}", e.getMessage(), e);
         }
 
         return new FeedbackDTO(

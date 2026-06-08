@@ -1,6 +1,8 @@
 package com.autoskola.trainingservice.service;
 
+import com.autoskola.trainingservice.client.FinanceClient;
 import com.autoskola.trainingservice.dto.CandidateDTO;
+import com.autoskola.trainingservice.dto.CandidateFinanceStatusDTO;
 import com.autoskola.trainingservice.dto.PhaseStatusDTO;
 import com.autoskola.trainingservice.dto.TrainingPhaseDTO;
 import com.autoskola.trainingservice.model.Candidate;
@@ -12,6 +14,8 @@ import com.autoskola.trainingservice.repository.LessonRepository;
 import com.autoskola.trainingservice.repository.TheoryLessonRepository;
 import com.autoskola.trainingservice.repository.TheorySessionAttendanceRepository;
 import com.autoskola.trainingservice.repository.TrainingPhaseRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +31,7 @@ public class TrainingPhaseService {
 
     private static final int REQUIRED_THEORY_LESSONS = 40;
     private static final int REQUIRED_DRIVING_LESSONS = 40;
+    private static final Logger log = LoggerFactory.getLogger(TrainingPhaseService.class);
 
     private final TrainingPhaseRepository phaseRepository;
     private final CandidateService candidateService;
@@ -35,6 +40,7 @@ public class TrainingPhaseService {
     private final TheoryLessonRepository theoryLessonRepository;
     private final TheorySessionAttendanceRepository attendanceRepository;
     private final DrivingLessonRepository drivingLessonRepository;
+    private final FinanceClient financeClient;
 
     public TrainingPhaseService(TrainingPhaseRepository phaseRepository,
                                 CandidateService candidateService,
@@ -42,7 +48,8 @@ public class TrainingPhaseService {
                                 LessonRepository lessonRepository,
                                 TheoryLessonRepository theoryLessonRepository,
                                 TheorySessionAttendanceRepository attendanceRepository,
-                                DrivingLessonRepository drivingLessonRepository) {
+                                DrivingLessonRepository drivingLessonRepository,
+                                FinanceClient financeClient) {
         this.phaseRepository = phaseRepository;
         this.candidateService = candidateService;
         this.candidateRepository = candidateRepository;
@@ -50,6 +57,7 @@ public class TrainingPhaseService {
         this.theoryLessonRepository = theoryLessonRepository;
         this.attendanceRepository = attendanceRepository;
         this.drivingLessonRepository = drivingLessonRepository;
+        this.financeClient = financeClient;
     }
 
     // ─── TIMELINE ────────────────────────────────────────────────────────────────
@@ -156,6 +164,24 @@ public class TrainingPhaseService {
                                            String status, LocalDate examDate, String notes) {
         Candidate candidate = candidateRepository.findById(candidateId)
                 .orElseThrow(() -> new RuntimeException("Kandidat nije pronađen"));
+
+        // Blokira pristup vozačkom ispitu ako finansijske obaveze nisu izmirene
+        if ("PRAKTIČNI ISPIT".equalsIgnoreCase(phaseType)) {
+            try {
+                CandidateFinanceStatusDTO financeStatus = financeClient.getFinanceStatus(candidateId);
+                if (!financeStatus.isExamEligible()) {
+                    throw new IllegalArgumentException(
+                            "Kandidat nije izmirio sve finansijske obaveze. " +
+                            "Preostali dug: " + financeStatus.getRemainingDebt() + " KM."
+                    );
+                }
+            } catch (IllegalArgumentException e) {
+                throw e; // propagiraj validacionu grešku
+            } catch (Exception e) {
+                log.warn("Nije moguće provjeriti finansijski status kandidata {}: {}", candidateId, e.getMessage());
+                // Ako finance-service nije dostupan, ne blokiraj (graceful degradation)
+            }
+        }
 
         List<TrainingPhase> existing = phaseRepository
                 .findByCandidateCandidateIdAndPhaseTypeIgnoreCase(candidateId, phaseType);

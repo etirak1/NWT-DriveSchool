@@ -13,12 +13,16 @@ const FeedbackModal = ({ candidate, onClose, onSubmitted }) => {
     const instructor = candidate?.assignedInstructor;
 
     const handleSubmit = async () => {
-        if (rating === 0) {
-            setError('Molimo odaberite ocjenu.');
-            return;
-        }
-        setError('');
-        setLoading(true);
+    if (rating === 0) {
+        setError('Molimo odaberite ocjenu.');
+        return;
+    }
+    if (!candidate?.candidateId || !candidate?.assignedInstructor?.instructorId) {
+        setError('Greška: podaci o kandidatu ili instruktoru nisu dostupni. Osvježite stranicu.');
+        return;
+    }
+    setError('');
+    setLoading(true);
 
 
         try {
