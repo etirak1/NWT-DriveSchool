@@ -16,17 +16,17 @@ export default function DashboardPage() {
 
     const loading = lv || lr || li;
 
-    if (loading) return <Spinner label="Loading resources..." />;
+    if (loading) return <Spinner label="Učitavanje resursa..." />;
     if (ev) return <ErrorState message={ev} onRetry={refetchV} />;
 
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-center gap-2 mb-1">
                 <LayoutDashboard className="text-blue-500" size={24} />
-                <h2 className="text-xl font-bold text-slate-900">Resource Management</h2>
+                <h2 className="text-xl font-bold text-slate-900">Upravljanje resursima</h2>
             </div>
             <p className="text-slate-500 text-sm mb-5">
-                Overview of driving school vehicles and instructors
+                Pregled instruktora i vozila auto-škole
             </p>
             <Dashboard
                 vehicles={vehicles}

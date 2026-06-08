@@ -86,17 +86,28 @@ export default function InstructorsPage() {
 
     const handleAssignVehicle = async (instructorId, vehicleId) => {
         setAssigning(true);
+
         try {
             await instructorApi.assignVehicle(instructorId, vehicleId);
+
             const vehicle = vehicles.find(v => v.vehicleId === vehicleId);
+
             addToast(
                 `Vozilo ${vehicle?.brand} ${vehicle?.model} dodijeljeno instruktoru!`,
                 'success'
             );
+
             setAssignTarget(null);
             loadCombinedData();
+
         } catch (e) {
-            addToast(getErrorMessage(e), 'error');
+
+            if (e.response?.status === 500) {
+                addToast('Vozilo je već dodijeljeno drugom instruktoru', 'error');
+            } else {
+                addToast(getErrorMessage(e), 'error');
+            }
+
         } finally {
             setAssigning(false);
         }

@@ -75,9 +75,9 @@ export default function Login() {
               <LogIn className="text-white" size={28} />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-center text-slate-900">Welcome Back</h1>
+          <h1 className="text-3xl font-bold text-center text-slate-900">Dobro došli!</h1>
           <p className="text-center text-slate-500 mt-2">
-            Sign in to your driving school account
+            Prijavite se na svoj račun auto-škole
           </p>
 
           {displayMessage && (
@@ -94,7 +94,7 @@ export default function Login() {
           <form onSubmit={handleSubmit} className="mt-8 space-y-5">
             <div>
               <label className="block text-sm font-semibold text-slate-800 mb-1.5">
-                Email Address
+                E-mail adresa
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
@@ -111,7 +111,7 @@ export default function Login() {
 
             <div>
               <label className="block text-sm font-semibold text-slate-800 mb-1.5">
-                Password
+                Lozinka
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
@@ -120,7 +120,7 @@ export default function Login() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder="Unesite svoju lozinku"
                   className="w-full pl-10 pr-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
                 />
               </div>
@@ -137,20 +137,17 @@ export default function Login() {
               disabled={loading}
               className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-semibold py-3 rounded-lg transition-colors"
             >
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? 'Prijavljivanje...' : 'Prijava'}
             </button>
           </form>
 
           <p className="text-center text-slate-600 mt-6">
-            Don't have an account?{' '}
+            Nemate kreiran račun?{' '}
             <Link to="/register" className="text-blue-500 font-semibold hover:underline">
-              Sign up
+              Registruj se
             </Link>
           </p>
         </div>
-        <p className="text-center text-slate-400 text-sm mt-4">
-          Secure login powered by advanced encryption
-        </p>
       </div>
     </div>
   );

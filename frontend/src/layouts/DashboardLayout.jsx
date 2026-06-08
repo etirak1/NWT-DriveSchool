@@ -28,7 +28,7 @@ export default function DashboardLayout() {
                         to="/dashboard"
                         className="flex items-center gap-1.5 text-slate-600 hover:text-slate-900 text-sm"
                     >
-                        <ArrowLeft size={16} /> Back to Dashboard
+                        <ArrowLeft size={16} /> Nazad na početnu
                     </Link>
                     <div className="flex items-center gap-4">
                         <div className="text-right hidden sm:block">
@@ -41,7 +41,7 @@ export default function DashboardLayout() {
                             onClick={() => { localStorage.removeItem('token'); navigate('/login'); }}
                             className="flex items-center gap-1.5 px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
                         >
-                            <LogOut size={16} /> Logout
+                            <LogOut size={16} /> Odjava
                         </button>
                     </div>
                 </div>
