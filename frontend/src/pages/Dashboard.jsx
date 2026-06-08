@@ -11,7 +11,7 @@ import {
   GraduationCap
 } from 'lucide-react';
 import { api } from '../api/client';
-import { isAdmin, getCurrentRole, getCurrentEmail, getCurrentUserId } from '../auth/jwt';
+import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 
 export default function Dashboard() {
@@ -22,9 +22,11 @@ export default function Dashboard() {
   const [showModal, setShowModal] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const role = getCurrentRole();
-  const email = getCurrentEmail();
-  const userIsAdmin = isAdmin();
+  const { user, logout } = useAuth();
+  const userId = user.userId;
+  const email  = user.email;
+  const role   = user.role;
+  const userIsAdmin = role === 'ADMIN';
 
   const loadAnnouncements = async () => {
     try {
@@ -191,6 +193,7 @@ export default function Dashboard() {
 
         {showModal && userIsAdmin && (
             <CreateAnnouncementModal
+                userId={user.userId}
                 onClose={() => setShowModal(false)}
                 onCreated={() => {
                   setShowModal(false);
@@ -240,7 +243,7 @@ function AnnouncementCard({ announcement }) {
   );
 }
 
-function CreateAnnouncementModal({ onClose, onCreated }) {
+function CreateAnnouncementModal({ onClose, onCreated, userId }) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [expirationDate, setExpirationDate] = useState('');
@@ -252,7 +255,6 @@ function CreateAnnouncementModal({ onClose, onCreated }) {
     setError('');
     setSubmitting(true);
     try {
-      const userId = getCurrentUserId();
       const payload = {
         title: title.trim(),
         content: content.trim(),

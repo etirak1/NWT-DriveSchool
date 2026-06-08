@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
-import { getCurrentUserId } from '../auth/jwt';
+import { useAuth } from '../context/AuthContext';
 import { Calendar, Clock, Car, ArrowLeft, CheckCircle, User } from 'lucide-react';
 
 export default function BookLesson() {
     const navigate = useNavigate();
-    const userId = getCurrentUserId();
+    const { user, logout } = useAuth();
+    const userId = user.userId;
+
 
     const [candidate, setCandidate] = useState(null);
     const [loading, setLoading] = useState(true);

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, LayoutDashboard, LogOut, GraduationCap } from 'lucide-react';
-import { isAdmin, getCurrentEmail, getCurrentRole } from '../auth/jwt';
+import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 import '../App.css';
 import { useAsync } from '../hooks/useAsync';
@@ -11,8 +11,9 @@ import { Spinner, ErrorState } from '../components/States';
 
 export default function DashboardPage() {
     const navigate = useNavigate();
-    const email = getCurrentEmail();
-    const role = getCurrentRole();
+    const { user, logout } = useAuth();
+    const email  = user.email;
+    const role   = user.role;
 
     const { data: vRes, loading: lv, error: ev, refetch: refetchV } = useAsync(() => vehicleApi.getAll());
     const { data: rRes, loading: lr } = useAsync(() => repairApi.getAll());

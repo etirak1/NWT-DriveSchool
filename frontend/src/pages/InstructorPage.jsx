@@ -47,8 +47,6 @@ export default function InstructorsPage() {
             });
 
             setData(combined);
-            console.log("Instruktori:", combined);
-            console.log("Vozila:", vehiclesList);
         } catch (err) {
             setError("Nije moguće učitati podatke.");
         } finally {

@@ -20,10 +20,6 @@ const FeedbackModal = ({ candidate, onClose, onSubmitted }) => {
         setError('');
         setLoading(true);
 
-        // Dodaj ovo privremeno
-        console.log('candidate objekat:', candidate);
-        console.log('candidateId:', candidate?.candidate?.candidateId);
-        console.log('instructorId:', candidate?.assignedInstructor?.instructorId);
 
         try {
             await api.post('/api/feedbacks', {

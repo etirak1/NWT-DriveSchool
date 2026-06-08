@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { LogOut, ArrowLeft, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import { financeApi } from '../services/financeApi';
 import { api } from '../api/client';
-import { getCurrentRole, getCurrentEmail } from '../auth/jwt';
+import { useAuth } from '../context/AuthContext';
 
 const fmt = (n) =>
     new Intl.NumberFormat('bs-BA', { style: 'currency', currency: 'BAM' }).format(n ?? 0);
@@ -311,9 +311,9 @@ export default function FinanceDashboard() {
     const [payingRow, setPayingRow] = useState(null);
     const [ensuringId, setEnsuringId] = useState(null);
 
-    const role  = getCurrentRole();
-    const email = getCurrentEmail();
-
+    const { user, logout } = useAuth();
+    const email  = user.email;
+    const role   = user.role;
     const loadData = useCallback(async () => {
         setLoading(true);
         setError('');
