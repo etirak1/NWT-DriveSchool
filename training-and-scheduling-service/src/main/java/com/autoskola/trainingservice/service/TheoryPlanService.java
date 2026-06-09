@@ -1,6 +1,7 @@
 package com.autoskola.trainingservice.service;
 
 import com.autoskola.trainingservice.dto.CandidateAttendanceSummary;
+import com.autoskola.trainingservice.dto.TheoryEligibilityDTO;
 import com.autoskola.trainingservice.dto.TheoryPlanRequest;
 import com.autoskola.trainingservice.model.*;
 import com.autoskola.trainingservice.repository.*;
@@ -278,6 +279,36 @@ public class TheoryPlanService {
         }
         sessionRepository.deleteAll(sessions);
         planRepository.delete(plan);
+    }
+
+    public TheoryEligibilityDTO getTheoryEligibility(Long candidateId) {
+        Candidate candidate = candidateRepository.findById(candidateId)
+                .orElseThrow(() -> new RuntimeException("Kandidat nije pronađen: " + candidateId));
+
+        List<TheoryPlan> plans = planRepository.findByCandidatesContainingOrderByStartDateDesc(candidate);
+        if (plans.isEmpty()) {
+            return new TheoryEligibilityDTO(false, false, 0, 0, 0.0, false);
+        }
+
+        // Uzimamo najnoviji plan
+        TheoryPlan plan = plans.get(0);
+        List<TheorySession> sessions = sessionRepository.findByPlanIdOrderBySessionNumber(plan.getId());
+
+        // Nastava je završena ako nema nijedne sesije u statusu PLANIRANO
+        boolean groupFinished = sessions.stream()
+                .noneMatch(s -> "PLANIRANO".equals(s.getStatus()));
+
+        long totalLessons = plan.getTotalLessons() != null ? plan.getTotalLessons() : 40L;
+        long attendedLessons = attendanceRepository
+                .sumAttendedLessonsByPlanAndCandidate(plan.getId(), candidateId);
+
+        double attendancePct = totalLessons > 0
+                ? Math.round((double) attendedLessons / totalLessons * 1000.0) / 10.0
+                : 0.0;
+
+        boolean eligible = attendancePct >= 60.0;
+
+        return new TheoryEligibilityDTO(true, groupFinished, attendedLessons, totalLessons, attendancePct, eligible);
     }
 
     public List<CandidateAttendanceSummary> getAttendanceSummary(Long planId) {

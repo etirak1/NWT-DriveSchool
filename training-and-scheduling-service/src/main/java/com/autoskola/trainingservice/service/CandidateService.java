@@ -168,8 +168,13 @@ public class CandidateService {
                 .orElseGet(() -> {
                     Instructor novi = new Instructor();
                     novi.setUserId(instructorUserId);
+                    novi.setAvailabilityNote("AVAILABLE");
                     return instructorRepository.save(novi);
                 });
+
+        if ("UNAVAILABLE".equals(instructor.getAvailabilityNote())) {
+            throw new RuntimeException("Instruktor je označen kao nedostupan i ne može biti dodijeljen kandidatu.");
+        }
 
         candidate.setAssignedInstructor(instructor);
         candidateRepository.save(candidate);

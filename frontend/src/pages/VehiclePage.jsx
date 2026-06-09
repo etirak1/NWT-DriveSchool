@@ -23,6 +23,7 @@ export default function VehiclesPage() {
     const [viewTarget, setViewTarget] = useState(null);
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [saving, setSaving] = useState(false);
+    const [deleting, setDeleting] = useState(false);
     const [search, setSearch] = useState('');
 
     const filtered = vehicles.filter(v =>
@@ -50,13 +51,17 @@ export default function VehiclesPage() {
     };
 
     const handleDelete = async () => {
+        setDeleting(true);
         try {
             await vehicleApi.delete(deleteTarget.vehicleId);
             addToast('Vozilo obrisano.', 'success');
-            refetch();
             setDeleteTarget(null);
+            refetch();
         } catch (e) {
             addToast(getErrorMessage(e), 'error');
+            setDeleteTarget(null);
+        } finally {
+            setDeleting(false);
         }
     };
 
@@ -70,28 +75,29 @@ export default function VehiclesPage() {
                     <h1 className="page-title">Vozila</h1>
                     <p className="page-sub">Upravljanje voznim parkom autoškole</p>
                 </div>
-                <button className="btn btn-primary" onClick={openAdd}>+ Dodaj vozilo</button>
-            </div>
-
-            <div className="page-toolbar">
-                <input
-                    className="search-input"
-                    placeholder="Pretraži vozila..."
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                />
-                <span className="toolbar-count">{filtered.length} vozila</span>
+                <button className="btn btn-primary" onClick={openAdd} disabled={!!error}>+ Dodaj vozilo</button>
             </div>
 
             {loading && <Spinner />}
             {error && <ErrorState message={error} onRetry={refetch} />}
             {!loading && !error && (
-                <VehicleTable
-                    vehicles={filtered}
-                    onEdit={openEdit}
-                    onDelete={setDeleteTarget}
-                    onView={setViewTarget}
-                />
+                <>
+                    <div className="page-toolbar">
+                        <input
+                            className="search-input"
+                            placeholder="Pretraži vozila..."
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                        />
+                        <span className="toolbar-count">{filtered.length} vozila</span>
+                    </div>
+                    <VehicleTable
+                        vehicles={filtered}
+                        onEdit={openEdit}
+                        onDelete={setDeleteTarget}
+                        onView={setViewTarget}
+                    />
+                </>
             )}
 
             <Modal
@@ -120,6 +126,7 @@ export default function VehiclesPage() {
                 onConfirm={handleDelete}
                 title="Obriši vozilo"
                 message={deleteTarget ? `Sigurno želiš obrisati ${deleteTarget.brand} ${deleteTarget.model}?` : ''}
+                loading={deleting}
             />
         </div>
     );

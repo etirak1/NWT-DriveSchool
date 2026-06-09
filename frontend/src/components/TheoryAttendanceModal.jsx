@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { api } from '../api/client';
+import { getErrorMessage } from '../utils/helpers';
 
 export default function TheoryAttendanceModal({ candidate, onClose }) {
     const [sessions, setSessions] = useState([]);
@@ -17,8 +18,8 @@ export default function TheoryAttendanceModal({ candidate, onClose }) {
             try {
                 const res = await api.get(`/api/theory-plans/candidate/${candidateId}/session-attendance`);
                 setSessions(res.data);
-            } catch {
-                setError('Greška pri učitavanju podataka.');
+            } catch (e) {
+                setError(getErrorMessage(e));
             } finally {
                 setLoading(false);
             }

@@ -55,11 +55,9 @@ export default function Dashboard({
     );
 
     // Instruktori
-    const busyInstructors = instructors.filter(
+    const unavailableInstructors = instructors.filter(
         instructor => instructor.availabilityNote === 'UNAVAILABLE'
     ).length;
-
-    console.log("Instruktori:", instructors);
 
     return (
         <div className="dashboard">
@@ -154,8 +152,9 @@ export default function Dashboard({
 
                 <StatCard
                     icon="👨‍🏫"
-                    label="Zauzeti instruktori"
-                    value={`${busyInstructors}/${instructors.length}`}
+                    label="Nedostupni instruktori"
+                    value={`${unavailableInstructors}/${instructors.length}`}
+                    variant={unavailableInstructors > 0 ? 'card-warning' : ''}
                 />
             </div>
 

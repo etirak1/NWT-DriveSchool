@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, BookOpen, CheckCircle, GraduationCap, Lock, Hash } from 'lucide-react';
 import { api } from '../api/client';
+import { getErrorMessage } from '../utils/helpers';
 
 const TOTAL = 40;
 
@@ -70,7 +71,7 @@ export default function TheoryLessonsModal({ candidate, onClose, onProgressUpdat
             const res = await api.get(`/api/theory-lessons/candidate/${candidateId}`);
             setLessons(res.data);
         } catch (e) {
-            setError('Greška pri učitavanju lekcija.');
+            setError(getErrorMessage(e));
         } finally {
             setLoading(false);
         }

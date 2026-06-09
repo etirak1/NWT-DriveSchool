@@ -318,6 +318,17 @@ function AddUserModal({ onClose, onCreated }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (!form.firstName.trim()) { setError('Ime je obavezno.'); return; }
+    if (!form.lastName.trim())  { setError('Prezime je obavezno.'); return; }
+    if (!form.email.trim())     { setError('E-mail adresa je obavezna.'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      setError('Unesite ispravnu e-mail adresu (npr. ime@domena.ba).');
+      return;
+    }
+    if (!form.password)           { setError('Lozinka je obavezna.'); return; }
+    if (form.password.length < 6) { setError('Lozinka mora imati najmanje 6 karaktera.'); return; }
+
     setSubmitting(true);
     try {
       await api.post('/api/users', {
@@ -345,7 +356,7 @@ function AddUserModal({ onClose, onCreated }) {
               <X size={22} />
             </button>
           </div>
-          <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          <form onSubmit={handleSubmit} noValidate className="p-5 space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-semibold text-slate-800 mb-1.5">Ime</label>

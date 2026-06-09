@@ -22,6 +22,17 @@ export default function Register() {
     e.preventDefault();
     setError('');
     setSuccess('');
+
+    if (!form.firstName.trim()) { setError('Ime je obavezno.'); return; }
+    if (!form.lastName.trim())  { setError('Prezime je obavezno.'); return; }
+    if (!form.email.trim())     { setError('E-mail adresa je obavezna.'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      setError('Unesite ispravnu e-mail adresu (npr. ime@domena.ba).');
+      return;
+    }
+    if (!form.password)         { setError('Lozinka je obavezna.'); return; }
+    if (form.password.length < 6) { setError('Lozinka mora imati najmanje 6 karaktera.'); return; }
+
     setLoading(true);
     try {
       await api.post('/api/users/register', {
@@ -51,7 +62,7 @@ export default function Register() {
             <h1 className="text-3xl font-bold text-center text-slate-900">Kreirajte račun</h1>
             <p className="text-center text-slate-500 mt-2">Pridruži se auto-školi</p>
 
-            <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+            <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-semibold text-slate-800 mb-1.5">

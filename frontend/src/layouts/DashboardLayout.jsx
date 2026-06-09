@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, LogOut } from 'lucide-react';
-import { getCurrentEmail, getCurrentRole } from '../auth/jwt';
+import { useAuth } from '../context/AuthContext';
 import '../App.css';
 
 const NAV = [
@@ -15,8 +15,9 @@ export default function DashboardLayout() {
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const location = useLocation();
     const navigate = useNavigate();
-    const email = getCurrentEmail();
-    const role = getCurrentRole();
+    const { user } = useAuth();
+    const email = user?.email;
+    const role = user?.role;
 
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col">

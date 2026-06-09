@@ -20,5 +20,6 @@ public class InstructorDTO {
     private String vehicleModel;
     private String vehicleRegistrationNumber;
     private String vehicleStatus;
+    private String availabilityNote;
 
 }

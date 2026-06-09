@@ -6,10 +6,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/**
- * Interni endpoint za inter-service komunikaciju — bez JWT autentifikacije.
- * Pristupačan samo sa localhost (servis-na-servis).
- */
+
 @RestController
 @RequestMapping("/internal")
 public class InternalController {

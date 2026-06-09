@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../hooks/useNotifications';
+import { getErrorMessage } from '../utils/helpers';
 
 const DAYS = ['Ned', 'Pon', 'Uto', 'Sri', 'Čet', 'Pet', 'Sub'];
 const MONTHS = [
@@ -38,7 +39,7 @@ export default function InstructorDashboard() {
     const [calendarDate, setCalendarDate] = useState(new Date());
     const [selectedDay, setSelectedDay] = useState(null);
 
-    const { notifications, unreadCount, connected, markAllRead, clearAll } = useNotifications(userId);
+    const { notifications, unreadCount, markAllRead, clearAll } = useNotifications(userId);
 
     useEffect(() => {
         const loadAll = async () => {
@@ -58,7 +59,7 @@ export default function InstructorDashboard() {
                     } catch { lessonMap[c.candidateId] = []; }
                 }));
                 setLessons(lessonMap);
-            } catch { showError('Greška pri učitavanju kandidata.'); }
+            } catch (e) { showError(getErrorMessage(e)); }
             finally { setLoading(false); }
         };
         loadAll();
@@ -232,9 +233,9 @@ export default function InstructorDashboard() {
                                             <button onClick={() => setNotifOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={14} /></button>
                                         </div>
                                     </div>
-                                    <div className={`px-4 py-1.5 text-xs flex items-center gap-1.5 border-b ${connected ? 'text-green-600 bg-green-50 border-green-100' : 'text-amber-600 bg-amber-50 border-amber-100'}`}>
-                                        <span className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-green-500' : 'bg-amber-400'}`} />
-                                        {connected ? 'Povezan — notifikacije uživo' : 'Nije povezan...'}
+                                    <div className="px-4 py-1.5 text-xs flex items-center gap-1.5 border-b text-slate-500 bg-slate-50 border-slate-100">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                                        Ažurira se svakih 30s
                                     </div>
                                     <div className="max-h-72 overflow-y-auto">
                                         {notifications.length === 0
@@ -285,11 +286,6 @@ export default function InstructorDashboard() {
                 </div>
             </header>
 
-            {/* ── Toasts ──────────────────────────────────────────────────────── */}
-            <div className="max-w-6xl mx-auto px-4 pt-4">
-                {successMsg && <div className="mb-4 bg-green-50 text-green-700 px-4 py-3 rounded-lg border border-green-100 text-sm">{successMsg}</div>}
-                {errorMsg   && <div className="mb-4 bg-red-50 text-red-700 px-4 py-3 rounded-lg border border-red-100 text-sm">{errorMsg}</div>}
-            </div>
 
             <div className="max-w-6xl mx-auto px-4 pb-10">
 
@@ -334,6 +330,7 @@ export default function InstructorDashboard() {
                                     const isSelected = day === selectedDay;
                                     const zakazano   = dayLessonList.filter(l => l.status === 'ZAKAZANO').length;
                                     const odradeno   = dayLessonList.filter(l => l.status === 'ODRAĐENO').length;
+                                    const otkazano   = dayLessonList.filter(l => l.status === 'OTKAZANO').length;
 
                                     return (
                                         <button
@@ -360,6 +357,9 @@ export default function InstructorDashboard() {
                                                     {odradeno > 0 && (
                                                         <span className={`w-2 h-2 rounded-full ${isSelected ? 'bg-white/70' : 'bg-green-400'}`} />
                                                     )}
+                                                    {otkazano > 0 && (
+                                                        <span className={`w-2 h-2 rounded-full ${isSelected ? 'bg-white/70' : 'bg-red-400'}`} />
+                                                    )}
                                                 </div>
                                             )}
                                         </button>
@@ -374,6 +374,9 @@ export default function InstructorDashboard() {
                                 </div>
                                 <div className="flex items-center gap-1.5 text-xs text-slate-500">
                                     <span className="w-2.5 h-2.5 rounded-full bg-green-400" /> Odrađeno
+                                </div>
+                                <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                                    <span className="w-2.5 h-2.5 rounded-full bg-red-400" /> Otkazano
                                 </div>
                             </div>
                         </div>
@@ -655,11 +658,23 @@ export default function InstructorDashboard() {
                                                     )}
 
                                                     {!allDone && (
-                                                        <AddDrivingLessonForm
-                                                            candidateId={selectedCandidate.candidateId}
-                                                            existingNumbers={cl.map(l => l.lessonNumber)}
-                                                            onAdd={addLesson}
-                                                        />
+                                                        <>
+                                                            <AddDrivingLessonForm
+                                                                candidateId={selectedCandidate.candidateId}
+                                                                existingNumbers={cl.map(l => l.lessonNumber)}
+                                                                onAdd={addLesson}
+                                                            />
+                                                            {successMsg && (
+                                                                <div className="mt-2 flex items-center gap-2 bg-green-50 text-green-700 px-4 py-2.5 rounded-lg border border-green-100 text-sm">
+                                                                    <CheckCircle size={15} className="shrink-0" /> {successMsg}
+                                                                </div>
+                                                            )}
+                                                            {errorMsg && (
+                                                                <div className="mt-2 bg-red-50 text-red-700 px-4 py-2.5 rounded-lg border border-red-100 text-sm">
+                                                                    {errorMsg}
+                                                                </div>
+                                                            )}
+                                                        </>
                                                     )}
                                                 </>
                                             );
@@ -684,10 +699,14 @@ export default function InstructorDashboard() {
                                                         <div key={lesson.lessonId} className="flex items-center justify-between px-3 py-2.5 bg-slate-50 rounded-lg border border-slate-100">
                                                             <div>
                                                                 <p className="text-sm font-medium text-slate-700">
-                                                                    {new Date(lesson.dateTime).toLocaleString('bs-BA', {
-                                                                        day: '2-digit', month: 'short', year: 'numeric',
-                                                                        hour: '2-digit', minute: '2-digit'
-                                                                    })}
+                                                                    {(() => {
+                                                                        const DANI = ['Nedjelja','Ponedjeljak','Utorak','Srijeda','Četvrtak','Petak','Subota'];
+                                                                        const MJESECI = ['januar','februar','mart','april','maj','juni','juli','august','septembar','oktobar','novembar','decembar'];
+                                                                        const d = new Date(lesson.dateTime);
+                                                                        const h = String(d.getHours()).padStart(2,'0');
+                                                                        const m = String(d.getMinutes()).padStart(2,'0');
+                                                                        return `${DANI[d.getDay()]}, ${d.getDate()}. ${MJESECI[d.getMonth()]} ${d.getFullYear()} u ${h}:${m}`;
+                                                                    })()}
                                                                 </p>
                                                                 {lesson.notes && <p className="text-xs text-slate-400 mt-0.5">{lesson.notes}</p>}
                                                             </div>

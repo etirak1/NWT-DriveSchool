@@ -4,13 +4,14 @@ import { LogOut, ArrowLeft, AlertTriangle, CheckCircle, XCircle } from 'lucide-r
 import { financeApi } from '../services/financeApi';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { getErrorMessage } from '../utils/helpers';
+import { ErrorState } from '../components/States';
 
 const fmt = (n) =>
     new Intl.NumberFormat('bs-BA', { style: 'currency', currency: 'BAM' }).format(n ?? 0);
 
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('bs-BA') : '—');
 
-// ─── Obaveze bar ─────────────────────────────────────────────────────────────
 function ObligationsBar({ obligations }) {
     if (!obligations || obligations.length === 0) return null;
     const colors = ['bg-indigo-500', 'bg-blue-400', 'bg-cyan-400', 'bg-teal-400', 'bg-green-400'];
@@ -40,7 +41,6 @@ function ObligationsBar({ obligations }) {
     );
 }
 
-// ─── Modal: evidentiraj uplatu ───────────────────────────────────────────────
 function PaymentModal({ row, onClose, onSuccess }) {
     const [amount, setAmount] = useState('');
     const [loading, setLoading] = useState(false);
@@ -78,7 +78,7 @@ function PaymentModal({ row, onClose, onSuccess }) {
                     </p>
                 </div>
 
-                {/* Prijedlozi iznosa */}
+               
                 <div className="px-5 pt-4">
                     {row.obligations && row.obligations.length > 0 && (
                         <div>
@@ -139,7 +139,6 @@ function PaymentModal({ row, onClose, onSuccess }) {
     );
 }
 
-// ─── Modal: detalji kandidata ─────────────────────────────────────────────────
 function DetailModal({ row, onClose, onPay }) {
     const paidTotal = row.paidAmount ?? 0;
     const total = row.totalAmount ?? 1900;
@@ -253,79 +252,120 @@ function DetailModal({ row, onClose, onPay }) {
     );
 }
 
-function generateReport(rows) {
+async function generateReport(rows) {
+    const { jsPDF } = await import('jspdf');
+    const { default: html2canvas } = await import('html2canvas');
+
     const withAccount = rows.filter(r => r._hasAccount);
-    const totalAmount  = withAccount.reduce((s, a) => s + parseFloat(a.totalAmount || 0), 0);
-    const totalPaid    = withAccount.reduce((s, a) => s + parseFloat(a.paidAmount || 0), 0);
-    const totalDebt    = withAccount.reduce((s, a) => s + parseFloat(a.remainingDebt || 0), 0);
+    const totalAmount = withAccount.reduce((s, a) => s + parseFloat(a.totalAmount || 0), 0);
+    const totalPaid   = withAccount.reduce((s, a) => s + parseFloat(a.paidAmount || 0), 0);
+    const totalDebt   = withAccount.reduce((s, a) => s + parseFloat(a.remainingDebt || 0), 0);
 
-    const html = `<!DOCTYPE html><html lang="bs"><head><meta charset="UTF-8"><title>Finansijski Izvjestaj</title>
-<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;padding:40px;color:#1a1a1a}
-.header{text-align:center;margin-bottom:32px;border-bottom:2px solid #2563eb;padding-bottom:20px}
-h1{font-size:22px;color:#2563eb;font-weight:700}.sub{color:#6b7280;font-size:13px;margin-top:4px}
-.summary{display:flex;gap:16px;margin-bottom:28px}.card{flex:1;border:1px solid #e5e7eb;border-radius:10px;padding:14px;text-align:center}
-.label{font-size:11px;color:#6b7280;text-transform:uppercase}.value{font-size:18px;font-weight:700;margin-top:4px}
-table{width:100%;border-collapse:collapse;font-size:13px}th{padding:10px 12px;text-align:left;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;background:#f8fafc}
-td{padding:10px 12px;border-bottom:1px solid #f3f4f6}.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:500}
-.ok{background:#dcfce7;color:#166534}.warn{background:#fef3c7;color:#92400e}.err{background:#fee2e2;color:#991b1b}
-.footer{margin-top:28px;text-align:center;color:#9ca3af;font-size:11px}</style></head>
-<body>
-<div class="header"><h1>Finansijski Izvjestaj</h1><p class="sub">Auto-skola — ${new Date().toLocaleDateString('bs-BA')}</p></div>
-<div class="summary">
-<div class="card"><div class="label">Ukupno zaduzeno</div><div class="value" style="color:#2563eb">${fmt(totalAmount)}</div></div>
-<div class="card"><div class="label">Naplaceno</div><div class="value" style="color:#16a34a">${fmt(totalPaid)}</div></div>
-<div class="card"><div class="label">Preostali dug</div><div class="value" style="color:#dc2626">${fmt(totalDebt)}</div></div>
-<div class="card"><div class="label">Br. kandidata</div><div class="value" style="color:#374151">${withAccount.length}</div></div>
-</div>
-<table><thead><tr><th>#</th><th>Kandidat</th><th>Upisnina</th><th>Ukupno</th><th>Placeno</th><th>Preostalo</th><th>Status</th></tr></thead>
-<tbody>${withAccount.map((a, i) => {
-        const enroll = (a.obligations || []).find(o => o.type === 'ENROLLMENT');
-        const enrollStatus = enroll?.fullyPaid
-            ? '<span class="badge ok">Upisnina OK</span>'
-            : '<span class="badge warn">Bez upisnine</span>';
-        const debt = parseFloat(a.remainingDebt || 0);
-        const paid = parseFloat(a.paidAmount || 0);
-        const tot  = parseFloat(a.totalAmount || 1900);
-        let cls = 'ok', lbl = 'Izmireno';
-        if (debt > 0 && debt < tot) { cls = 'warn'; lbl = Math.round((paid/tot)*100)+'% plaćeno'; }
-        if (paid === 0) { cls = 'err'; lbl = 'Nije placeno'; }
-        return `<tr><td>${i+1}</td><td><strong>${a._candidateName}</strong></td><td>${enrollStatus}</td><td>${fmt(a.totalAmount)}</td><td>${fmt(a.paidAmount)}</td><td>${fmt(a.remainingDebt)}</td><td><span class="badge ${cls}">${lbl}</span></td></tr>`;
-    }).join('')}</tbody></table>
-<div class="footer">Generisano automatski — Finansijski modul Auto-škole</div>
-</body></html>`;
+    const container = document.createElement('div');
+    container.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;background:#fff;font-family:Arial,sans-serif;font-size:13px;color:#1a1a1a;padding:40px;box-sizing:border-box;';
 
-    const w = window.open('', '_blank');
-    w.document.write(html);
-    w.document.close();
-    setTimeout(() => w.print(), 500);
+    container.innerHTML = `
+        <div style="text-align:center;border-bottom:2px solid #2563eb;padding-bottom:16px;margin-bottom:24px">
+            <div style="font-size:20px;font-weight:700;color:#2563eb">Finansijski Izvještaj</div>
+            <div style="font-size:12px;color:#6b7280;margin-top:4px">Auto-škola — ${new Date().toLocaleDateString('bs-BA')}</div>
+        </div>
+        <div style="display:flex;gap:12px;margin-bottom:24px">
+            ${[
+                ['Ukupno zaduženo', fmt(totalAmount), '#2563eb'],
+                ['Naplaćeno',       fmt(totalPaid),   '#16a34a'],
+                ['Preostali dug',   fmt(totalDebt),   '#dc2626'],
+                ['Kandidata',       withAccount.length,'#374151'],
+            ].map(([lbl, val, col]) => `
+                <div style="flex:1;border:1px solid #e5e7eb;border-radius:8px;padding:12px;text-align:center">
+                    <div style="font-size:10px;color:#6b7280;text-transform:uppercase">${lbl}</div>
+                    <div style="font-size:16px;font-weight:700;color:${col};margin-top:4px">${val}</div>
+                </div>`).join('')}
+        </div>
+        <table style="width:100%;border-collapse:collapse">
+            <thead>
+                <tr style="background:#f8fafc">
+                    ${['#','Kandidat','Upisnina','Ukupno','Plaćeno','Preostalo','Status'].map(h =>
+                        `<th style="padding:9px 10px;text-align:left;font-size:11px;color:#374151;border-bottom:1px solid #e5e7eb">${h}</th>`
+                    ).join('')}
+                </tr>
+            </thead>
+            <tbody>
+                ${withAccount.map((a, i) => {
+                    const enroll = (a.obligations || []).find(o => o.type === 'ENROLLMENT');
+                    const enrollOk = enroll?.fullyPaid;
+                    const debt = parseFloat(a.remainingDebt || 0);
+                    const paid = parseFloat(a.paidAmount || 0);
+                    const tot  = parseFloat(a.totalAmount || 1900);
+                    let bgS = '#dcfce7', colS = '#166534', lbl = 'Izmireno';
+                    if (debt > 0 && debt < tot) { bgS = '#fef3c7'; colS = '#92400e'; lbl = Math.round((paid/tot)*100)+'% plaćeno'; }
+                    if (paid === 0) { bgS = '#fee2e2'; colS = '#991b1b'; lbl = 'Nije plaćeno'; }
+                    return `<tr style="border-bottom:1px solid #f3f4f6">
+                        <td style="padding:8px 10px">${i+1}</td>
+                        <td style="padding:8px 10px;font-weight:600">${a._candidateName}</td>
+                        <td style="padding:8px 10px">
+                            <span style="background:${enrollOk?'#dcfce7':'#fef3c7'};color:${enrollOk?'#166534':'#92400e'};padding:2px 7px;border-radius:999px;font-size:11px">
+                                ${enrollOk ? 'OK' : 'Nije'}
+                            </span>
+                        </td>
+                        <td style="padding:8px 10px">${fmt(a.totalAmount)}</td>
+                        <td style="padding:8px 10px;color:#16a34a">${fmt(a.paidAmount)}</td>
+                        <td style="padding:8px 10px;color:#dc2626">${fmt(a.remainingDebt)}</td>
+                        <td style="padding:8px 10px">
+                            <span style="background:${bgS};color:${colS};padding:2px 7px;border-radius:999px;font-size:11px">${lbl}</span>
+                        </td>
+                    </tr>`;
+                }).join('')}
+            </tbody>
+        </table>
+        <div style="margin-top:24px;text-align:center;color:#9ca3af;font-size:11px">
+            Generisano automatski — Finansijski modul Auto-škole
+        </div>`;
+
+    document.body.appendChild(container);
+
+    try {
+        const canvas = await html2canvas(container, { scale: 2, useCORS: true });
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: 'a4' });
+        const pdfW = pdf.internal.pageSize.getWidth();
+        const pdfH = (canvas.height * pdfW) / canvas.width;
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfW, pdfH);
+        pdf.save(`finansijski-izvjestaj-${new Date().toISOString().slice(0,10)}.pdf`);
+    } finally {
+        document.body.removeChild(container);
+    }
 }
 
-// ─── Main page ───────────────────────────────────────────────────────────────
+
 export default function FinanceDashboard() {
     const navigate = useNavigate();
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(null);
     const [error, setError] = useState('');
     const [search, setSearch] = useState('');
     const [selectedRow, setSelectedRow] = useState(null);
     const [payingRow, setPayingRow] = useState(null);
     const [ensuringId, setEnsuringId] = useState(null);
+    const [generatingPdf, setGeneratingPdf] = useState(false);
 
     const { user, logout } = useAuth();
     const email  = user.email;
     const role   = user.role;
     const loadData = useCallback(async () => {
         setLoading(true);
+        setLoadError(null);
         setError('');
         try {
-            const [candidatesRes, accounts] = await Promise.all([
-                api.get('/api/candidates'),
-                financeApi.getAll(),
-            ]);
+            const candidatesRes = await api.get('/api/candidates');
             const candidates = candidatesRes.data;
 
+            const candidateIds = candidates.map(c => c.candidateId);
+            const statusesRes = await financeApi.getStatuses(candidateIds);
+            const statuses = statusesRes.data;
+
             const merged = candidates.map(c => {
-                const account = accounts.find(a => a.candidateId === c.candidateId);
+                const account = statuses.find(s => s.candidateId === c.candidateId) || null;
                 const name = c.user
                     ? `${c.user.firstName} ${c.user.lastName}`
                     : `Kandidat #${c.candidateId}`;
@@ -340,7 +380,7 @@ export default function FinanceDashboard() {
 
             setRows(merged);
         } catch (err) {
-            setError('Nije moguće učitati podatke.');
+            setLoadError(getErrorMessage(err));
         } finally {
             setLoading(false);
         }
@@ -349,12 +389,15 @@ export default function FinanceDashboard() {
     useEffect(() => { loadData(); }, [loadData]);
 
     const ensureAccount = async (candidateId) => {
+        console.log('ensureAccount called with:', candidateId);
         setEnsuringId(candidateId);
         try {
-            await financeApi.ensureAccount(candidateId);
+            const res = await financeApi.ensureAccount(candidateId);
+            console.log('ensureAccount response:', res);
             await loadData();
-        } catch {
-            setError('Greška pri kreiranju računa.');
+        } catch (err) {
+            console.error('ensureAccount error:', err);
+            setError('Greška pri kreiranju računa: ' + (err?.response?.data?.message || err?.message || 'Nepoznata greška'));
         } finally {
             setEnsuringId(null);
         }
@@ -398,13 +441,22 @@ export default function FinanceDashboard() {
                         <h2 className="text-2xl font-bold text-slate-900">Finansije</h2>
                         <p className="text-slate-500 text-sm mt-0.5">Evidencija uplata kandidata</p>
                     </div>
-                    <button onClick={() => generateReport(rows)} disabled={withAccounts.length === 0}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-40 shadow-sm">
-                        Generiši izvještaj
+                    <button
+                        onClick={async () => {
+                            setGeneratingPdf(true);
+                            try { await generateReport(rows); }
+                            finally { setGeneratingPdf(false); }
+                        }}
+                        disabled={withAccounts.length === 0 || generatingPdf}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-40 shadow-sm"
+                    >
+                        {generatingPdf ? 'Generišem...' : 'Izvještaj'}
                     </button>
                 </div>
 
-                {noAccountCount > 0 && (
+                {loadError && <ErrorState message={loadError} onRetry={loadData} />}
+
+                {noAccountCount > 0 && !loadError && (
                     <div className="mb-5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center gap-2 text-sm text-amber-800">
                         <AlertTriangle size={15} />
                         {noAccountCount} kandidat(a) nema finansijski račun — kliknite "Kreiraj račun" pored njihovog imena.
@@ -412,7 +464,7 @@ export default function FinanceDashboard() {
                 )}
 
                 {/* Sažetak */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                {!loadError && <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                     {[
                         { label: 'Ukupno zaduženo', value: fmt(totalAmount),  icon: '📋', color: 'text-slate-900' },
                         { label: 'Naplaćeno',        value: fmt(totalPaid),   icon: '✅', color: 'text-green-700' },
@@ -425,10 +477,10 @@ export default function FinanceDashboard() {
                             <div className="text-xs text-slate-400 mt-0.5">{s.label}</div>
                         </div>
                     ))}
-                </div>
+                </div>}
 
                 {/* Tabela */}
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                {!loadError && <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                     <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
                         <h3 className="font-semibold text-slate-900">Svi kandidati</h3>
                         <input type="text" placeholder="Pretraži..."
@@ -525,7 +577,7 @@ export default function FinanceDashboard() {
                             </tbody>
                         </table>
                     </div>
-                </div>
+                </div>}
             </div>
 
             {selectedRow && !payingRow && (

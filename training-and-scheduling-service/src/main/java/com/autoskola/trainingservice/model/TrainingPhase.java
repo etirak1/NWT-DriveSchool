@@ -37,7 +37,6 @@ public class TrainingPhase{
     )
     private String status;
 
-    @PastOrPresent(message = "Datum polaganja ne može biti u budućnosti")
     private LocalDate dateCompleted;
 
     @Column(columnDefinition = "TEXT")

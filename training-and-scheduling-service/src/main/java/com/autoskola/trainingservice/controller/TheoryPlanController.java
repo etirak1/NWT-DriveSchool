@@ -1,6 +1,7 @@
 package com.autoskola.trainingservice.controller;
 
 import com.autoskola.trainingservice.dto.CandidateAttendanceSummary;
+import com.autoskola.trainingservice.dto.TheoryEligibilityDTO;
 import com.autoskola.trainingservice.dto.TheoryPlanRequest;
 import com.autoskola.trainingservice.model.*;
 import com.autoskola.trainingservice.service.TheoryPlanService;
@@ -77,6 +78,13 @@ public class TheoryPlanController {
     public ResponseEntity<List<Map<String, Object>>> getCandidateSessionAttendance(
             @PathVariable Long candidateId) {
         return ResponseEntity.ok(theoryPlanService.getCandidateSessionAttendance(candidateId));
+    }
+
+    @GetMapping("/candidate/{candidateId}/theory-eligibility")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR', 'CANDIDATE')")
+    public ResponseEntity<TheoryEligibilityDTO> getTheoryEligibility(
+            @PathVariable Long candidateId) {
+        return ResponseEntity.ok(theoryPlanService.getTheoryEligibility(candidateId));
     }
 
     @GetMapping("/sessions/{sessionId}/attendance")

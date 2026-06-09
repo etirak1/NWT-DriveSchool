@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getErrorMessage } from '../utils/helpers';
 import {
   Menu,
   Megaphone,
@@ -37,7 +38,7 @@ export default function Dashboard() {
       setAnnouncements(list);
       setError('');
     } catch (err) {
-      setError('Greška pri učitavanju obavještenja.');
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }

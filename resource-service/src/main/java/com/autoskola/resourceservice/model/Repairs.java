@@ -34,6 +34,8 @@ public class Repairs {
     @Positive(message = "Cijena mora biti pozitivan broj")
     private Double cost;
 
+    private String status = "PLANNED";
+
     private LocalDateTime dateCreated;
 
     @PrePersist

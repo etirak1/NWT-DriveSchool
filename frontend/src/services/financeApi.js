@@ -18,6 +18,10 @@ export const financeApi = {
     getStatus: (candidateId) =>
         api.get(`/accounts/${candidateId}/status`),
 
+    // Bulk statusi za više kandidata
+    getStatuses: (candidateIds) =>
+        api.get(`/accounts/statuses?candidateIds=${candidateIds.join(',')}`),
+
     // Kreiraj račun ako ne postoji
     ensureAccount: (candidateId) =>
         api.post(`/accounts/ensure/${candidateId}`),

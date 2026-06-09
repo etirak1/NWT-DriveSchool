@@ -48,7 +48,7 @@ export default function InstructorsPage() {
 
             setData(combined);
         } catch (err) {
-            setError("Nije moguće učitati podatke.");
+            setError(getErrorMessage(err));
         } finally {
             setLoading(false);
         }
@@ -119,20 +119,20 @@ export default function InstructorsPage() {
                 </div>
             </div>
 
-            <div className="page-toolbar">
-                <input
-                    className="search-input"
-                    placeholder="Pretraži instruktore..."
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                />
-                <span className="toolbar-count">{filtered.length} instruktora</span>
-            </div>
-
             {loading && <Spinner />}
             {error && <ErrorState message={error} onRetry={loadCombinedData} />}
 
             {!loading && !error && (
+                <>
+                <div className="page-toolbar">
+                    <input
+                        className="search-input"
+                        placeholder="Pretraži instruktore..."
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                    />
+                    <span className="toolbar-count">{filtered.length} instruktora</span>
+                </div>
                 <div className="table-wrap">
                     <table className="data-table">
                         <thead>
@@ -203,6 +203,7 @@ export default function InstructorsPage() {
                         </tbody>
                     </table>
                 </div>
+                </>
             )}
 
             {assignTarget && (

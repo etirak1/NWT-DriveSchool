@@ -6,10 +6,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
-/**
- * Inicijalizuje samo admin/instruktor korisnike koji su neophodni za rad sistema.
- * Nikad ne briše postojeće podatke — idempotentno.
- */
+
 @Component
 public class UserDataInitializer {
 
@@ -24,7 +21,6 @@ public class UserDataInitializer {
 
     @Transactional
     public void init() {
-        // Kreiraj samo ako ne postoji — idempotentno, ne brise nicta
         ensureUser("etirak1@etf.unsa.ba",   "Elma",    "Tirak",      "ADMIN");
         ensureUser("enekic1@etf.unsa.ba",   "Elma",    "Nekic",      "ADMIN");
         ensureUser("aalihodzic6@etf.unsa.ba","Adna",    "Alihodzic",  "ADMIN");

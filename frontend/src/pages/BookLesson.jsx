@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { getErrorMessage } from '../utils/helpers';
 import { Calendar, Clock, Car, ArrowLeft, CheckCircle, User } from 'lucide-react';
 
 export default function BookLesson() {
@@ -41,7 +42,7 @@ export default function BookLesson() {
                 }
             } catch (err) {
                 console.error(err);
-                setError('Greška pri učitavanju podataka kandidata.');
+                setError(getErrorMessage(err));
             } finally {
                 setLoading(false);
             }
@@ -143,7 +144,7 @@ export default function BookLesson() {
         );
     }
 
-    // ── Blokada ako teorijski dio nije položen ──
+    
     if (eligibility && !eligibility.theoryPassed) {
         return (
             <div className="min-h-screen bg-slate-50 p-8">
@@ -163,7 +164,7 @@ export default function BookLesson() {
         );
     }
 
-    // ── Blokada ako je dostignut sedmični limit ──
+   
     if (eligibility && eligibility.lessonsThisWeek >= eligibility.weeklyLimit) {
         return (
             <div className="min-h-screen bg-slate-50 p-8">

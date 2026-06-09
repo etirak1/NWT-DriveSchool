@@ -79,6 +79,16 @@ public class FinanceService {
         return buildStatus(candidateId, obligations);
     }
 
+    @Transactional
+    public List<CandidateStatusDTO> getStatusesForCandidates(List<Integer> candidateIds) {
+        return candidateIds.stream()
+                .map(id -> accountRepository.findByCandidateId(id)
+                        .map(account -> buildStatus(id, getOrCreateObligations(account)))
+                        .orElse(null))
+                .filter(java.util.Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
 
     @Transactional
     public CandidateStatusDTO recordPayment(Integer candidateId, BigDecimal amount) {

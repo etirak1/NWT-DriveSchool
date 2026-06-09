@@ -32,7 +32,7 @@ public class User {
     private String passwordHash;
 
     @NotBlank(message = "Uloga je obavezna")
-    private String role;  // ADMIN, INSTRUCTOR, CANDIDATE
+    private String role;
 
     @NotBlank(message = "Status je obavezan")
     private String status;

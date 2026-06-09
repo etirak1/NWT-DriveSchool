@@ -5,6 +5,8 @@ import { LogOut, UserCheck, BookOpen, ChevronDown, ChevronUp, ArrowLeft } from '
 import { useAuth } from '../context/AuthContext';
 import TheoryLessonsModal from '../components/TheoryLessonsModal';
 import TrainingTimeline from '../components/TrainingTimeline';
+import { getErrorMessage } from '../utils/helpers';
+import { ErrorState, Spinner } from '../components/States';
 
 
 export default function CandidateManagement() {
@@ -15,27 +17,39 @@ export default function CandidateManagement() {
 
     const [candidates, setCandidates] = useState([]);
     const [instructors, setInstructors] = useState([]);
+    const [instructorsUnavailable, setInstructorsUnavailable] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(null);
     const [expandedCandidate, setExpandedCandidate] = useState(null);
     const [successMsg, setSuccessMsg] = useState('');
     const [errorMsg, setErrorMsg] = useState('');
     const [theoryModalCandidate, setTheoryModalCandidate] = useState(null);
     const [timelineRefreshCount, setTimelineRefreshCount] = useState(0);
     const [inlineErrors, setInlineErrors] = useState({});
+    const [inlineSuccess, setInlineSuccess] = useState({});
+
+    const loadCandidates = async () => {
+        setLoading(true);
+        setLoadError(null);
+        try {
+            const candRes = await api.get('/api/candidates');
+            setCandidates(candRes.data);
+        } catch (err) {
+            setLoadError(getErrorMessage(err));
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         const loadData = async () => {
+            await loadCandidates();
+
             try {
-                const [candRes, instRes] = await Promise.all([
-                    api.get('/api/candidates'),
-                    api.get('/api/instructors')
-                ]);
-                setCandidates(candRes.data);
+                const instRes = await api.get('/api/instructors');
                 setInstructors(instRes.data);
-            } catch (err) {
-                setErrorMsg('Greška pri učitavanju podataka.');
-            } finally {
-                setLoading(false);
+            } catch {
+                setInstructorsUnavailable(true);
             }
         };
         loadData();
@@ -51,7 +65,8 @@ export default function CandidateManagement() {
             await api.patch(`/api/candidates/${candidateId}/assign-instructor/${instructorUserId}`);
             const res = await api.get('/api/candidates');
             setCandidates(res.data);
-            showSuccess('Instruktor uspješno dodijeljen!');
+            setInlineSuccess(prev => ({ ...prev, [candidateId]: 'Instruktor uspješno dodijeljen!' }));
+            setTimeout(() => setInlineSuccess(prev => ({ ...prev, [candidateId]: null })), 3000);
         } catch (err) {
             const msg = err.response?.data?.message || 'Greška pri dodjeljivanju instruktora.';
             setInlineErrors(prev => ({ ...prev, [candidateId]: msg }));
@@ -71,7 +86,7 @@ export default function CandidateManagement() {
         setTimeout(() => setErrorMsg(''), 3000);
     };
 
-    if (loading) return <div className="p-10 text-center">Učitavanje...</div>;
+    if (loading) return <Spinner label="Učitavanje kandidata..." />;
 
     return (
         <div className="min-h-screen bg-slate-50">
@@ -99,6 +114,7 @@ export default function CandidateManagement() {
             </header>
 
             <div className="max-w-5xl mx-auto px-4 py-8">
+                {loadError && <ErrorState message={loadError} onRetry={loadCandidates} />}
                 {successMsg && (
                     <div className="mb-4 bg-green-50 text-green-700 px-4 py-3 rounded-lg border border-green-100 text-sm">{successMsg}</div>
                 )}
@@ -106,6 +122,7 @@ export default function CandidateManagement() {
                     <div className="mb-4 bg-red-50 text-red-700 px-4 py-3 rounded-lg border border-red-100 text-sm">{errorMsg}</div>
                 )}
 
+                {!loadError && <>
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-2xl font-bold text-slate-900">Kandidati</h2>
                     <Link
@@ -140,18 +157,27 @@ export default function CandidateManagement() {
                                                 className={`text-sm border rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 ${inlineErrors[candidate.candidateId] ? 'border-red-400' : 'border-slate-200'}`}
                                                 value={candidate.assignedInstructor?.user?.userId || ''}
                                                 onChange={e => assignInstructor(candidate.candidateId, e.target.value)}
+                                                disabled={instructorsUnavailable}
+                                                title={instructorsUnavailable ? 'Servis instruktora trenutno nije dostupan' : ''}
                                             >
-                                                <option value="">Odaberi instruktora</option>
-                                                {instructors.map(inst => (
-                                                    <option key={inst.instructorId} value={inst.user?.userId}>
-                                                        {inst.user?.firstName} {inst.user?.lastName}
-                                                    </option>
-                                                ))}
+                                                <option value="">{instructorsUnavailable ? 'Servis nedostupan' : 'Odaberi instruktora'}</option>
+                                                {instructors
+                                                    .filter(inst => inst.availabilityNote !== 'UNAVAILABLE')
+                                                    .map(inst => (
+                                                        <option key={inst.instructorId} value={inst.user?.userId}>
+                                                            {inst.user?.firstName} {inst.user?.lastName}
+                                                        </option>
+                                                    ))}
                                             </select>
                                         </div>
                                         {inlineErrors[candidate.candidateId] && (
                                             <p className="text-xs text-red-600 max-w-xs leading-snug">
                                                 ⚠️ {inlineErrors[candidate.candidateId]}
+                                            </p>
+                                        )}
+                                        {inlineSuccess[candidate.candidateId] && (
+                                            <p className="text-xs text-green-600 max-w-xs leading-snug">
+                                                ✓ {inlineSuccess[candidate.candidateId]}
                                             </p>
                                         )}
                                     </div>
@@ -180,6 +206,7 @@ export default function CandidateManagement() {
                         </div>
                     ))}
                 </div>
+                </>}
             </div>
 
             {theoryModalCandidate && (

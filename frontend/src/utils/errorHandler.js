@@ -7,7 +7,7 @@ export function parseApiError(error, options = {}) {
     const status = error?.response?.status;
     const body   = error?.response?.data;
 
-    // 409 Conflict — optional caller-supplied override
+   
     if (status === 409 && conflictMessage) {
         return conflictMessage;
     }

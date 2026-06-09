@@ -40,6 +40,20 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (!email.trim()) {
+      setError('E-mail adresa je obavezna.');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError('Unesite ispravnu e-mail adresu (npr. ime@domena.ba).');
+      return;
+    }
+    if (!password) {
+      setError('Lozinka je obavezna.');
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await api.post('/api/auth/login', { email, password });
@@ -88,7 +102,7 @@ export default function Login() {
                 </div>
             )}
 
-            <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+            <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-5">
               <div>
                 <label className="block text-sm font-semibold text-slate-800 mb-1.5">
                   E-mail adresa

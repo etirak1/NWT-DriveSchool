@@ -53,6 +53,7 @@ export default function RepairForm({
                 : null,
             description: form.description,
             cost: form.cost ? Number(form.cost) : null,
+            status: form.status,
         });
     };
 
@@ -152,7 +153,7 @@ export default function RepairForm({
                     required
                     type="number"
                     step="0.01"
-                    min="0.01"
+                    min="5"
                     value={form.cost}
                     onChange={set('cost')}
                     placeholder="0.00"
@@ -160,7 +161,7 @@ export default function RepairForm({
                         if (e.target.validity.valueMissing) {
                             e.target.setCustomValidity('Unesite cijenu');
                         } else if (e.target.validity.rangeUnderflow) {
-                            e.target.setCustomValidity('Cijena mora biti veća od 0');
+                            e.target.setCustomValidity('Cijena mora biti najmanje 5 KM');
                         }
                     }}
                     onInput={(e) =>

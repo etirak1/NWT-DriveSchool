@@ -60,7 +60,6 @@ public class TrainingPhaseService {
         this.financeClient = financeClient;
     }
 
-    // ─── TIMELINE ────────────────────────────────────────────────────────────────
 
     public List<PhaseStatusDTO> getTimeline(Long candidateId) {
         Candidate candidate = candidateRepository.findById(candidateId)
@@ -165,7 +164,6 @@ public class TrainingPhaseService {
         Candidate candidate = candidateRepository.findById(candidateId)
                 .orElseThrow(() -> new RuntimeException("Kandidat nije pronađen"));
 
-        // Blokira pristup vozačkom ispitu ako finansijske obaveze nisu izmirene
         if ("PRAKTIČNI ISPIT".equalsIgnoreCase(phaseType)) {
             try {
                 CandidateFinanceStatusDTO financeStatus = financeClient.getFinanceStatus(candidateId);
@@ -196,7 +194,14 @@ public class TrainingPhaseService {
         }
 
         if (status != null) phase.setStatus(status);
-        if (examDate != null) phase.setDateCompleted(examDate);
+        if (examDate != null) {
+            boolean isCompleted = "POLOŽENO".equalsIgnoreCase(status != null ? status : phase.getStatus())
+                    || "NEPOLOŽENO".equalsIgnoreCase(status != null ? status : phase.getStatus());
+            if (isCompleted && examDate.isAfter(java.time.LocalDate.now())) {
+                throw new IllegalArgumentException("Datum ispita ne može biti u budućnosti za status 'Položeno' ili 'Nije položio'.");
+            }
+            phase.setDateCompleted(examDate);
+        }
         if (notes != null) phase.setNotes(notes);
 
         phaseRepository.save(phase);
@@ -207,7 +212,6 @@ public class TrainingPhaseService {
                 .orElse(null);
     }
 
-    // ─── POSTOJEĆE METODE ────────────────────────────────────────────────────────
 
     public TrainingPhaseDTO getPhaseDetails(Long id) {
         TrainingPhase phase = phaseRepository.findById(id)

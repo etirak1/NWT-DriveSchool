@@ -3,11 +3,11 @@ package com.autoskola.trainingservice.dto;
 public class CandidateAttendanceSummary {
 
     private Long candidateId;
-    private long attended;         // sessions attended
-    private long heldSessions;     // total sessions held
-    private long attendedLessons;  // lessons covered in attended sessions
-    private long totalLessons;     // plan's total lessons
-    private double attendancePct;  // lesson-based percentage
+    private long attended;
+    private long heldSessions;
+    private long attendedLessons;
+    private long totalLessons;
+    private double attendancePct;
     private boolean eligible;
 
     private static final double MIN_ATTENDANCE_PCT = 60.0;

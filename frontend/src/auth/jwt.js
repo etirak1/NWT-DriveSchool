@@ -1,4 +1,3 @@
-// Dekodira payload JWT tokena (samo čitanje, ne verifikacija — verifikaciju radi gateway)
 export function decodeJwt(token) {
   if (!token) return null;
   try {

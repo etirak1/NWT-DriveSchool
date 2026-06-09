@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
+import { getErrorMessage } from '../utils/helpers';
 import { BookOpen, Plus, Users, Calendar, Clock, ArrowLeft, LogOut, ChevronRight, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import TheoryPlanCreateModal from '../components/TheoryPlanCreateModal';
@@ -44,7 +45,7 @@ export default function TheoryPlansPage() {
                 setEnrollmentEligibleIds(null); // finance nije dostupan, ne blokiramo
             }
         } catch (e) {
-            setError('Greška pri učitavanju planova nastave.');
+            setError(getErrorMessage(e));
         } finally {
             setLoading(false);
         }

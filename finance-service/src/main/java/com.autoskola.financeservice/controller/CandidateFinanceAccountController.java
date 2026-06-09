@@ -49,6 +49,11 @@ public class CandidateFinanceAccountController {
         return ResponseEntity.ok(financeService.getStatus(candidateId));
     }
 
+    @GetMapping("/statuses")
+    public ResponseEntity<List<CandidateStatusDTO>> getStatuses(@RequestParam List<Integer> candidateIds) {
+        return ResponseEntity.ok(financeService.getStatusesForCandidates(candidateIds));
+    }
+
     @PostMapping("/ensure/{candidateId}")
     public ResponseEntity<CandidateStatusDTO> ensureAccount(@PathVariable Integer candidateId) {
         return ResponseEntity.ok(financeService.getOrCreateByCandidateId(candidateId));

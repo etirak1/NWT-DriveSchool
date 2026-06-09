@@ -53,7 +53,6 @@ public class ResourceServiceApplication {
 			BCryptPasswordEncoder passwordEncoder
 	) {
 		return args -> {
-			// Seed korisnici — upiši samo ako ne postoje (idempotentno pri restartu)
 			seedUser(userRepository, passwordEncoder, 1L, "Elma",   "Tirak",      "etirak1@etf.unsa.ba",   "ADMIN");
 			seedUser(userRepository, passwordEncoder, 2L, "Elma",   "Nekić",      "enekic1@etf.unsa.ba",   "ADMIN");
 			seedUser(userRepository, passwordEncoder, 3L, "Adna",   "Alihodžić",  "aalihodzic6@etf.unsa.ba","ADMIN");
@@ -61,7 +60,6 @@ public class ResourceServiceApplication {
 			seedUser(userRepository, passwordEncoder, 5L, "Emina",  "Omerović",   "eomerovic1@etf.unsa.ba", "CANDIDATE");
 			seedUser(userRepository, passwordEncoder, 6L, "Tajra",  "Ljubović",   "tljubovic1@etf.unsa.ba", "INSTRUCTOR");
 
-			// Seed vozila — upiši samo ako tabela prazna
 			if (vehicleRepository.count() == 0) {
 				Vehicle vehicle1 = vehicleRepository.save(new Vehicle(
 						null, "Toyota", "Corolla", "E123-ABC", "ACTIVE",
@@ -73,12 +71,11 @@ public class ResourceServiceApplication {
 						LocalDateTime.now(), LocalDateTime.now().minusMonths(6).plusYears(1)));
 
 				if (repairsRepository.count() == 0) {
-					repairsRepository.save(new Repairs(null, vehicle2, LocalDateTime.now().minusDays(10), "Oil change and brake check", 150.0, null));
-					repairsRepository.save(new Repairs(null, vehicle2, LocalDateTime.now().minusMonths(1), "Replaced tires", 400.0, null));
+					repairsRepository.save(new Repairs(null, vehicle2, LocalDateTime.now().minusDays(10), "Oil change and brake check", 150.0, "COMPLETED", null));
+					repairsRepository.save(new Repairs(null, vehicle2, LocalDateTime.now().minusMonths(1), "Replaced tires", 400.0, "COMPLETED", null));
 				}
 			}
 
-			// Kreiraj Instructor zapis za sve korisnike s INSTRUCTOR rolom koji ga nemaju
 			userRepository.findAll().stream()
 					.filter(u -> "INSTRUCTOR".equals(u.getRole()))
 					.filter(u -> !instructorRepository.existsByUserId(u.getUserId()))
@@ -96,10 +93,7 @@ public class ResourceServiceApplication {
 		}
 	}
 
-	/**
-	 * Nakon što je aplikacija potpuno pokrenuta, sinhronizuj instruktore iz user-service.
-	 * Koristi ApplicationReadyEvent da se izbjegne problem startnog redosljeda servisa.
-	 */
+
 	@Bean
 	@Profile("!test")
 	public org.springframework.context.ApplicationListener<ApplicationReadyEvent> syncInstructors(
@@ -111,7 +105,6 @@ public class ResourceServiceApplication {
 				List<UserDTO> instructors = userClientService.getAllInstructors();
 				int synced = 0;
 				for (UserDTO dto : instructors) {
-					// Upiši korisnika ako ne postoji lokalno
 					if (!userRepository.existsById(dto.getUserId())) {
 						User u = new User();
 						u.setUserId(dto.getUserId());
@@ -123,7 +116,6 @@ public class ResourceServiceApplication {
 						u.setStatus("ACTIVE");
 						userRepository.save(u);
 					}
-					// Kreiraj Instructor zapis ako ne postoji
 					if (!instructorRepository.existsByUserId(dto.getUserId())) {
 						instructorRepository.save(new Instructor(null, dto.getUserId(), "AVAILABLE", null, null));
 						synced++;

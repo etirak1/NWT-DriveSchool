@@ -41,6 +41,7 @@ export default function CandidateDashboard() {
     const [rescheduleLesson,  setRescheduleLesson]  = useState(null);
     const [timeline,          setTimeline]          = useState([]);
     const [pendingLessons,    setPendingLessons]    = useState([]);
+    const [theoryEligibility, setTheoryEligibility] = useState(null);
 
     const fetchLessons = async (page = 0) => {
         try {
@@ -75,6 +76,12 @@ export default function CandidateDashboard() {
         try {
             const ratedRes = await api.get(`/api/feedbacks/candidate/${candId}/exists`);
             setAlreadyRated(ratedRes.data);
+        } catch (e) { /* ignore */ }
+
+        // Theory eligibility (je li nastava gotova i je li kandidat bio dovoljno prisutan)
+        try {
+            const eligRes = await api.get(`/api/theory-plans/candidate/${candId}/theory-eligibility`);
+            setTheoryEligibility(eligRes.data);
         } catch (e) { /* ignore */ }
     };
 
@@ -177,7 +184,7 @@ export default function CandidateDashboard() {
     const drivingExamPassed = practicalExamPhase?.examStatus?.toUpperCase() === 'POLOŽENO';
     const effectiveDrivingCompleted = drivingExamPassed ? drivingTotal : drivingCompleted;
     const drivingPct         = drivingTotal > 0 ? Math.round((effectiveDrivingCompleted / drivingTotal) * 100) : 0;
-    const allDone            = theoryPct >= 100 && drivingPct >= 100;
+    const allDone            = theoryPassed && drivingExamPassed;
 
     // Finance helpers — oslanjamo se na financeStatus (CandidateStatusDTO)
     const totalAmount       = Number(financeStatus?.totalAmount   ?? 0);
@@ -270,6 +277,23 @@ export default function CandidateDashboard() {
                             </div>
                         )}
 
+                        {/* Teorijska nastava završena — kandidat nije ispunio uslov prisustva */}
+                        {theoryEligibility?.hasGroup && theoryEligibility?.groupFinished && !theoryEligibility?.eligible && !theoryPassed && (
+                            <div className="bg-red-50 border border-red-300 rounded-xl p-4 flex items-start gap-3">
+                                <AlertTriangle size={20} className="text-red-500 flex-shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="font-semibold text-red-800 text-sm">Niste ispunili uslov za teorijski ispit</p>
+                                    <p className="text-red-700 text-sm mt-0.5">
+                                        Teorijska nastava za Vašu grupu je završena. Prisustvovali ste{' '}
+                                        <span className="font-bold">{theoryEligibility.attendedLessons} od {theoryEligibility.totalLessons}</span>{' '}
+                                        časova ({theoryEligibility.attendancePct}%), što je ispod minimalnog praga od 60%.
+                                        Stoga nemate pravo pristupa teorijskom ispitu.
+                                        Za više informacija kontaktirajte administratora.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Finance info — dugovanje */}
                         {financeStatus && remainingDebt > 0 && (
                             <div className={`rounded-xl border p-4 flex items-start gap-3 ${
@@ -284,8 +308,8 @@ export default function CandidateDashboard() {
                                         Ukupno uplaćeno: <span className="font-bold text-green-600">{amountPaid.toFixed(2)} KM</span>
                                         {' · '}
                                         Preostalo dugovanje: <span className="font-bold text-red-600">{remainingDebt.toFixed(2)} KM</span>
-                                        {!examEligible && (
-                                            <span className="ml-1 text-slate-500">— za polaganje ispita potrebno je izmiriti sve obaveze.</span>
+                                        {!examEligible && drivingPct >= 100 && (
+                                            <span className="ml-1 text-slate-500">— za polaganje završnog praktičnog ispita potrebno je izmiriti sve obaveze.</span>
                                         )}
                                     </p>
                                 </div>
@@ -303,7 +327,7 @@ export default function CandidateDashboard() {
                         )}
 
                         {/* Sve plaćeno ALI obuka nije završena */}
-                        {financeStatus && remainingDebt === 0 && totalAmount > 0 && !drivingExamPassed && (
+                        {financeStatus && remainingDebt === 0 && totalAmount > 0 && !drivingExamPassed && theoryPct < 100 && drivingPct < 100 && (
                             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center gap-3">
                                 <CheckCircle size={20} className="text-blue-500 flex-shrink-0" />
                                 <p className="text-blue-800 text-sm font-medium">
@@ -345,10 +369,14 @@ export default function CandidateDashboard() {
                                         <div key={lesson.lessonId} className="px-5 py-4 flex items-center justify-between gap-4">
                                             <div>
                                                 <p className="text-sm font-semibold text-slate-800">
-                                                    {new Date(lesson.dateTime).toLocaleString('bs-BA', {
-                                                        weekday: 'long', day: '2-digit', month: 'long',
-                                                        hour: '2-digit', minute: '2-digit'
-                                                    })}
+                                                    {(() => {
+                                                        const DANI = ['Nedjelja','Ponedjeljak','Utorak','Srijeda','Četvrtak','Petak','Subota'];
+                                                        const MJESECI = ['januar','februar','mart','april','maj','juni','juli','august','septembar','oktobar','novembar','decembar'];
+                                                        const d = new Date(lesson.dateTime);
+                                                        const h = String(d.getHours()).padStart(2,'0');
+                                                        const m = String(d.getMinutes()).padStart(2,'0');
+                                                        return `${DANI[d.getDay()]}, ${d.getDate()}. ${MJESECI[d.getMonth()]} ${d.getFullYear()} u ${h}:${m}`;
+                                                    })()}
                                                 </p>
                                                 <p className="text-xs text-slate-500 mt-0.5">
                                                     Instruktor: {lesson.instructor?.firstName} {lesson.instructor?.lastName}
@@ -479,9 +507,7 @@ export default function CandidateDashboard() {
                                             {candidate.assignedInstructor?.user?.firstName}{' '}
                                             {candidate.assignedInstructor?.user?.lastName}
                                         </p>
-                                        <p className="text-xs text-slate-400">
-                                            {candidate.assignedInstructor?.availabilityNote || 'Instructor'}
-                                        </p>
+                                        <p className="text-xs text-slate-400">Instruktor vožnje</p>
                                     </div>
                                 </div>
                             </div>
@@ -493,6 +519,7 @@ export default function CandidateDashboard() {
                             onPageChange={fetchLessons}
                             onReschedule={setRescheduleLesson}
                             theoryPassed={theoryPassed}
+                            drivingDone={drivingPct >= 100}
                         />
                     </>
                 )}
@@ -836,7 +863,7 @@ export default function CandidateDashboard() {
 }
 
 /* ── Lesson table sub-component ── */
-function LessonTable({ pageData, onPageChange, onReschedule, theoryPassed }) {
+function LessonTable({ pageData, onPageChange, onReschedule, theoryPassed, drivingDone }) {
     return (
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
@@ -844,16 +871,16 @@ function LessonTable({ pageData, onPageChange, onReschedule, theoryPassed }) {
                     <BookOpen size={16} className="text-blue-500" />
                     Historija časova
                 </h2>
-                {theoryPassed ? (
+                {!drivingDone && theoryPassed ? (
                     <Link
                         to="/book-lesson"
                         className="flex items-center gap-1.5 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg font-medium text-sm transition"
                     >
                         <Plus size={14} /> Zakaži čas
                     </Link>
-                ) : (
+                ) : !drivingDone ? (
                     <span className="text-xs text-slate-400 italic">Teorijski ispit potreban</span>
-                )}
+                ) : null}
             </div>
 
             {pageData.content.length === 0 ? (
@@ -883,14 +910,16 @@ function LessonTable({ pageData, onPageChange, onReschedule, theoryPassed }) {
                                 </td>
                                 <td className="px-6 py-4">
                                     <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
-                                        lesson.status === 'ODRAĐENO' ? 'bg-green-100 text-green-700' :
-                                        lesson.status === 'ZAKAZANO' ? 'bg-blue-100 text-blue-700'   :
-                                        lesson.status === 'OTKAZANO' ? 'bg-red-100 text-red-700'     :
+                                        lesson.status === 'ODRAĐENO' ? 'bg-green-100 text-green-700'   :
+                                        lesson.status === 'ZAKAZANO' ? 'bg-blue-100 text-blue-700'     :
+                                        lesson.status === 'OTKAZANO' ? 'bg-red-100 text-red-700'       :
+                                        lesson.status === 'PENDING'  ? 'bg-yellow-100 text-yellow-700' :
                                         'bg-slate-100 text-slate-600'
                                     }`}>
-                                        {lesson.status === 'ODRAĐENO' ? 'Completed' :
-                                         lesson.status === 'ZAKAZANO' ? 'Scheduled' :
-                                         lesson.status === 'OTKAZANO' ? 'Cancelled' : lesson.status}
+                                        {lesson.status === 'ODRAĐENO' ? 'Završeno'     :
+                                         lesson.status === 'ZAKAZANO' ? 'Zakazano'     :
+                                         lesson.status === 'OTKAZANO' ? 'Otkazano'     :
+                                         lesson.status === 'PENDING'  ? 'Na čekanju'   : lesson.status}
                                     </span>
                                 </td>
                                 <td className="px-6 py-4 text-sm text-slate-400 italic">

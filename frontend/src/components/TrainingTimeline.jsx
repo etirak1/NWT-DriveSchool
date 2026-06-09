@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api/client';
+import { getErrorMessage } from '../utils/helpers';
 import {
     CheckCircle2, Lock, Clock, AlertCircle, ChevronDown, ChevronUp,
     BookOpen, Car, FileCheck, GraduationCap, Award, ClipboardList
@@ -52,7 +53,7 @@ export default function TrainingTimeline({ candidate, onOpenTheory, refreshToken
             const res = await api.get(`/api/phases/candidate/${candidateId}/timeline`);
             setTimeline(res.data);
         } catch {
-            setError('Greška pri učitavanju toka obuke.');
+            setError(getErrorMessage(e));
         } finally {
             setLoading(false);
         }
@@ -229,6 +230,15 @@ function ExamModal({ candidateId, phaseType, label, current, onClose, onSaved })
 
     const handleSave = async () => {
         if (!status) { setError('Status je obavezan.'); return; }
+
+        if ((status === 'POLOŽENO' || status === 'NEPOLOŽENO') && examDate) {
+            const today = new Date().toISOString().split('T')[0];
+            if (examDate > today) {
+                setError('Datum ispita ne može biti u budućnosti za status "Položeno" ili "Nije položio".');
+                return;
+            }
+        }
+
         setSaving(true);
         try {
             await api.patch(`/api/phases/candidate/${candidateId}/exam`, {
@@ -239,7 +249,15 @@ function ExamModal({ candidateId, phaseType, label, current, onClose, onSaved })
             });
             onSaved();
         } catch (e) {
-            setError(e.response?.data?.message || 'Greška pri čuvanju.');
+            const data = e.response?.data;
+            let msg = 'Greška pri čuvanju.';
+            if (typeof data === 'string' && data.includes('interpolatedMessage=')) {
+                const match = data.match(/interpolatedMessage='([^']+)'/);
+                if (match) msg = match[1];
+            } else if (data?.message) {
+                msg = data.message;
+            }
+            setError(msg);
         } finally {
             setSaving(false);
         }

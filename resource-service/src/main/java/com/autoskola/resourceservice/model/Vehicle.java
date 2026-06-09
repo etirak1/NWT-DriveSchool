@@ -26,7 +26,7 @@ public class Vehicle {
     private String registrationNumber;
 
     @NotBlank(message = "Status vozila je obavezan")
-    private String status; // npr. ACTIVE, IN_REPAIR
+    private String status;
 
     private LocalDateTime lastTechnicalInspection;
 
