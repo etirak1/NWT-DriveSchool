@@ -36,7 +36,8 @@ export default function TheoryPlansPage() {
 
             // Učitaj finance status da znamo ko je platio upisninu
             try {
-                const accounts = await financeApi.getAll();
+                const accountsRes = await financeApi.getAll();
+                const accounts = accountsRes.data || [];
                 const eligible = accounts
                     .filter(a => a.enrollmentEligible)
                     .map(a => a.candidateId);

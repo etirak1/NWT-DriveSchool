@@ -21,11 +21,11 @@ public class FinanceEnrollmentChecker {
         try {
             String url = financeServiceUrl + "/accounts/" + candidateId + "/status";
             CandidateStatusResponse status = restTemplate.getForObject(url, CandidateStatusResponse.class);
-            if (status == null) return true; // fail-open
+            if (status == null) return false; // nema finansijskog računa = upisnina nije plaćena
             return status.isEnrollmentEligible();
         } catch (Exception e) {
-            log.warn("Finance-service nije dostupan, provjera upisnine preskocena za kandidata {}: {}", candidateId, e.getMessage());
-            return true;
+            log.warn("Finance-service nije dostupan za kandidata {}: {}", candidateId, e.getMessage());
+            throw new RuntimeException("Nije moguće provjeriti status upisnine — finance-service nije dostupan. Pokušajte ponovo.");
         }
     }
 
