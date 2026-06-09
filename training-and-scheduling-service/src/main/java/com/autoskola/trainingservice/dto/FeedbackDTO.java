@@ -1,9 +1,6 @@
 package com.autoskola.trainingservice.dto;
 
 import com.autoskola.trainingservice.model.Feedback;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -23,7 +20,6 @@ public class FeedbackDTO {
     @Max(value = 5, message = "Maksimalna ocjena je 5")
     private Integer rating;
 
-    @NotBlank(message = "Komentar ne može biti prazan")
     @Size(max = 500, message = "Komentar može imati najviše 500 karaktera")
     private String comment;
 

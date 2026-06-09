@@ -22,7 +22,6 @@ public class UserRegisteredListener {
 
     @RabbitListener(queues = "user_registered_resource_queue")
     public void handleUserRegistered(UserRegisteredEvent event) {
-        // Spremi korisnika u lokalnu tabelu ako ne postoji
         if (!userRepository.existsById(event.getUserId())) {
             User user = new User();
             user.setUserId(event.getUserId());

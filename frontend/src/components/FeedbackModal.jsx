@@ -13,17 +13,17 @@ const FeedbackModal = ({ candidate, onClose, onSubmitted }) => {
     const instructor = candidate?.assignedInstructor;
 
     const handleSubmit = async () => {
-        if (rating === 0) {
-            setError('Molimo odaberite ocjenu.');
-            return;
-        }
-        setError('');
-        setLoading(true);
+    if (rating === 0) {
+        setError('Molimo odaberite ocjenu.');
+        return;
+    }
+    if (!candidate?.candidateId || !candidate?.assignedInstructor?.instructorId) {
+        setError('Greška: podaci o kandidatu ili instruktoru nisu dostupni. Osvježite stranicu.');
+        return;
+    }
+    setError('');
+    setLoading(true);
 
-        // Dodaj ovo privremeno
-        console.log('candidate objekat:', candidate);
-        console.log('candidateId:', candidate?.candidate?.candidateId);
-        console.log('instructorId:', candidate?.assignedInstructor?.instructorId);
 
         try {
             await api.post('/api/feedbacks', {
@@ -68,7 +68,6 @@ const FeedbackModal = ({ candidate, onClose, onSubmitted }) => {
                     </button>
                 </div>
 
-                {/* Info o instruktoru */}
                 <div className="flex items-center gap-3 bg-gray-50 rounded-xl p-4 mb-6">
                     <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm">
                         {instructor?.user?.firstName?.[0]}{instructor?.user?.lastName?.[0]}

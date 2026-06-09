@@ -35,7 +35,6 @@ public class UserEventListener {
     @RabbitListener(queues = RabbitMQConfig.QUEUE_USER_REGISTERED)
     public void handleUserRegistered(UserDTO event) {
         if ("INSTRUCTOR".equalsIgnoreCase(event.getRole())) {
-            // Provjeri da li već postoji u tvojoj bazi
             if (!instructorRepository.existsByUserId(event.getUserId())) {
                 Instructor instructor = new Instructor();
                 instructor.setUserId(event.getUserId());

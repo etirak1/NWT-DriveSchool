@@ -14,5 +14,9 @@ public class CandidateFinanceAccountDTO {
     private BigDecimal totalAmount;
     private BigDecimal remainingDebt;
     private List<PaymentDTO> payments;
+    private Integer candidateId;
+    private List<ObligationDTO> obligations;
+    private boolean enrollmentEligible;
+    private boolean examEligible;
 
 }

@@ -3,7 +3,9 @@ package com.autoskola.resourceservice.controller;
 import com.autoskola.resourceservice.dto.VehicleRequestDTO;
 import com.autoskola.resourceservice.model.Vehicle;
 import com.autoskola.resourceservice.event.ResourceEventPublisher;
+import com.autoskola.resourceservice.repository.RepairsRepository;
 import com.autoskola.resourceservice.repository.VehicleRepository;
+import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,11 +17,14 @@ import java.util.List;
 public class VehicleController {
 
     private final VehicleRepository vehicleRepository;
+    private final RepairsRepository repairsRepository;
     private final ResourceEventPublisher eventPublisher;
 
     public VehicleController(VehicleRepository vehicleRepository,
+                             RepairsRepository repairsRepository,
                              ResourceEventPublisher eventPublisher) {
         this.vehicleRepository = vehicleRepository;
+        this.repairsRepository = repairsRepository;
         this.eventPublisher = eventPublisher;
     }
 
@@ -71,10 +76,12 @@ public class VehicleController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
     public ResponseEntity<Void> deleteVehicle(@PathVariable Long id) {
         if (!vehicleRepository.existsById(id)) {
             throw new RuntimeException("Vozilo nije pronađeno");
         }
+        repairsRepository.deleteByVehicle_VehicleId(id);
         vehicleRepository.deleteById(id);
         eventPublisher.publishVehicleDeleted(id);
         return ResponseEntity.noContent().build();

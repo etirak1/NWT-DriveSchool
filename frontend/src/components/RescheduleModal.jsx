@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Calendar, Clock, CheckCircle } from 'lucide-react';
 import { api } from '../api/client';
-import { getCurrentUserId } from '../auth/jwt';
+import { useAuth } from '../context/AuthContext';
 
 const TIME_SLOTS = [];
 for (let h = 8; h <= 16; h++) {
@@ -10,7 +10,8 @@ for (let h = 8; h <= 16; h++) {
 }
 
 export default function RescheduleModal({ lesson, onClose, onRescheduled }) {
-    const userId = getCurrentUserId();
+    const { user, logout } = useAuth();
+    const userId = user.userId;
 
     const [date, setDate]         = useState('');
     const [time, setTime]         = useState('');
@@ -21,7 +22,7 @@ export default function RescheduleModal({ lesson, onClose, onRescheduled }) {
 
     const instructorId = lesson?.instructor?.userId ?? lesson?.instructorId;
 
-    // Fetch busy slots when date changes
+   
     useEffect(() => {
         if (!date || !instructorId) return;
         const fetchBusy = async () => {
@@ -60,7 +61,7 @@ export default function RescheduleModal({ lesson, onClose, onRescheduled }) {
 
     const handleSubmit = async () => {
         if (!date || !time) {
-            setError('Please select a date and time.');
+            setError('Molimo odaberite datum i termin.');
             return;
         }
 
@@ -79,13 +80,13 @@ export default function RescheduleModal({ lesson, onClose, onRescheduled }) {
             }, 1500);
         } catch (err) {
             const body = err?.response?.data;
-            setError(body?.message || 'Failed to reschedule. Please try again.');
+            setError(body?.message || 'Greška pri promjeni termina. Pokušajte ponovo.');
         } finally {
             setSubmitting(false);
         }
     };
 
-    // Min date = tomorrow
+    
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const minDate = tomorrow.toISOString().slice(0, 10);
@@ -108,9 +109,9 @@ export default function RescheduleModal({ lesson, onClose, onRescheduled }) {
                             <Calendar className="text-white" size={18} />
                         </div>
                         <div>
-                            <h3 className="font-bold text-slate-900">Reschedule lesson</h3>
+                            <h3 className="font-bold text-slate-900">Promjena termina časa</h3>
                             <p className="text-xs text-slate-500">
-                                Current: <span className="font-medium">{currentDateTime}</span>
+                                Trenutni termin: <span className="font-medium">{currentDateTime}</span>
                             </p>
                         </div>
                     </div>
@@ -125,15 +126,15 @@ export default function RescheduleModal({ lesson, onClose, onRescheduled }) {
                             <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
                                 <CheckCircle size={28} className="text-green-500" />
                             </div>
-                            <p className="font-semibold text-slate-800">Lesson rescheduled!</p>
-                            <p className="text-sm text-slate-500">Closing...</p>
+                            <p className="font-semibold text-slate-800">Termin uspješno promijenjen!</p>
+                            <p className="text-sm text-slate-500">Zatvaranje...</p>
                         </div>
                     ) : (
                         <>
                             {/* Date picker */}
                             <div>
                                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                                    <Calendar className="inline mr-1.5" size={14} /> New date
+                                    <Calendar className="inline mr-1.5" size={14} /> Novi datum
                                 </label>
                                 <input
                                     type="date"
@@ -148,7 +149,7 @@ export default function RescheduleModal({ lesson, onClose, onRescheduled }) {
                             {date && (
                                 <div>
                                     <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                                        <Clock className="inline mr-1.5" size={14} /> Available time slots
+                                        <Clock className="inline mr-1.5" size={14} /> Dostupni termini
                                     </label>
                                     <div className="grid grid-cols-4 gap-2">
                                         {TIME_SLOTS.map(slot => {
@@ -175,7 +176,7 @@ export default function RescheduleModal({ lesson, onClose, onRescheduled }) {
                                         })}
                                     </div>
                                     {busySlots.length > 0 && (
-                                        <p className="text-xs text-slate-400 mt-2">Crossed-out slots are already taken.</p>
+                                        <p className="text-xs text-slate-400 mt-2">Precrtani termini su već zauzeti.</p>
                                     )}
                                 </div>
                             )}
@@ -192,14 +193,14 @@ export default function RescheduleModal({ lesson, onClose, onRescheduled }) {
                                     onClick={onClose}
                                     className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium text-sm"
                                 >
-                                    Cancel
+                                    Odustani
                                 </button>
                                 <button
                                     onClick={handleSubmit}
                                     disabled={submitting || !date || !time}
                                     className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed text-white rounded-lg font-medium text-sm transition"
                                 >
-                                    {submitting ? 'Saving...' : 'Confirm reschedule'}
+                                    {submitting ? 'Čuvanje...' : 'Potvrdi promjenu'}
                                 </button>
                             </div>
                         </>

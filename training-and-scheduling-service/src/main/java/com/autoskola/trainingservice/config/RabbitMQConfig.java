@@ -14,6 +14,7 @@ public class RabbitMQConfig {
     public static final String QUEUE_TRAINING = "training_queue";
     public static final String QUEUE_USER_REGISTERED = "user_registered_queue";
     public static final String QUEUE_VEHICLE_ASSIGNED = "training_vehicle_assigned_queue";
+    public static final String QUEUE_INSTRUCTOR_AVAILABILITY = "training_instructor_availability_queue";
 
     @Bean
     public TopicExchange exchange() {
@@ -52,6 +53,18 @@ public class RabbitMQConfig {
         return BindingBuilder.bind(vehicleAssignedQueue())
                 .to(exchange)
                 .with("instructor.vehicle.assigned");
+    }
+
+    @Bean
+    public Queue instructorAvailabilityQueue() {
+        return new Queue(QUEUE_INSTRUCTOR_AVAILABILITY, true);
+    }
+
+    @Bean
+    public Binding instructorAvailabilityBinding(TopicExchange exchange) {
+        return BindingBuilder.bind(instructorAvailabilityQueue())
+                .to(exchange)
+                .with("instructor.availability.updated");
     }
 
     @Bean

@@ -29,7 +29,6 @@ public class Feedback {
     @Max(value = 5, message = "Maksimalna ocjena je 5")
     private Integer rating;
 
-    @NotBlank(message = "Komentar ne može biti prazan")
     @Size(max = 500, message = "Komentar može imati najviše 500 karaktera")
     private String comment;
 

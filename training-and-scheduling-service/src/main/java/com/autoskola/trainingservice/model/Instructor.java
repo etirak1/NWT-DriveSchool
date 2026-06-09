@@ -21,4 +21,7 @@ public class Instructor {
     private String vehicleModel;
     private String vehicleRegistrationNumber;
     private String vehicleStatus;
+
+    @Column(nullable = false)
+    private String availabilityNote = "AVAILABLE";
 }

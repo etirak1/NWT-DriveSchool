@@ -41,7 +41,7 @@ public class InstructorController {
     public InstructorDTO createInstructor(@Valid @RequestBody Instructor instructor) {
         InstructorDTO saved = instructorService.createInstructor(instructor);
         eventPublisher.publishInstructorAvailabilityUpdated(
-                saved.getInstructorId(), saved.getAvailabilityNote());
+                saved.getInstructorId(), saved.getUser().getUserId(), saved.getAvailabilityNote());
         return saved;
     }
 
@@ -57,7 +57,7 @@ public class InstructorController {
                                             @RequestBody Map<String, String> body) {
         String note = body.get("availabilityNote");
         InstructorDTO updated = instructorService.updateAvailability(id, note);
-        eventPublisher.publishInstructorAvailabilityUpdated(id, note);
+        eventPublisher.publishInstructorAvailabilityUpdated(id, updated.getUser().getUserId(), note);
         return updated;
     }
 

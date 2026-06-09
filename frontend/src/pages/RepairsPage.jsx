@@ -7,6 +7,7 @@ import Modal from '../components/Modal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { Spinner, ErrorState } from '../components/States';
 import { useToast } from '../context/ToastContext';
+import { getErrorMessage } from '../utils/helpers';
 
 export default function RepairsPage() {
     const { addToast } = useToast();
@@ -19,6 +20,7 @@ export default function RepairsPage() {
     const [editTarget, setEditTarget] = useState(null);
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [saving, setSaving] = useState(false);
+    const [deleting, setDeleting] = useState(false);
     const [filterVehicle, setFilterVehicle] = useState('');
 
     const filtered = (repairs || []).filter(r =>
@@ -39,19 +41,24 @@ export default function RepairsPage() {
             setEditTarget(null);
             refetch();
         } catch (e) {
-            addToast(`Greška: ${e.message}`, 'error');
+            addToast(getErrorMessage(e), 'error');
         } finally {
             setSaving(false);
         }
     };
 
     const handleDelete = async () => {
+        setDeleting(true);
         try {
             await repairApi.delete(deleteTarget.repairId);
             addToast('Popravka obrisana.', 'success');
+            setDeleteTarget(null);
             refetch();
         } catch (e) {
-            addToast(`Greška: ${e.message}`, 'error');
+            addToast(getErrorMessage(e), 'error');
+            setDeleteTarget(null);
+        } finally {
+            setDeleting(false);
         }
     };
 
@@ -65,33 +72,34 @@ export default function RepairsPage() {
                     <h1 className="page-title">Servisne popravke</h1>
                     <p className="page-sub">Evidencija svih popravki i servisa vozila</p>
                 </div>
-                <button className="btn btn-primary" onClick={openAdd}>+ Dodaj popravku</button>
-            </div>
-
-            <div className="page-toolbar">
-                <select
-                    className="search-input"
-                    value={filterVehicle}
-                    onChange={e => setFilterVehicle(e.target.value)}
-                >
-                    <option value="">Sva vozila</option>
-                    {(vehicles || []).map(v => (
-                        <option key={v.vehicleId} value={v.vehicleId}>
-                            {v.brand} {v.model} ({v.registrationNumber})
-                        </option>
-                    ))}
-                </select>
-                <span className="toolbar-count">{filtered.length} popravki</span>
+                <button className="btn btn-primary" onClick={openAdd} disabled={!!error}>+ Dodaj popravku</button>
             </div>
 
             {loading && <Spinner />}
             {error && <ErrorState message={error} onRetry={refetch} />}
             {!loading && !error && (
-                <RepairTable
-                    repairs={filtered}
-                    onEdit={openEdit}
-                    onDelete={setDeleteTarget}
-                />
+                <>
+                    <div className="page-toolbar">
+                        <select
+                            className="search-input"
+                            value={filterVehicle}
+                            onChange={e => setFilterVehicle(e.target.value)}
+                        >
+                            <option value="">Sva vozila</option>
+                            {(vehicles || []).map(v => (
+                                <option key={v.vehicleId} value={v.vehicleId}>
+                                    {v.brand} {v.model} ({v.registrationNumber})
+                                </option>
+                            ))}
+                        </select>
+                        <span className="toolbar-count">{filtered.length} popravki</span>
+                    </div>
+                    <RepairTable
+                        repairs={filtered}
+                        onEdit={openEdit}
+                        onDelete={setDeleteTarget}
+                    />
+                </>
             )}
 
             <Modal
@@ -114,6 +122,7 @@ export default function RepairsPage() {
                 onConfirm={handleDelete}
                 title="Obriši popravku"
                 message={deleteTarget ? `Sigurno želiš obrisati ovu popravku za ${deleteTarget.vehicle?.brand} ${deleteTarget.vehicle?.model}?` : ''}
+                loading={deleting}
             />
         </div>
     );

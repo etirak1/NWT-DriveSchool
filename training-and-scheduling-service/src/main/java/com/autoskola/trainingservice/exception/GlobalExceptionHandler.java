@@ -12,19 +12,25 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // Hvata greške validacije (@Valid)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
         String defaultMsg = ex.getBindingResult().getAllErrors().get(0).getDefaultMessage();
         return new ResponseEntity<>(new ErrorResponse("VALIDATION_FAILED", defaultMsg), HttpStatus.BAD_REQUEST);
     }
 
-    // Hvata greške kada resurs nije pronađen
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ErrorResponse> handleRuntime(RuntimeException ex) {
-        return new ResponseEntity<>(new ErrorResponse("RESOURCE_NOT_FOUND", ex.getMessage()), HttpStatus.NOT_FOUND);
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
+        return new ResponseEntity<>(new ErrorResponse("BAD_REQUEST", ex.getMessage()), HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ErrorResponse> handleRuntime(RuntimeException ex) {
+        String msg = ex.getMessage() != null ? ex.getMessage() : "Interna greška";
+        if (msg.contains("nije pronađen") || msg.contains("not found")) {
+            return new ResponseEntity<>(new ErrorResponse("NOT_FOUND", msg), HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(new ErrorResponse("INTERNAL_ERROR", msg), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
     public ResponseEntity<Map<String, String>> handleAccessDenied(Exception ex) {
         Map<String, String> response = new HashMap<>();

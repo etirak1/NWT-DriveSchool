@@ -13,12 +13,10 @@ public class RabbitMQConfig {
 
     public static final String EXCHANGE = "skola_exchange";
 
-    // Queue names
     public static final String QUEUE_CANDIDATE = "finance_candidate_queue";
     public static final String QUEUE_LESSON    = "finance_lesson_queue";
     public static final String QUEUE_VEHICLE   = "finance_vehicle_queue";
 
-    // Routing keys koje Finance service sluša
     public static final String KEY_CANDIDATE = "candidate.created";
     public static final String KEY_LESSON    = "lesson.completed";
     public static final String KEY_VEHICLE   = "vehicle.serviced";

@@ -41,9 +41,9 @@ public class ResourceEventPublisher {
                 java.util.Map.of("vehicleId", vehicleId));
     }
 
-    public void publishInstructorAvailabilityUpdated(Long instructorId, String availabilityNote) {
+    public void publishInstructorAvailabilityUpdated(Long instructorId, Long userId, String availabilityNote) {
         rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, "instructor.availability.updated",
-                java.util.Map.of("instructorId", instructorId, "availabilityNote", availabilityNote));
+                java.util.Map.of("instructorId", instructorId, "userId", userId, "availabilityNote", availabilityNote));
     }
 
 

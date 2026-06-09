@@ -23,9 +23,9 @@ public class TrainingPhase{
 
     @NotBlank(message = "Tip faze je obavezan")
     @Pattern(
-            regexp = "^(TEORIJSKI DIO|PRAKTIČNA VOŽNJA|POLIGON|GRADSKA VOŽNJA|ISPIT)$",
+            regexp = "^(TEORIJSKI DIO|PRAKTIČNA VOŽNJA|POLIGON|GRADSKA VOŽNJA|ISPIT|TEORIJSKI ISPIT|PRAKTIČNI ISPIT)$",
             flags = Pattern.Flag.CASE_INSENSITIVE,
-            message = "Tip faze mora biti jedan od: TEORIJSKI DIO, PRAKTIČNA VOŽNJA, POLIGON, GRADSKA VOŽNJA ili ISPIT"
+            message = "Nepoznati tip faze"
     )
     private String phaseType;
 
@@ -37,6 +37,8 @@ public class TrainingPhase{
     )
     private String status;
 
-    @PastOrPresent(message = "Datum polaganja ne može biti u budućnosti")
     private LocalDate dateCompleted;
+
+    @Column(columnDefinition = "TEXT")
+    private String notes;
 }

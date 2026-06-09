@@ -14,6 +14,6 @@ public class UserDTO {
     private String firstName;
     private String lastName;
     private String email;
-    private String role;   // ADMIN, INSTRUCTOR, CANDIDATE
+    private String role;
 
 }

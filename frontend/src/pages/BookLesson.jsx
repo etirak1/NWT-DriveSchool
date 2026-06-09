@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
-import { getCurrentUserId } from '../auth/jwt';
+import { useAuth } from '../context/AuthContext';
+import { getErrorMessage } from '../utils/helpers';
 import { Calendar, Clock, Car, ArrowLeft, CheckCircle, User } from 'lucide-react';
 
 export default function BookLesson() {
     const navigate = useNavigate();
-    const userId = getCurrentUserId();
+    const { user, logout } = useAuth();
+    const userId = user.userId;
+
 
     const [candidate, setCandidate] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -14,13 +17,10 @@ export default function BookLesson() {
 
     const [date, setDate] = useState('');
     const [time, setTime] = useState('');
-    const [notes, setNotes] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
     const [eligibility, setEligibility] = useState(null);
-    const [lessonType, setLessonType] = useState('VOŽNJA');
-    const [topic, setTopic] = useState('');
 
     const TIME_SLOTS = [];
     for (let h = 8; h <= 16; h++) {
@@ -31,7 +31,7 @@ export default function BookLesson() {
     useEffect(() => {
         const loadCandidate = async () => {
             try {
-                const res = await api.get(`/api/candidates/${userId}`);
+                const res = await api.get(`/api/candidates/by-user/${userId}`);
                 setCandidate(res.data);
 
                 try {
@@ -42,7 +42,7 @@ export default function BookLesson() {
                 }
             } catch (err) {
                 console.error(err);
-                setError('Greška pri učitavanju podataka kandidata.');
+                setError(getErrorMessage(err));
             } finally {
                 setLoading(false);
             }
@@ -86,11 +86,7 @@ export default function BookLesson() {
 
         const instructor = getInstructor();
         if (!instructor) {
-            setError('Nemate dodijeljen instruktor.');
-            return;
-        }
-        if (!instructor.assignedVehicleId) {
-            setError('Vaš instruktor nema dodijeljeno vozilo. Kontaktirajte administraciju.');
+            setError('Nemate dodijeljenog instruktora.');
             return;
         }
 
@@ -102,9 +98,7 @@ export default function BookLesson() {
                 dateTime,
                 duration: 45,
                 status: 'ZAKAZANO',
-                lessonType: lessonType,
-                topic: topic.trim() || null,
-                notes: notes.trim() || null
+                lessonType: 'VOŽNJA',
             };
             await api.post('/api/lessons', payload);
             setSuccess(true);
@@ -137,7 +131,7 @@ export default function BookLesson() {
                 <div className="max-w-xl mx-auto">
                     <button onClick={() => navigate('/dashboard')}
                         className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-4">
-                        <ArrowLeft size={16} /> Nazad
+                        <ArrowLeft size={16} /> Nazad na početnu
                     </button>
                     <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
                         <h2 className="font-bold text-amber-800 mb-2">Nema dodijeljenog instruktora</h2>
@@ -150,14 +144,14 @@ export default function BookLesson() {
         );
     }
 
-    // ── Blokada ako teorijski dio nije položen ──
+    
     if (eligibility && !eligibility.theoryPassed) {
         return (
             <div className="min-h-screen bg-slate-50 p-8">
                 <div className="max-w-xl mx-auto">
                     <button onClick={() => navigate('/dashboard')}
                         className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-4">
-                        <ArrowLeft size={16} /> Nazad
+                        <ArrowLeft size={16} /> Nazad na početnu
                     </button>
                     <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
                         <h2 className="font-bold text-amber-800 mb-2">Teorijski dio nije položen</h2>
@@ -170,14 +164,14 @@ export default function BookLesson() {
         );
     }
 
-    // ── Blokada ako je dostignut sedmični limit ──
+   
     if (eligibility && eligibility.lessonsThisWeek >= eligibility.weeklyLimit) {
         return (
             <div className="min-h-screen bg-slate-50 p-8">
                 <div className="max-w-xl mx-auto">
                     <button onClick={() => navigate('/dashboard')}
                         className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-4">
-                        <ArrowLeft size={16} /> Nazad
+                        <ArrowLeft size={16} /> Nazad na početnu
                     </button>
                     <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
                         <h2 className="font-bold text-amber-800 mb-2">Sedmični limit dostignut</h2>
@@ -204,7 +198,7 @@ export default function BookLesson() {
             <div className="max-w-2xl mx-auto">
                 <button onClick={() => navigate('/dashboard')}
                     className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-4">
-                    <ArrowLeft size={16} /> Nazad na dashboard
+                    <ArrowLeft size={16} /> Nazad na početnu
                 </button>
 
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
@@ -226,7 +220,7 @@ export default function BookLesson() {
                                 <CheckCircle className="text-emerald-600" size={32} />
                             </div>
                             <h3 className="font-bold text-slate-900 text-lg">Čas uspješno zakazan!</h3>
-                            <p className="text-sm text-slate-500 mt-1">Vraćam vas na dashboard...</p>
+                            <p className="text-sm text-slate-500 mt-1">Vraćam vas na početnu...</p>
                         </div>
                     ) : (
                         <form onSubmit={handleSubmit} className="space-y-5">
@@ -299,34 +293,6 @@ export default function BookLesson() {
                                     Instruktor nema dodijeljeno vozilo — kontaktirajte administraciju.
                                 </div>
                             )}
-
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-800 mb-1.5">
-                                    Tema/gradivo (opcionalno)
-                                </label>
-                                <input
-                                    type="text"
-                                    value={topic}
-                                    onChange={(e) => setTopic(e.target.value)}
-                                    maxLength={200}
-                                    placeholder="Npr. parking, vožnja u gradu, kružni tok..."
-                                    className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-800 mb-1.5">
-                                    Napomena (opcionalno)
-                                </label>
-                                <textarea
-                                    rows={3}
-                                    value={notes}
-                                    onChange={(e) => setNotes(e.target.value)}
-                                    maxLength={500}
-                                    placeholder="Npr. želim raditi parking ili vožnju u gradu..."
-                                    className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 resize-none"
-                                />
-                            </div>
 
                             {error && (
                                 <div className="bg-red-50 text-red-700 text-sm px-3 py-2 rounded-lg border border-red-100">

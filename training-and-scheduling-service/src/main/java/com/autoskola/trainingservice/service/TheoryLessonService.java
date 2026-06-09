@@ -50,17 +50,20 @@ public class TheoryLessonService {
         java.util.Set<Integer> existingNumbers = new java.util.HashSet<>();
         existing.forEach(l -> existingNumbers.add(l.getLessonNumber()));
 
+        List<TheoryLesson> toCreate = new java.util.ArrayList<>();
         for (int i = 1; i <= TOTAL_LESSONS; i++) {
             if (!existingNumbers.contains(i)) {
                 TheoryLesson lesson = new TheoryLesson();
                 lesson.setCandidate(candidate);
                 lesson.setLessonNumber(i);
                 lesson.setCompleted(false);
-                theoryLessonRepository.save(lesson);
+                toCreate.add(lesson);
             }
         }
+        if (!toCreate.isEmpty()) {
+            theoryLessonRepository.saveAll(toCreate);
+        }
     }
-
     @Transactional
     public TheoryLesson toggleLesson(Long candidateId, Integer lessonNumber, boolean completed) {
         if (lessonNumber < 1 || lessonNumber > TOTAL_LESSONS) {
@@ -133,5 +136,56 @@ public class TheoryLessonService {
 
     public long getCompletedCount(Long candidateId) {
         return theoryLessonRepository.countByCandidateCandidateIdAndCompletedTrue(candidateId);
+    }
+
+
+    @Transactional
+    public void markSessionRange(Long candidateId, int fromLesson, int toLesson) {
+        if (fromLesson < 1 || toLesson > TOTAL_LESSONS || fromLesson > toLesson) return;
+
+        getLessonsForCandidate(candidateId);
+
+        List<TheoryLesson> toMark = theoryLessonRepository
+                .findByCandidateCandidateIdOrderByLessonNumber(candidateId)
+                .stream()
+                .filter(l -> l.getLessonNumber() >= fromLesson
+                          && l.getLessonNumber() <= toLesson
+                          && !l.isCompleted())
+                .collect(java.util.stream.Collectors.toList());
+
+        toMark.forEach(l -> {
+            l.setCompleted(true);
+            l.setCompletedDate(LocalDate.now());
+        });
+        theoryLessonRepository.saveAll(toMark);
+
+        updateTheoryPhase(candidateId);
+    }
+
+    @Transactional
+    public List<TheoryLesson> bulkComplete(Long candidateId, int targetCount) {
+        if (targetCount < 1 || targetCount > TOTAL_LESSONS) {
+            throw new RuntimeException("Broj mora biti između 1 i " + TOTAL_LESSONS);
+        }
+
+        List<TheoryLesson> lessons = getLessonsForCandidate(candidateId);
+        long currentCompleted = lessons.stream().filter(TheoryLesson::isCompleted).count();
+
+        if (targetCount <= currentCompleted) {
+            throw new RuntimeException(
+                "Broj ne može biti manji ili jednak trenutnom napretku (" + currentCompleted + " odrađenih).");
+        }
+
+        lessons.stream()
+            .filter(l -> l.getLessonNumber() <= targetCount && !l.isCompleted())
+            .forEach(l -> {
+                l.setCompleted(true);
+                l.setCompletedDate(LocalDate.now());
+                theoryLessonRepository.save(l);
+            });
+
+        updateTheoryPhase(candidateId);
+
+        return theoryLessonRepository.findByCandidateCandidateIdOrderByLessonNumber(candidateId);
     }
 }

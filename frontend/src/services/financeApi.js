@@ -1,61 +1,32 @@
-
-const BASE_URL = '';
-
-const getAuthHeaders = () => {
-    const token = localStorage.getItem('token');
-    return {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    };
-};
-
-const request = async (method, path, body) => {
-    const res = await fetch(`${BASE_URL}${path}`, {
-        method,
-        headers: getAuthHeaders(),
-        ...(body ? { body: JSON.stringify(body) } : {}),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-    if (res.status === 204) return null;
-    return res.json();
-};
+import { api } from '../api/client';
 
 
 export const financeApi = {
-    // Svi računi (paginiran)
+    // Svi računi
+    getAll: () =>
+        api.get('/accounts'),
+
+    // Paginirani računi
     getAllPaginated: (page = 0, size = 10) =>
-        request('GET', `/accounts/paginated?page=${page}&size=${size}&sort=enrollmentDate`),
+        api.get(`/accounts/paginated?page=${page}&size=${size}&sort=enrollmentDate`),
 
-    // Svi računi (lista)
-    getAll: () => request('GET', '/accounts'),
+    // Račun po ID-u
+    getById: (id) =>
+        api.get(`/accounts/${id}`),
 
-    // Jedan račun po ID-u
-    getById: (id) => request('GET', `/accounts/${id}`),
+    // Status računa (obaveze + eligibility)
+    getStatus: (candidateId) =>
+        api.get(`/accounts/${candidateId}/status`),
 
-    // Preostali dug kandidata
-    getRemainingDebt: (id) => request('GET', `/accounts/${id}/debt`),
+    // Bulk statusi za više kandidata
+    getStatuses: (candidateIds) =>
+        api.get(`/accounts/statuses?candidateIds=${candidateIds.join(',')}`),
 
-    // Patch računa
-    patchAccount: (id, patchData) =>
-        fetch(`${BASE_URL}/accounts/${id}`, {
-            method: 'PATCH',
-            headers: {
-                ...getAuthHeaders(),
-                'Content-Type': 'application/json-patch+json',
-            },
-            body: JSON.stringify(patchData),
-        }).then(res => {
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            return res.json();
-        }),
-};
+    // Kreiraj račun ako ne postoji
+    ensureAccount: (candidateId) =>
+        api.post(`/accounts/ensure/${candidateId}`),
 
-
-export const paymentApi = {
-    // Uplate po kandidatu
-    getByCandidateId: (candidateId) =>
-        request('GET', `/payments/candidate/${candidateId}`),
-
-    // Kreiraj uplatu
-    create: (data) => request('POST', '/payments', data),
+    // Uplata
+    recordPayment: (candidateId, amount) =>
+        api.post(`/accounts/${candidateId}/pay`, { amount }),
 };

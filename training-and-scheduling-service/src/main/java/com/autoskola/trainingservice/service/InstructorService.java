@@ -49,7 +49,8 @@ public class InstructorService {
                 instructor.getVehicleBrand(),
                 instructor.getVehicleModel(),
                 instructor.getVehicleRegistrationNumber(),
-                instructor.getVehicleStatus()
+                instructor.getVehicleStatus(),
+                instructor.getAvailabilityNote() != null ? instructor.getAvailabilityNote() : "AVAILABLE"
         );
     }
 
@@ -79,10 +80,22 @@ public class InstructorService {
                             inst.getVehicleBrand(),
                             inst.getVehicleModel(),
                             inst.getVehicleRegistrationNumber(),
-                            inst.getVehicleStatus()
+                            inst.getVehicleStatus(),
+                            inst.getAvailabilityNote() != null ? inst.getAvailabilityNote() : "AVAILABLE"
                     );
                 })
                 .collect(Collectors.toList());
+    }
+
+    public InstructorDTO updateAvailability(Long instructorId, String availabilityNote) {
+        Instructor instructor = instructorRepository.findById(instructorId)
+                .orElseThrow(() -> new RuntimeException("Instruktor nije pronađen: " + instructorId));
+        if (!"AVAILABLE".equals(availabilityNote) && !"UNAVAILABLE".equals(availabilityNote)) {
+            throw new RuntimeException("Neispravna vrijednost dostupnosti. Dozvoljeno: AVAILABLE, UNAVAILABLE");
+        }
+        instructor.setAvailabilityNote(availabilityNote);
+        instructorRepository.save(instructor);
+        return getInstructorFullDetails(instructorId);
     }
 
     @Value("${server.port}")

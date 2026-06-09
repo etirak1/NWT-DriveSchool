@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { userApi, instructorApi, vehicleApi } from '../services/api';
 import { Spinner, ErrorState } from '../components/States';
 import { useToast } from '../context/ToastContext';
+import { getErrorMessage } from '../utils/helpers';
 import AssignVehicleModal from '../components/AssignVehicleModal';
 
 export default function InstructorsPage() {
@@ -46,10 +47,8 @@ export default function InstructorsPage() {
             });
 
             setData(combined);
-            console.log("Instruktori:", combined);
-            console.log("Vozila:", vehiclesList);
         } catch (err) {
-            setError("Nije moguće učitati podatke.");
+            setError(getErrorMessage(err));
         } finally {
             setLoading(false);
         }
@@ -77,7 +76,7 @@ export default function InstructorsPage() {
                     : item
             ));
         } catch (e) {
-            addToast(`Greška: ${e.message}`, 'error');
+            addToast(getErrorMessage(e), 'error');
         } finally {
             setActionLoading(null);
         }
@@ -85,17 +84,28 @@ export default function InstructorsPage() {
 
     const handleAssignVehicle = async (instructorId, vehicleId) => {
         setAssigning(true);
+
         try {
             await instructorApi.assignVehicle(instructorId, vehicleId);
+
             const vehicle = vehicles.find(v => v.vehicleId === vehicleId);
+
             addToast(
                 `Vozilo ${vehicle?.brand} ${vehicle?.model} dodijeljeno instruktoru!`,
                 'success'
             );
+
             setAssignTarget(null);
             loadCombinedData();
+
         } catch (e) {
-            addToast(`Greška pri dodjeli vozila: ${e.message}`, 'error');
+
+            if (e.response?.status === 500) {
+                addToast('Vozilo je već dodijeljeno drugom instruktoru', 'error');
+            } else {
+                addToast(getErrorMessage(e), 'error');
+            }
+
         } finally {
             setAssigning(false);
         }
@@ -109,20 +119,20 @@ export default function InstructorsPage() {
                 </div>
             </div>
 
-            <div className="page-toolbar">
-                <input
-                    className="search-input"
-                    placeholder="Pretraži instruktore..."
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                />
-                <span className="toolbar-count">{filtered.length} instruktora</span>
-            </div>
-
             {loading && <Spinner />}
             {error && <ErrorState message={error} onRetry={loadCombinedData} />}
 
             {!loading && !error && (
+                <>
+                <div className="page-toolbar">
+                    <input
+                        className="search-input"
+                        placeholder="Pretraži instruktore..."
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                    />
+                    <span className="toolbar-count">{filtered.length} instruktora</span>
+                </div>
                 <div className="table-wrap">
                     <table className="data-table">
                         <thead>
@@ -193,6 +203,7 @@ export default function InstructorsPage() {
                         </tbody>
                     </table>
                 </div>
+                </>
             )}
 
             {assignTarget && (
