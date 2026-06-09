@@ -34,7 +34,7 @@ export default function TheoryPlansPage() {
             setPlans(plansRes.data);
             setCandidates(candRes.data);
 
-            // Učitaj finance status da znamo ko je platio upisninu
+
             try {
                 const accountsRes = await financeApi.getAll();
                 const accounts = accountsRes.data || [];
@@ -43,7 +43,7 @@ export default function TheoryPlansPage() {
                     .map(a => a.candidateId);
                 setEnrollmentEligibleIds(eligible);
             } catch {
-                setEnrollmentEligibleIds(null); // finance nije dostupan, ne blokiramo
+                setEnrollmentEligibleIds(null);
             }
         } catch (e) {
             setError(getErrorMessage(e));
@@ -75,10 +75,10 @@ export default function TheoryPlansPage() {
             <header className="bg-white border-b border-slate-200">
                 <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
                     <Link
-                        to="/dashboard"
+                        to="/candidates"
                         className="flex items-center gap-1.5 text-slate-600 hover:text-slate-900 text-sm"
                     >
-                        <ArrowLeft size={16} /> Nazad na početnu
+                        <ArrowLeft size={16} /> Nazad
                     </Link>
                     <div className="flex items-center gap-4">
                         <div className="text-right hidden sm:block">
