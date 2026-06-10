@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { getErrorMessage } from '../utils/helpers';
+import { SCHEDULE_TIMEOUT_MS } from '../constants';
 import { Calendar, Clock, Car, ArrowLeft, CheckCircle, User } from 'lucide-react';
 
 export default function BookLesson() {
@@ -35,7 +36,7 @@ export default function BookLesson() {
                 setCandidate(res.data);
 
                 try {
-                    const elig = await api.get(`/api/lessons/eligibility?userId=${userId}`);
+                    const elig = await api.get(`/api/lessons/eligibility`);
                     setEligibility(elig.data);
                 } catch (e) {
                     console.error('Greška pri provjeri eligibility-ja:', e);
@@ -102,7 +103,7 @@ export default function BookLesson() {
             };
             await api.post('/api/lessons', payload);
             setSuccess(true);
-            setTimeout(() => navigate('/dashboard'), 1800);
+            setTimeout(() => navigate('/dashboard'), SCHEDULE_TIMEOUT_MS);
         } catch (err) {
             const body = err?.response?.data;
             let msg = 'Greška pri zakazivanju časa.';

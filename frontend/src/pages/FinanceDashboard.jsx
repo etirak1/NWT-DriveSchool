@@ -389,11 +389,9 @@ export default function FinanceDashboard() {
     useEffect(() => { loadData(); }, [loadData]);
 
     const ensureAccount = async (candidateId) => {
-        console.log('ensureAccount called with:', candidateId);
         setEnsuringId(candidateId);
         try {
-            const res = await financeApi.ensureAccount(candidateId);
-            console.log('ensureAccount response:', res);
+            await financeApi.ensureAccount(candidateId);
             await loadData();
         } catch (err) {
             console.error('ensureAccount error:', err);

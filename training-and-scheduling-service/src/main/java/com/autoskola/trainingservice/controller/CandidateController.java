@@ -3,7 +3,6 @@ package com.autoskola.trainingservice.controller;
 import com.autoskola.trainingservice.dto.CandidateDTO;
 import com.autoskola.trainingservice.model.Candidate;
 import com.autoskola.trainingservice.service.CandidateService;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -11,7 +10,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import java.util.List;
 
 @RestController
-@EnableMethodSecurity
 @RequestMapping("/api/candidates")
 public class CandidateController {
 

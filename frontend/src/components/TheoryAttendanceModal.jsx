@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { api } from '../api/client';
 import { getErrorMessage } from '../utils/helpers';
+import { TOTAL_THEORY_LESSONS } from '../constants';
 
 export default function TheoryAttendanceModal({ candidate, onClose }) {
     const [sessions, setSessions] = useState([]);
@@ -55,7 +56,7 @@ export default function TheoryAttendanceModal({ candidate, onClose }) {
                             Prisustvo: <strong className="text-green-700">{attended.length}/{sessions.length}</strong>
                         </span>
                         <span className="text-slate-600">
-                            Lekcije: <strong className="text-indigo-700">{attendedLessons}/40</strong>
+                            Lekcije: <strong className="text-indigo-700">{attendedLessons}/{TOTAL_THEORY_LESSONS}</strong>
                         </span>
                     </div>
                 )}

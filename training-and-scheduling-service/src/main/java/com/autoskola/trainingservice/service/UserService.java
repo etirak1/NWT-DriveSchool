@@ -3,9 +3,6 @@ package com.autoskola.trainingservice.service;
 import com.autoskola.trainingservice.dto.UserDTO;
 import com.autoskola.trainingservice.model.User;
 import com.autoskola.trainingservice.repository.UserRepository;
-import jakarta.validation.constraints.NotNull;
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,35 +11,26 @@ import java.util.stream.Collectors;
 @Service
 public class UserService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private ModelMapper modelMapper;
+    public UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     public List<UserDTO> getAllUsers() {
-        List<User> users = userRepository.findAll();
-        return users.stream()
-                .map(user -> modelMapper.map(user, UserDTO.class))
+        return userRepository.findAll().stream()
+                .map(user -> new UserDTO(user.getUserId(), user.getFirstName(), user.getLastName(), user.getRole()))
                 .collect(Collectors.toList());
     }
 
     public UserDTO createUser(User user) {
-        User savedUser = userRepository.save(user);
-        return modelMapper.map(savedUser, UserDTO.class);
+        User saved = userRepository.save(user);
+        return new UserDTO(saved.getUserId(), saved.getFirstName(), saved.getLastName(), saved.getRole());
     }
 
     public UserDTO getUserById(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Korisnik nije pronađen"));
-
-        return new UserDTO(
-                user.getUserId(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getRole()
-        );
+        return new UserDTO(user.getUserId(), user.getFirstName(), user.getLastName(), user.getRole());
     }
-
-
 }

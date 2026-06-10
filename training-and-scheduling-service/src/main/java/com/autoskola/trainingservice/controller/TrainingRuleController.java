@@ -3,13 +3,11 @@ package com.autoskola.trainingservice.controller;
 import com.autoskola.trainingservice.dto.TrainingRuleDTO;
 import com.autoskola.trainingservice.service.TrainingRuleService;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import java.util.List;
 
 @RestController
-@EnableMethodSecurity
 @RequestMapping("/api/rules")
 public class TrainingRuleController {
 

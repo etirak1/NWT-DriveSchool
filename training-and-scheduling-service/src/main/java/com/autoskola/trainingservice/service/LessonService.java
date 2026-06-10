@@ -8,8 +8,13 @@ import com.autoskola.trainingservice.model.Candidate;
 import com.autoskola.trainingservice.model.Instructor;
 import com.autoskola.trainingservice.model.Lesson;
 import com.autoskola.trainingservice.model.DrivingLesson;
+import com.autoskola.trainingservice.config.TrainingConstants;
+import com.autoskola.trainingservice.model.InstructorNotification;
 import com.autoskola.trainingservice.repository.CandidateRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.autoskola.trainingservice.repository.DrivingLessonRepository;
+import com.autoskola.trainingservice.repository.InstructorNotificationRepository;
 import com.autoskola.trainingservice.repository.LessonRepository;
 import com.autoskola.trainingservice.config.RabbitMQConfig;
 import com.autoskola.trainingservice.repository.TrainingPhaseRepository;
@@ -27,25 +32,39 @@ import org.springframework.data.domain.Pageable;
 @Service
 public class LessonService {
 
+    private static final Logger log = LoggerFactory.getLogger(LessonService.class);
+
     private final LessonRepository lessonRepository;
     private final UserClient userClient;
     private final CandidateRepository candidateRepository;
     private final RabbitTemplate rabbitTemplate;
     private final TrainingPhaseRepository phaseRepository;
     private final DrivingLessonRepository drivingLessonRepository;
+    private final InstructorNotificationRepository notificationRepository;
 
     public LessonService(LessonRepository lessonRepository,
                          UserClient userClient,
                          CandidateRepository candidateRepository,
                          RabbitTemplate rabbitTemplate,
                          TrainingPhaseRepository phaseRepository,
-                         DrivingLessonRepository drivingLessonRepository) {
+                         DrivingLessonRepository drivingLessonRepository,
+                         InstructorNotificationRepository notificationRepository) {
         this.lessonRepository = lessonRepository;
         this.userClient = userClient;
         this.candidateRepository = candidateRepository;
         this.rabbitTemplate = rabbitTemplate;
         this.phaseRepository = phaseRepository;
         this.drivingLessonRepository = drivingLessonRepository;
+        this.notificationRepository = notificationRepository;
+    }
+
+    private void sendNotification(Long instructorUserId, String type, String title, String body) {
+        InstructorNotification n = new InstructorNotification();
+        n.setInstructorUserId(instructorUserId);
+        n.setType(type);
+        n.setTitle(title);
+        n.setBody(body);
+        notificationRepository.save(n);
     }
 
     private UserDTO safeGetUser(Long userId, String fallbackRole) {
@@ -53,11 +72,9 @@ public class LessonService {
             return new UserDTO(null, "Nepoznato", "Korisnik", fallbackRole);
         }
         try {
-            UserDTO dto = userClient.getUserById(userId);
-            System.out.println("safeGetUser uspješno: " + userId + " -> " + dto.getFirstName());
-            return dto;
+            return userClient.getUserById(userId);
         } catch (Exception e) {
-            System.out.println("safeGetUser PALO za userId=" + userId + ", greška: " + e.getMessage());
+            log.warn("Nije moguće dohvatiti korisnika userId={}: {}", userId, e.getMessage());
             return new UserDTO(userId, "Nepoznato", "Korisnik", fallbackRole);
         }
     }
@@ -206,7 +223,7 @@ public class LessonService {
             boolean alreadyExists = drivingLessonRepository
                     .findByCandidateCandidateIdAndLessonNumber(candidate.getCandidateId(), nextNumber)
                     .isPresent();
-            if (!alreadyExists && nextNumber <= 40) {
+            if (!alreadyExists && nextNumber <= TrainingConstants.REQUIRED_DRIVING_LESSONS) {
                 String notes = lesson.getNotes() != null ? lesson.getNotes()
                         : (lesson.getTopic() != null ? lesson.getTopic() : null);
                 drivingLessonRepository.save(new DrivingLesson(
@@ -216,9 +233,14 @@ public class LessonService {
             }
         }
 
+        sendNotification(
+            lesson.getInstructor().getUserId(),
+            "LESSON_COMPLETED",
+            "Čas završen",
+            "Čas #" + lessonId + " je uspješno označen kao odrađen."
+        );
+
         return "Čas uspješno završen";
-
-
     }
 
     public Page<LessonDTO> getAllLessonsPaged(Pageable pageable) {
@@ -330,6 +352,14 @@ public class LessonService {
         lesson.setNotes(notes);
 
         Lesson saved = lessonRepository.save(lesson);
+
+        sendNotification(
+            instructor.getUserId(),
+            "LESSON_PROPOSED",
+            "Čas predložen",
+            "Predložen je novi čas kandidatu #" + candidateId + " za " + dateTime + "."
+        );
+
         return getLessonDetails(saved.getLessonId());
     }
 
@@ -347,6 +377,14 @@ public class LessonService {
 
         lesson.setStatus("ZAKAZANO");
         lessonRepository.save(lesson);
+
+        sendNotification(
+            lesson.getInstructor().getUserId(),
+            "LESSON_CONFIRMED",
+            "Čas potvrđen",
+            "Kandidat je potvrdio čas #" + lessonId + "."
+        );
+
         return getLessonDetails(lessonId);
     }
 
@@ -364,6 +402,14 @@ public class LessonService {
 
         lesson.setStatus("OTKAZANO");
         lessonRepository.save(lesson);
+
+        sendNotification(
+            lesson.getInstructor().getUserId(),
+            "LESSON_REJECTED",
+            "Čas odbijen",
+            "Kandidat je odbio čas #" + lessonId + "."
+        );
+
         return getLessonDetails(lessonId);
     }
 
@@ -421,6 +467,13 @@ public class LessonService {
 
         lesson.setDateTime(newDateTime);
         lessonRepository.save(lesson);
+
+        sendNotification(
+            lesson.getInstructor().getUserId(),
+            "LESSON_RESCHEDULED",
+            "Čas pomjeren",
+            "Kandidat je pomjerio čas #" + lessonId + " na " + newDateTime + "."
+        );
 
         return getLessonDetails(lessonId);
     }

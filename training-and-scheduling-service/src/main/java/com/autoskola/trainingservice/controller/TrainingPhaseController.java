@@ -7,7 +7,6 @@ import com.autoskola.trainingservice.repository.TrainingPhaseRepository;
 import com.autoskola.trainingservice.service.TrainingPhaseService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
@@ -16,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@EnableMethodSecurity
 @RequestMapping("/api/phases")
 public class TrainingPhaseController {
 

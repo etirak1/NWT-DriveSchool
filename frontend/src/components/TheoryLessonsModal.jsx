@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, BookOpen, CheckCircle, GraduationCap, Lock, Hash } from 'lucide-react';
 import { api } from '../api/client';
 import { getErrorMessage } from '../utils/helpers';
-
-const TOTAL = 40;
+import { TOTAL_THEORY_LESSONS as TOTAL } from '../constants';
 
 const LESSON_TITLES = [
     'Uvod u saobraćajne propise',

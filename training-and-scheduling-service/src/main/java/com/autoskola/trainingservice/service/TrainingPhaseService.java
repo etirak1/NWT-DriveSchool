@@ -1,6 +1,7 @@
 package com.autoskola.trainingservice.service;
 
 import com.autoskola.trainingservice.client.FinanceClient;
+import com.autoskola.trainingservice.config.TrainingConstants;
 import com.autoskola.trainingservice.dto.CandidateDTO;
 import com.autoskola.trainingservice.dto.CandidateFinanceStatusDTO;
 import com.autoskola.trainingservice.dto.PhaseStatusDTO;
@@ -29,8 +30,8 @@ import java.util.stream.Collectors;
 @Service
 public class TrainingPhaseService {
 
-    private static final int REQUIRED_THEORY_LESSONS = 40;
-    private static final int REQUIRED_DRIVING_LESSONS = 40;
+    private static final int REQUIRED_THEORY_LESSONS  = TrainingConstants.REQUIRED_THEORY_LESSONS;
+    private static final int REQUIRED_DRIVING_LESSONS = TrainingConstants.REQUIRED_DRIVING_LESSONS;
     private static final Logger log = LoggerFactory.getLogger(TrainingPhaseService.class);
 
     private final TrainingPhaseRepository phaseRepository;

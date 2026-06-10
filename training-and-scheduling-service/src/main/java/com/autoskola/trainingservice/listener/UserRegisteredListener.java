@@ -6,8 +6,9 @@ import com.autoskola.trainingservice.model.Instructor;
 import com.autoskola.trainingservice.repository.CandidateRepository;
 import com.autoskola.trainingservice.repository.InstructorRepository;
 import com.autoskola.trainingservice.repository.TrainingRuleRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -16,14 +17,19 @@ import java.time.LocalDate;
 @Component
 public class UserRegisteredListener {
 
-    @Autowired
-    private CandidateRepository candidateRepository;
+    private static final Logger log = LoggerFactory.getLogger(UserRegisteredListener.class);
 
-    @Autowired
-    private InstructorRepository instructorRepository;
+    private final CandidateRepository candidateRepository;
+    private final InstructorRepository instructorRepository;
+    private final TrainingRuleRepository ruleRepository;
 
-    @Autowired
-    private TrainingRuleRepository ruleRepository;
+    public UserRegisteredListener(CandidateRepository candidateRepository,
+                                  InstructorRepository instructorRepository,
+                                  TrainingRuleRepository ruleRepository) {
+        this.candidateRepository = candidateRepository;
+        this.instructorRepository = instructorRepository;
+        this.ruleRepository = ruleRepository;
+    }
 
     @RabbitListener(queues = "user_registered_queue")
     public void handleUserRegistered(UserRegisteredEvent event) {
@@ -32,7 +38,7 @@ public class UserRegisteredListener {
 
         if ("CANDIDATE".equalsIgnoreCase(role)) {
             if (candidateRepository.existsByUserId(userId)) {
-                System.out.println("Kandidat već postoji za userId: " + userId + ", preskačem.");
+                log.debug("Kandidat već postoji za userId: {}, preskačem.", userId);
                 return;
             }
             Candidate candidate = new Candidate();
@@ -40,17 +46,17 @@ public class UserRegisteredListener {
             candidate.setEnrollmentDate(LocalDate.now());
             candidate.setProgressPercentage(BigDecimal.ZERO);
             candidateRepository.save(candidate);
-            System.out.println("Kandidat kreiran za userId: " + userId);
+            log.info("Kandidat kreiran za userId: {}", userId);
 
         } else if ("INSTRUCTOR".equalsIgnoreCase(role) || "INSTRUKTOR".equalsIgnoreCase(role)) {
             if (instructorRepository.existsByUserId(userId)) {
-                System.out.println("Instruktor već postoji za userId: " + userId + ", preskačem.");
+                log.debug("Instruktor već postoji za userId: {}, preskačem.", userId);
                 return;
             }
             Instructor instructor = new Instructor();
             instructor.setUserId(userId);
             instructorRepository.save(instructor);
-            System.out.println("Instruktor kreiran za userId: " + userId);
+            log.info("Instruktor kreiran za userId: {}", userId);
         }
     }
 }
