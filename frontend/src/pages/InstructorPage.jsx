@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { userApi, instructorApi, vehicleApi } from '../services/api';
 import { Spinner, ErrorState } from '../components/States';
 import { useToast } from '../context/ToastContext';
@@ -7,56 +8,38 @@ import AssignVehicleModal from '../components/AssignVehicleModal';
 
 export default function InstructorsPage() {
     const { addToast } = useToast();
-    const [data, setData] = useState([]);
-    const [vehicles, setVehicles] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const queryClient = useQueryClient();
     const [search, setSearch] = useState('');
     const [actionLoading, setActionLoading] = useState(null);
     const [assignTarget, setAssignTarget] = useState(null);
     const [assigning, setAssigning] = useState(false);
 
-    const loadCombinedData = useCallback(async () => {
-        try {
-            setLoading(true);
-            setError(null);
-
+    const { data: { instructors: data = [], vehicles = [] } = {}, isLoading: loading, isError, refetch } = useQuery({
+        queryKey: ['instructors'],
+        queryFn: async () => {
             const [resUsers, resInstructors, resVehicles] = await Promise.all([
                 userApi.getActiveInstructors(),
                 instructorApi.getAll(),
                 vehicleApi.getAll()
             ]);
-
             const usersList = resUsers.data.content || resUsers.data || [];
             const resourceList = resInstructors.data.content || resInstructors.data || [];
             const vehiclesList = resVehicles.data?.data || resVehicles.data || [];
-
-            setVehicles(vehiclesList);
-
             const combined = resourceList.map((instructor) => {
                 const userIdFromResource = instructor.user?.userId || instructor.userId;
-                const userMatch = usersList.find(u =>
-                    String(u.userId) === String(userIdFromResource)
-                );
+                const userMatch = usersList.find(u => String(u.userId) === String(userIdFromResource));
                 return {
                     ...instructor,
                     firstName: userMatch?.firstName || instructor.user?.firstName || 'Nije pronađeno ime',
                     lastName: userMatch?.lastName || instructor.user?.lastName || 'Nije pronađeno prezime',
-                    email: userMatch?.email || instructor.user?.email || 'Nema emaila'
+                    email: userMatch?.email || instructor.user?.email || 'Nema emaila',
                 };
             });
+            return { instructors: combined, vehicles: vehiclesList };
+        },
+    });
 
-            setData(combined);
-        } catch (err) {
-            setError(getErrorMessage(err));
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        loadCombinedData();
-    }, [loadCombinedData]);
+    const error = isError ? 'Greška pri učitavanju instruktora.' : null;
 
     const filtered = data.filter(i =>
         `${i.firstName} ${i.lastName} ${i.email}`.toLowerCase().includes(search.toLowerCase())
@@ -96,7 +79,7 @@ export default function InstructorsPage() {
             );
 
             setAssignTarget(null);
-            loadCombinedData();
+            queryClient.invalidateQueries({ queryKey: ['instructors'] });
 
         } catch (e) {
 
@@ -120,7 +103,7 @@ export default function InstructorsPage() {
             </div>
 
             {loading && <Spinner />}
-            {error && <ErrorState message={error} onRetry={loadCombinedData} />}
+            {error && <ErrorState message={error} onRetry={refetch} />}
 
             {!loading && !error && (
                 <>

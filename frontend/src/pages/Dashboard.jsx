@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { getErrorMessage } from '../utils/helpers';
 import {
   Menu,
   Megaphone,
@@ -19,39 +18,24 @@ import {
 } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { useAnnouncements } from '../hooks/useAnnouncements';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [announcements, setAnnouncements] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const userId = user.userId;
   const email = user.email;
   const role = user.role;
   const userIsAdmin = role === 'ADMIN';
 
-  const loadAnnouncements = async () => {
-    try {
-      setLoading(true);
-      const res = await api.get('/api/announcements');
-      const list = Array.isArray(res.data) ? res.data : [];
-      list.sort((a, b) => new Date(b.dateCreated) - new Date(a.dateCreated));
-      setAnnouncements(list);
-      setError('');
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadAnnouncements();
-  }, []);
+  const queryClient = useQueryClient();
+  const { announcements: raw, isLoading: loading, isError } = useAnnouncements();
+  const announcements = [...raw].sort((a, b) => new Date(b.dateCreated) - new Date(a.dateCreated));
+  const error = isError ? 'Greška pri učitavanju obavještenja.' : '';
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -278,7 +262,7 @@ export default function Dashboard() {
                 onClose={() => setShowModal(false)}
                 onCreated={() => {
                   setShowModal(false);
-                  loadAnnouncements();
+                  queryClient.invalidateQueries({ queryKey: ['announcements'] });
                 }}
             />
         )}

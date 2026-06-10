@@ -1,83 +1,80 @@
-import { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
 
 export function useCandidateProgress(userId) {
-    const [candidate,         setCandidate]         = useState(null);
-    const [phases,            setPhases]            = useState([]);
-    const [timeline,          setTimeline]          = useState([]);
-    const [theoryEligibility, setTheoryEligibility] = useState(null);
-    const [alreadyRated,      setAlreadyRated]      = useState(false);
-    const [theoryCompleted,   setTheoryCompleted]   = useState(0);
-    const [drivingCompleted,  setDrivingCompleted]  = useState(0);
-    const [loading,           setLoading]           = useState(true);
+    const queryClient = useQueryClient();
 
-    const loadProgress = async (candId) => {
-        try {
-            const res = await api.get(`/api/theory-lessons/candidate/${candId}`);
-            setTheoryCompleted((res.data || []).filter(l => l.completed).length);
-        } catch { /* ignore */ }
+    const { data: candidate = null, isLoading } = useQuery({
+        queryKey: ['candidate', userId],
+        queryFn: () => api.get(`/api/candidates/by-user/${userId}`).then(r => r.data),
+        enabled: !!userId,
+    });
 
-        try {
-            const res = await api.get(`/api/phases/candidate/${candId}`);
-            setPhases(res.data);
-        } catch { /* ignore */ }
+    const candidateId = candidate?.candidateId;
 
-        try {
-            const res = await api.get(`/api/phases/candidate/${candId}/timeline`);
-            setTimeline(res.data);
-        } catch { /* ignore */ }
+    const { data: theoryCompleted = 0 } = useQuery({
+        queryKey: ['theoryLessons', candidateId],
+        queryFn: () =>
+            api.get(`/api/theory-lessons/candidate/${candidateId}`)
+               .then(r => (r.data || []).filter(l => l.completed).length),
+        enabled: !!candidateId,
+        refetchInterval: 30000,
+        refetchOnWindowFocus: true,
+    });
 
-        try {
-            const res = await api.get(`/api/feedbacks/candidate/${candId}/exists`);
-            setAlreadyRated(res.data);
-        } catch { /* ignore */ }
+    const { data: drivingCompleted = 0 } = useQuery({
+        queryKey: ['drivingCount', candidateId],
+        queryFn: () =>
+            api.get(`/api/driving-lessons/candidate/${candidateId}/count`)
+               .then(r => r.data?.completed || 0),
+        enabled: !!candidateId,
+        refetchInterval: 30000,
+        refetchOnWindowFocus: true,
+    });
 
-        try {
-            const res = await api.get(`/api/theory-plans/candidate/${candId}/theory-eligibility`);
-            setTheoryEligibility(res.data);
-        } catch { /* ignore */ }
-    };
+    const { data: phases = [] } = useQuery({
+        queryKey: ['phases', candidateId],
+        queryFn: () => api.get(`/api/phases/candidate/${candidateId}`).then(r => r.data),
+        enabled: !!candidateId,
+        refetchInterval: 30000,
+        refetchOnWindowFocus: true,
+    });
 
-    useEffect(() => {
-        let candIdRef = null;
+    const { data: timeline = [] } = useQuery({
+        queryKey: ['timeline', candidateId],
+        queryFn: () => api.get(`/api/phases/candidate/${candidateId}/timeline`).then(r => r.data),
+        enabled: !!candidateId,
+        refetchInterval: 30000,
+        refetchOnWindowFocus: true,
+    });
 
-        const load = async () => {
-            try {
-                const res = await api.get(`/api/candidates/by-user/${userId}`);
-                const cand = res.data;
-                setCandidate(cand);
-                candIdRef = cand.candidateId;
+    const { data: alreadyRated = false } = useQuery({
+        queryKey: ['alreadyRated', candidateId],
+        queryFn: () =>
+            api.get(`/api/feedbacks/candidate/${candidateId}/exists`).then(r => r.data),
+        enabled: !!candidateId,
+    });
 
-                try {
-                    const drivingRes = await api.get(`/api/driving-lessons/candidate/${cand.candidateId}/count`);
-                    setDrivingCompleted(drivingRes.data.completed || 0);
-                } catch { /* ignore */ }
+    const { data: theoryEligibility = null } = useQuery({
+        queryKey: ['theoryEligibility', candidateId],
+        queryFn: () =>
+            api.get(`/api/theory-plans/candidate/${candidateId}/theory-eligibility`)
+               .then(r => r.data),
+        enabled: !!candidateId,
+    });
 
-                await loadProgress(cand.candidateId);
-            } catch (err) {
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        load();
-
-        const handleVisibilityChange = () => {
-            if (document.visibilityState === 'visible' && candIdRef) loadProgress(candIdRef);
-        };
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-        const interval = setInterval(() => { if (candIdRef) loadProgress(candIdRef); }, 30000);
-
-        return () => {
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
-            clearInterval(interval);
-        };
-    }, []);
+    const setAlreadyRated = (val) =>
+        queryClient.setQueryData(['alreadyRated', candidateId], val);
 
     return {
-        candidate, phases, timeline, theoryEligibility,
-        alreadyRated, setAlreadyRated,
-        theoryCompleted, drivingCompleted,
-        loading,
+        candidate,
+        phases,
+        timeline,
+        theoryEligibility,
+        alreadyRated,
+        setAlreadyRated,
+        theoryCompleted,
+        drivingCompleted,
+        loading: isLoading,
     };
 }

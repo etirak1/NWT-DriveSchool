@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Car } from 'lucide-react';
-import { useAsync } from '../hooks/useAsync';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { vehicleApi, repairApi } from '../services/api';
 import VehicleTable from '../components/VehicleTable';
 import VehicleForm from '../components/VehicleForm';
@@ -14,11 +14,17 @@ import { getErrorMessage } from '../utils/helpers';
 
 export default function VehiclesPage() {
     const { addToast } = useToast();
-    const { data: vRes, loading, error, refetch } = useAsync(() => vehicleApi.getAll());
-    const { data: rRes } = useAsync(() => repairApi.getAll());
+    const queryClient = useQueryClient();
 
-    const vehicles = vRes?.data || [];
-    const repairs = rRes?.data || [];
+    const { data: vehicles = [], isLoading: loading, isError: error, refetch } = useQuery({
+        queryKey: ['vehicles'],
+        queryFn: () => vehicleApi.getAll().then(r => r.data || []),
+    });
+
+    const { data: repairs = [] } = useQuery({
+        queryKey: ['repairs'],
+        queryFn: () => repairApi.getAll().then(r => r.data || []),
+    });
 
     const [showForm, setShowForm] = useState(false);
     const [editTarget, setEditTarget] = useState(null);
@@ -44,7 +50,7 @@ export default function VehiclesPage() {
             }
             setShowForm(false);
             setEditTarget(null);
-            refetch();
+            queryClient.invalidateQueries({ queryKey: ['vehicles'] });
         } catch (e) {
             addToast(getErrorMessage(e), 'error');
         } finally {
@@ -59,7 +65,7 @@ export default function VehiclesPage() {
             await vehicleApi.delete(deleteTarget.vehicleId);
             addToast('Vozilo obrisano.', 'success');
             setDeleteTarget(null);
-            refetch();
+            queryClient.invalidateQueries({ queryKey: ['vehicles'] });
         } catch (e) {
             addToast(getErrorMessage(e), 'error');
             setDeleteTarget(null);

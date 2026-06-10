@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAsync } from '../hooks/useAsync';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { repairApi, vehicleApi } from '../services/api';
 import RepairTable from '../components/RepairTable';
 import RepairForm from '../components/RepairForm';
@@ -11,11 +11,17 @@ import { getErrorMessage } from '../utils/helpers';
 
 export default function RepairsPage() {
     const { addToast } = useToast();
-    const { data: repairsResponse, loading, error, refetch } = useAsync(() => repairApi.getAll());
-    const { data: vehiclesResponse } = useAsync(() => vehicleApi.getAll());
+    const queryClient = useQueryClient();
 
-    const repairs = repairsResponse?.data || [];
-    const vehicles = vehiclesResponse?.data || [];
+    const { data: repairs = [], isLoading: loading, isError: error, refetch } = useQuery({
+        queryKey: ['repairs'],
+        queryFn: () => repairApi.getAll().then(r => r.data || []),
+    });
+
+    const { data: vehicles = [] } = useQuery({
+        queryKey: ['vehicles'],
+        queryFn: () => vehicleApi.getAll().then(r => r.data || []),
+    });
     const [showForm, setShowForm] = useState(false);
     const [editTarget, setEditTarget] = useState(null);
     const [deleteTarget, setDeleteTarget] = useState(null);
@@ -39,7 +45,7 @@ export default function RepairsPage() {
             }
             setShowForm(false);
             setEditTarget(null);
-            refetch();
+            queryClient.invalidateQueries({ queryKey: ['repairs'] });
         } catch (e) {
             addToast(getErrorMessage(e), 'error');
         } finally {
@@ -53,7 +59,7 @@ export default function RepairsPage() {
             await repairApi.delete(deleteTarget.repairId);
             addToast('Popravka obrisana.', 'success');
             setDeleteTarget(null);
-            refetch();
+            queryClient.invalidateQueries({ queryKey: ['repairs'] });
         } catch (e) {
             addToast(getErrorMessage(e), 'error');
             setDeleteTarget(null);

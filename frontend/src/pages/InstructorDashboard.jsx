@@ -289,7 +289,7 @@ export default function InstructorDashboard() {
             </header>
 
 
-            <div className="max-w-6xl mx-auto px-4 pb-10">
+            <div className="max-w-6xl mx-auto px-4 pt-6 pb-10">
 
                 {/* ══ KALENDAR ══════════════════════════════════════════════════ */}
                 {activeTab === 'calendar' && (
@@ -588,7 +588,7 @@ export default function InstructorDashboard() {
                                         </div>
 
                                         {/* Stats row */}
-                                        <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-slate-100">
+                                        <div className="grid grid-cols-3 sm:grid-cols-3 gap-2 mt-4 pt-4 border-t border-slate-100">
                                             {(() => {
                                                 const cl = lessons[selectedCandidate.candidateId] || [];
                                                 const total = selectedCandidate.rule?.minPracticalLessons ?? TOTAL_DRIVING_LESSONS;

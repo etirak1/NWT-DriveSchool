@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { X, BookOpen, CheckCircle, XCircle, Clock, Calendar, Users, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import { api } from '../api/client';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 const STATUS_COLORS = {
     'PLANIRANO': 'bg-blue-50 text-blue-700 border-blue-200',
@@ -23,64 +24,49 @@ function getStatusLabel(status) {
 
 export default function TheoryPlanViewModal({ plan, onClose }) {
     const [activeTab, setActiveTab] = useState('sessions');
-    const [sessions, setSessions] = useState([]);
-    const [summary, setSummary] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [summaryLoading, setSummaryLoading] = useState(false);
     const [expandedSession, setExpandedSession] = useState(null);
     const [attendanceMap, setAttendanceMap] = useState({});
     const [savingSession, setSavingSession] = useState(null);
     const [error, setError] = useState('');
-    const [candidateNameMap, setCandidateNameMap] = useState({});
+    const [repForm, setRepForm] = useState({ date: '', time: '' });
+    const [savingReschedule, setSavingReschedule] = useState(false);
+    const [rescheduleSuccess, setRescheduleSuccess] = useState(false);
+    const queryClient = useQueryClient();
 
     const candidates = plan?.candidates || [];
 
-    useEffect(() => {
-        api.get('/api/candidates').then(res => {
-            const map = {};
-            res.data.forEach(c => {
-                if (c.user) {
-                    map[c.candidateId] = `${c.user.firstName} ${c.user.lastName}`;
-                }
-            });
-            setCandidateNameMap(map);
-        }).catch(() => {});
-    }, []);
+    // Candidates already cached from TheoryPlansPage — no extra network request
+    const { data: allCandidates = [] } = useQuery({
+        queryKey: ['candidates'],
+        queryFn: () => api.get('/api/candidates').then(r => r.data),
+    });
 
-    useEffect(() => { loadSessions(); }, [plan]);
+    const candidateNameMap = Object.fromEntries(
+        allCandidates
+            .filter(c => c.user)
+            .map(c => [c.candidateId, `${c.user.firstName} ${c.user.lastName}`])
+    );
 
-    useEffect(() => {
-        if (activeTab === 'attendance') loadSummary();
-    }, [activeTab]);
-
-    const loadSessions = async () => {
-        setLoading(true);
-        try {
-            const res = await api.get(`/api/theory-plans/${plan.id}/sessions`);
-            setSessions(res.data);
+    const { data: sessions = [], isLoading: loading } = useQuery({
+        queryKey: ['sessions', plan?.id],
+        queryFn: () => api.get(`/api/theory-plans/${plan.id}/sessions`).then(r => {
+            const data = r.data;
+            // init attendance map
             const initMap = {};
-            res.data.forEach(s => {
+            data.forEach(s => {
                 initMap[s.id] = candidates.map(c => c.candidateId);
             });
             setAttendanceMap(initMap);
-        } catch (e) {
-            setError('Greska pri ucitavanju termina.');
-        } finally {
-            setLoading(false);
-        }
-    };
+            return data;
+        }),
+        enabled: !!plan?.id,
+    });
 
-    const loadSummary = async () => {
-        setSummaryLoading(true);
-        try {
-            const res = await api.get(`/api/theory-plans/${plan.id}/attendance-summary`);
-            setSummary(res.data);
-        } catch (e) {
-            setError('Greska pri ucitavanju prisustva.');
-        } finally {
-            setSummaryLoading(false);
-        }
-    };
+    const { data: summary = [], isLoading: summaryLoading } = useQuery({
+        queryKey: ['attendanceSummary', plan?.id],
+        queryFn: () => api.get(`/api/theory-plans/${plan.id}/attendance-summary`).then(r => r.data),
+        enabled: !!plan?.id && activeTab === 'attendance',
+    });
 
     const toggleAttendance = (sessionId, candidateId) => {
         setAttendanceMap(prev => {
@@ -98,20 +84,55 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
         setSavingSession(sessionId);
         setError('');
         try {
-            const res = await api.patch(`/api/theory-plans/sessions/${sessionId}`, {
+            await api.patch(`/api/theory-plans/sessions/${sessionId}`, {
                 status,
                 note: note || null,
-                presentCandidateIds: status === 'ODRZANO'
-                    ? (attendanceMap[sessionId] || [])
-                    : null,
+                presentCandidateIds: status === 'ODRZANO' ? (attendanceMap[sessionId] || []) : null,
             });
-            setSessions(prev => prev.map(s => s.id === sessionId ? res.data : s));
+            queryClient.invalidateQueries({ queryKey: ['sessions', plan.id] });
+            queryClient.invalidateQueries({ queryKey: ['attendanceSummary', plan.id] });
             setExpandedSession(null);
-            if (activeTab === 'attendance') loadSummary();
         } catch (e) {
             setError(e.response?.data?.message || 'Greska pri azuriranju termina.');
         } finally {
             setSavingSession(null);
+        }
+    };
+
+    const handleExpand = (session) => {
+        if (expandedSession === session.id) {
+            setExpandedSession(null);
+        } else {
+            setExpandedSession(session.id);
+            if (session.status === 'OTKAZANO') {
+                setRepForm({
+                    date: session.date || '',
+                    time: session.startTime?.slice(0, 5) || '',
+                });
+            }
+        }
+    };
+
+    const rescheduleSession = async (sessionId) => {
+        if (!repForm.date || !repForm.time) return;
+        setSavingReschedule(true);
+        setError('');
+        try {
+            await api.patch(`/api/theory-plans/sessions/${sessionId}`, {
+                status: 'PLANIRANO',
+                date: repForm.date,
+                startTime: repForm.time + ':00',
+                note: null,
+                presentCandidateIds: null,
+            });
+            queryClient.invalidateQueries({ queryKey: ['sessions', plan.id] });
+            setExpandedSession(null);
+            setRescheduleSuccess(true);
+            setTimeout(() => setRescheduleSuccess(false), 4000);
+        } catch (e) {
+            setError(e.response?.data?.message || 'Greška pri zakazivanju termina.');
+        } finally {
+            setSavingReschedule(false);
         }
     };
 
@@ -121,9 +142,8 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
     const maintained = sessions.filter(isHeld).length;
     const planned = sessions.filter(isPlanned).length;
 
-    const getCandidateName = (candidateId) => {
-        return candidateNameMap[candidateId] || `Kandidat #${candidateId}`;
-    };
+    const getCandidateName = (candidateId) =>
+        candidateNameMap[candidateId] || `Kandidat #${candidateId}`;
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
@@ -188,6 +208,13 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
                     </div>
                 )}
 
+                {rescheduleSuccess && (
+                    <div className="mx-5 mt-2 text-sm text-green-700 bg-green-50 px-3 py-2 rounded-lg border border-green-200 shrink-0 flex items-center gap-2">
+                        <CheckCircle size={14} className="shrink-0" />
+                        Termin uspješno prekazan na novi datum!
+                    </div>
+                )}
+
                 {/* Tab: Termini */}
                 {activeTab === 'sessions' && (
                     <div className="overflow-y-auto p-5 space-y-2">
@@ -197,6 +224,20 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
                             const isExpanded = expandedSession === session.id;
                             const isSaving = savingSession === session.id;
                             const held = isHeld(session);
+
+                            const previousPending = sessions.some(
+                                s => s.sessionNumber < session.sessionNumber && (!s.status || s.status === 'PLANIRANO')
+                            );
+
+                            const nextPlanned = sessions
+                                .filter(s => s.sessionNumber > session.sessionNumber && (!s.status || s.status === 'PLANIRANO'))
+                                .sort((a, b) => a.sessionNumber - b.sessionNumber)[0];
+                            const maxDate = nextPlanned?.date
+                                ? new Date(new Date(nextPlanned.date).getTime() - 86400000).toISOString().slice(0, 10)
+                                : '';
+                            const conflictSameDay = sessions.some(
+                                s => s.id !== session.id && s.date === repForm.date && s.startTime?.slice(0, 5) === repForm.time
+                            );
 
                             return (
                                 <div key={session.id} className="border border-slate-200 rounded-xl overflow-hidden">
@@ -226,8 +267,9 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
                                         </span>
                                         {!held && (
                                             <button
-                                                onClick={() => setExpandedSession(isExpanded ? null : session.id)}
-                                                className="text-slate-400 hover:text-slate-700 shrink-0">
+                                                onClick={() => handleExpand(session)}
+                                                className={`shrink-0 ${session.status === 'OTKAZANO' ? 'text-red-400 hover:text-red-600' : 'text-slate-400 hover:text-slate-700'}`}
+                                                title={session.status === 'OTKAZANO' ? 'Zakaži zamjenski termin' : ''}>
                                                 {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                                             </button>
                                         )}
@@ -235,59 +277,121 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
 
                                     {isExpanded && (
                                         <div className="px-4 py-3 border-t border-slate-100 bg-white">
-                                            <div className="mb-3">
-                                                <p className="text-xs font-semibold text-slate-600 mb-1">Teme:</p>
-                                                {session.topic?.split(' | ').map((t, i) => (
-                                                    <p key={i} className="text-xs text-slate-600">- {t}</p>
-                                                ))}
-                                            </div>
+                                            {session.status === 'OTKAZANO' ? (
+                                                /* Reschedule form */
+                                                <div>
+                                                    <div className="flex items-center gap-2 mb-3">
+                                                        <AlertTriangle size={14} className="text-amber-500 shrink-0" />
+                                                        <span className="text-xs font-semibold text-amber-700">
+                                                            Odaberite novi datum
+                                                            {maxDate ? ` (najkasnije ${maxDate})` : ''}
+                                                        </span>
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-2 mb-3">
+                                                        <div>
+                                                            <label className="text-xs text-slate-500 mb-1 block">Datum *</label>
+                                                            <input
+                                                                type="date"
+                                                                value={repForm.date}
+                                                                max={maxDate || undefined}
+                                                                onChange={e => setRepForm(f => ({ ...f, date: e.target.value }))}
+                                                                className="w-full text-sm border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-xs text-slate-500 mb-1 block">Početak *</label>
+                                                            <input
+                                                                type="time"
+                                                                value={repForm.time}
+                                                                onChange={e => setRepForm(f => ({ ...f, time: e.target.value }))}
+                                                                className="w-full text-sm border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    {conflictSameDay && (
+                                                        <p className="text-xs text-red-600 mb-2 flex items-center gap-1">
+                                                            <AlertTriangle size={11} /> Već postoji termin u isto vrijeme — odaberite drugu satnicu.
+                                                        </p>
+                                                    )}
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={() => rescheduleSession(session.id)}
+                                                            disabled={savingReschedule || !repForm.date || !repForm.time || conflictSameDay}
+                                                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white rounded-lg">
+                                                            <Calendar size={13} />
+                                                            {savingReschedule ? 'Zakazujem...' : 'Zakaži termin'}
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setExpandedSession(null)}
+                                                            className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">
+                                                            Odustani
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                /* Normal PLANIRANO actions */
+                                                <div>
+                                                    <div className="mb-3">
+                                                        <p className="text-xs font-semibold text-slate-600 mb-1">Teme:</p>
+                                                        {session.topic?.split(' | ').map((t, i) => (
+                                                            <p key={i} className="text-xs text-slate-600">- {t}</p>
+                                                        ))}
+                                                    </div>
 
-                                            {candidates.length > 0 && (
-                                                <div className="mb-3">
-                                                    <p className="text-xs font-semibold text-slate-600 mb-1 flex items-center gap-1">
-                                                        <Users size={11} /> Prisustvo:
-                                                    </p>
-                                                    <div className="space-y-1">
-                                                        {candidates.map(c => {
-                                                            const name = getCandidateName(c.candidateId);
-                                                            const present = (attendanceMap[session.id] || []).includes(c.candidateId);
-                                                            return (
-                                                                <label key={c.candidateId} className="flex items-center gap-2 cursor-pointer">
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        checked={present}
-                                                                        onChange={() => toggleAttendance(session.id, c.candidateId)}
-                                                                        className="accent-indigo-500"
-                                                                    />
-                                                                    <span className="text-sm text-slate-700">{name}</span>
-                                                                </label>
-                                                            );
-                                                        })}
+                                                    {candidates.length > 0 && (
+                                                        <div className="mb-3">
+                                                            <p className="text-xs font-semibold text-slate-600 mb-1 flex items-center gap-1">
+                                                                <Users size={11} /> Prisustvo:
+                                                            </p>
+                                                            <div className="space-y-1">
+                                                                {candidates.map(c => {
+                                                                    const name = getCandidateName(c.candidateId);
+                                                                    const present = (attendanceMap[session.id] || []).includes(c.candidateId);
+                                                                    return (
+                                                                        <label key={c.candidateId} className="flex items-center gap-2 cursor-pointer">
+                                                                            <input
+                                                                                type="checkbox"
+                                                                                checked={present}
+                                                                                onChange={() => toggleAttendance(session.id, c.candidateId)}
+                                                                                className="accent-indigo-500"
+                                                                            />
+                                                                            <span className="text-sm text-slate-700">{name}</span>
+                                                                        </label>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {previousPending && (
+                                                        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5 mb-2 flex items-center gap-1">
+                                                            <AlertTriangle size={11} className="shrink-0" />
+                                                            Prethodni termin još nije završen ili otkazan.
+                                                        </p>
+                                                    )}
+                                                    <div className="flex gap-2 mt-2">
+                                                        <button
+                                                            onClick={() => updateSession(session.id, 'ODRZANO', null)}
+                                                            disabled={isSaving || previousPending}
+                                                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-green-600 hover:bg-green-700 disabled:bg-green-300 disabled:cursor-not-allowed text-white rounded-lg">
+                                                            <CheckCircle size={13} />
+                                                            {isSaving ? 'Cuvam...' : 'Oznaci odrzanim'}
+                                                        </button>
+                                                        <button
+                                                            onClick={() => updateSession(session.id, 'OTKAZANO', null)}
+                                                            disabled={isSaving}
+                                                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg">
+                                                            <XCircle size={13} />
+                                                            Otkazi
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setExpandedSession(null)}
+                                                            className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">
+                                                            Zatvori
+                                                        </button>
                                                     </div>
                                                 </div>
                                             )}
-
-                                            <div className="flex gap-2 mt-2">
-                                                <button
-                                                    onClick={() => updateSession(session.id, 'ODRZANO', null)}
-                                                    disabled={isSaving}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white rounded-lg">
-                                                    <CheckCircle size={13} />
-                                                    {isSaving ? 'Cuvam...' : 'Oznaci odrzanim'}
-                                                </button>
-                                                <button
-                                                    onClick={() => updateSession(session.id, 'OTKAZANO', null)}
-                                                    disabled={isSaving}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg">
-                                                    <XCircle size={13} />
-                                                    Otkazi
-                                                </button>
-                                                <button
-                                                    onClick={() => setExpandedSession(null)}
-                                                    className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">
-                                                    Zatvori
-                                                </button>
-                                            </div>
                                         </div>
                                     )}
                                 </div>
@@ -349,7 +453,6 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
                                                     )}
                                                 </div>
 
-                                                {/* Mini progress bar */}
                                                 <div className="w-16 shrink-0">
                                                     <div className="w-full bg-white rounded-full h-2">
                                                         <div

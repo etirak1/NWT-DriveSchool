@@ -80,12 +80,12 @@ export default function CandidateDashboard() {
                 </div>
 
                 <div className="max-w-5xl mx-auto px-4">
-                    <nav className="flex gap-1 border-t border-slate-100">
+                    <nav className="flex gap-1 border-t border-slate-100 overflow-x-auto">
                         {navItems.map(item => (
                             <button
                                 key={item.id}
                                 onClick={() => setActiveSection(item.id)}
-                                className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                                className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
                                     activeSection === item.id
                                         ? 'border-blue-500 text-blue-600'
                                         : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -205,7 +205,7 @@ export default function CandidateDashboard() {
                                 </div>
                                 <div className="divide-y divide-slate-100">
                                     {pendingLessons.map(lesson => (
-                                        <div key={lesson.lessonId} className="px-5 py-4 flex items-center justify-between gap-4">
+                                        <div key={lesson.lessonId} className="px-4 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                             <div>
                                                 <p className="text-sm font-semibold text-slate-800">
                                                     {(() => {
@@ -270,14 +270,14 @@ export default function CandidateDashboard() {
                                 <BookOpen size={16} className="text-purple-500" />
                                 Časovi teorije
                             </h2>
-                            <div className="grid grid-cols-3 gap-4 mb-5">
+                            <div className="grid grid-cols-3 sm:grid-cols-3 gap-3 mb-5">
                                 {[
                                     { label: 'Završeno',      value: theoryCompleted,               color: 'text-green-600'  },
                                     { label: 'Ukupno potrebno', value: theoryTotal,                    color: 'text-slate-800'  },
                                     { label: 'Preostalo',      value: Math.max(0, theoryTotal - theoryCompleted), color: 'text-purple-600' },
                                 ].map(s => (
-                                    <div key={s.label} className="bg-slate-50 rounded-lg p-4 text-center">
-                                        <p className={`text-3xl font-bold ${s.color}`}>{s.value}</p>
+                                    <div key={s.label} className="bg-slate-50 rounded-lg p-3 sm:p-4 text-center">
+                                        <p className={`text-2xl sm:text-3xl font-bold ${s.color}`}>{s.value}</p>
                                         <p className="text-xs text-slate-500 mt-1">{s.label}</p>
                                     </div>
                                 ))}
@@ -304,14 +304,14 @@ export default function CandidateDashboard() {
                                 <Car size={16} className="text-blue-500" />
                                 Časovi vožnje
                             </h2>
-                            <div className="grid grid-cols-3 gap-4 mb-5">
+                            <div className="grid grid-cols-3 sm:grid-cols-3 gap-3 mb-5">
                                 {[
                                     { label: 'Završeno',      value: effectiveDrivingCompleted,               color: 'text-green-600' },
                                     { label: 'Ukupno potrebno', value: drivingTotal,                                  color: 'text-slate-800' },
                                     { label: 'Preostalo',      value: Math.max(0, drivingTotal - effectiveDrivingCompleted), color: 'text-blue-600'  },
                                 ].map(s => (
-                                    <div key={s.label} className="bg-slate-50 rounded-lg p-4 text-center">
-                                        <p className={`text-3xl font-bold ${s.color}`}>{s.value}</p>
+                                    <div key={s.label} className="bg-slate-50 rounded-lg p-3 sm:p-4 text-center">
+                                        <p className={`text-2xl sm:text-3xl font-bold ${s.color}`}>{s.value}</p>
                                         <p className="text-xs text-slate-500 mt-1">{s.label}</p>
                                     </div>
                                 ))}
@@ -466,7 +466,7 @@ export default function CandidateDashboard() {
 
                         {/* Status badges */}
                         {financeStatus && (
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className={`rounded-xl border p-4 flex items-center gap-3 ${
                                     enrollmentPaid ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'
                                 }`}>
@@ -525,14 +525,14 @@ export default function CandidateDashboard() {
                             </div>
                             {financeStatus ? (
                                 <>
-                                    <div className="grid grid-cols-3 gap-4 mb-5">
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
                                         {[
                                             { label: 'Ukupna cijena obuke', value: `${totalAmount.toFixed(2)} KM`,   color: 'text-slate-800' },
                                             { label: 'Uplaćeno',            value: `${amountPaid.toFixed(2)} KM`,    color: 'text-green-600' },
                                             { label: 'Preostalo dugovanje', value: `${remainingDebt.toFixed(2)} KM`, color: remainingDebt > 0 ? 'text-red-500' : 'text-green-600' },
                                         ].map(s => (
-                                            <div key={s.label} className="bg-slate-50 rounded-lg p-4 text-center">
-                                                <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+                                            <div key={s.label} className="bg-slate-50 rounded-lg p-3 sm:p-4 text-center">
+                                                <p className={`text-xl sm:text-2xl font-bold ${s.color}`}>{s.value}</p>
                                                 <p className="text-xs text-slate-500 mt-1">{s.label}</p>
                                             </div>
                                         ))}

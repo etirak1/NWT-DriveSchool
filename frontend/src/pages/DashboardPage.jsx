@@ -1,23 +1,30 @@
 import React from 'react';
 import { LayoutDashboard } from 'lucide-react';
-import { useAsync } from '../hooks/useAsync';
+import { useQuery } from '@tanstack/react-query';
 import { vehicleApi, repairApi, instructorApi } from '../services/api';
 import Dashboard from '../components/Dashboard';
 import { Spinner, ErrorState } from '../components/States';
 
 export default function DashboardPage() {
-    const { data: vRes, loading: lv, error: ev, refetch: refetchV } = useAsync(() => vehicleApi.getAll());
-    const { data: rRes, loading: lr } = useAsync(() => repairApi.getAll());
-    const { data: iRes, loading: li } = useAsync(() => instructorApi.getAll());
+    const { data: vehicles = [], isLoading: lv, isError: ev, refetch: refetchV } = useQuery({
+        queryKey: ['vehicles'],
+        queryFn: () => vehicleApi.getAll().then(r => r.data || []),
+    });
 
-    const vehicles = vRes?.data || [];
-    const repairs = rRes?.data || [];
-    const instructors = iRes?.data || [];
+    const { data: repairs = [], isLoading: lr } = useQuery({
+        queryKey: ['repairs'],
+        queryFn: () => repairApi.getAll().then(r => r.data || []),
+    });
+
+    const { data: instructors = [], isLoading: li } = useQuery({
+        queryKey: ['instructors'],
+        queryFn: () => instructorApi.getAll().then(r => r.data?.content || r.data || []),
+    });
 
     const loading = lv || lr || li;
 
     if (loading) return <Spinner label="Učitavanje resursa..." />;
-    if (ev) return <ErrorState message={ev} onRetry={refetchV} />;
+    if (ev) return <ErrorState message="Greška pri učitavanju" onRetry={refetchV} />;
 
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
