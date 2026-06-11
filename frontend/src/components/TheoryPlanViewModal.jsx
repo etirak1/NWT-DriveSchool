@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 const STATUS_COLORS = {
     'PLANIRANO': 'bg-blue-50 text-blue-700 border-blue-200',
-    'ODRZANO':   'bg-green-50 text-green-700 border-green-200',
+    'ODRZANO':   'bg-emerald-50 text-emerald-700 border-emerald-200',
     'OTKAZANO':  'bg-red-50 text-red-700 border-red-200',
 };
 
@@ -35,7 +35,6 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
 
     const candidates = plan?.candidates || [];
 
-    // Candidates already cached from TheoryPlansPage — no extra network request
     const { data: allCandidates = [] } = useQuery({
         queryKey: ['candidates'],
         queryFn: () => api.get('/api/candidates').then(r => r.data),
@@ -51,7 +50,6 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
         queryKey: ['sessions', plan?.id],
         queryFn: () => api.get(`/api/theory-plans/${plan.id}/sessions`).then(r => {
             const data = r.data;
-            // init attendance map
             const initMap = {};
             data.forEach(s => {
                 initMap[s.id] = candidates.map(c => c.candidateId);
@@ -146,44 +144,46 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
         candidateNameMap[candidateId] || `Kandidat #${candidateId}`;
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col border border-slate-100 overflow-hidden">
 
                 {/* Header */}
-                <div className="flex items-center justify-between p-5 border-b border-slate-200 shrink-0">
-                    <div className="flex items-center gap-3">
-                        <div className="bg-indigo-500 w-9 h-9 rounded-lg flex items-center justify-center">
-                            <BookOpen className="text-white" size={18} />
+                <div className="bg-gradient-to-r from-blue-800 to-blue-500 px-6 py-5 flex-shrink-0">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white/20">
+                                <BookOpen className="text-white" size={18} />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-white text-base">{plan.groupName}</h3>
+                                <p className="text-blue-200 text-xs mt-0.5">
+                                    {maintained}/{sessions.length} termina odrzano &mdash; {planned} planirano
+                                </p>
+                            </div>
                         </div>
-                        <div>
-                            <h3 className="font-bold text-slate-900">{plan.groupName}</h3>
-                            <p className="text-xs text-slate-500">
-                                {maintained}/{sessions.length} termina odrzano &mdash; {planned} planirano
-                            </p>
-                        </div>
+                        <button onClick={onClose} className="text-blue-200 hover:text-white transition-colors">
+                            <X size={22} />
+                        </button>
                     </div>
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-700">
-                        <X size={22} />
-                    </button>
-                </div>
 
-                {/* Progress bar */}
-                <div className="px-5 pt-3 pb-2 shrink-0">
-                    <div className="w-full bg-slate-100 rounded-full h-2">
-                        <div
-                            className="h-2 bg-indigo-500 rounded-full transition-all"
-                            style={{ width: `${sessions.length ? (maintained / sessions.length) * 100 : 0}%` }}
-                        />
+                    {/* Progress bar */}
+                    <div className="mt-4">
+                        <div className="w-full bg-white/20 rounded-full h-1.5">
+                            <div
+                                className="h-1.5 bg-white rounded-full transition-all duration-500"
+                                style={{ width: `${sessions.length ? (maintained / sessions.length) * 100 : 0}%` }}
+                            />
+                        </div>
                     </div>
                 </div>
 
                 {/* Tabs */}
-                <div className="px-5 pb-0 pt-2 shrink-0 flex gap-1 border-b border-slate-100">
+                <div className="px-6 pt-0 shrink-0 flex gap-1 border-b border-slate-100 bg-white">
                     <button
                         onClick={() => setActiveTab('sessions')}
-                        className={`px-4 py-2 text-sm font-semibold rounded-t-lg border-b-2 transition-colors ${
+                        className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors ${
                             activeTab === 'sessions'
-                                ? 'border-indigo-500 text-indigo-700'
+                                ? 'border-blue-500 text-blue-700'
                                 : 'border-transparent text-slate-500 hover:text-slate-700'
                         }`}
                     >
@@ -191,9 +191,9 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
                     </button>
                     <button
                         onClick={() => setActiveTab('attendance')}
-                        className={`px-4 py-2 text-sm font-semibold rounded-t-lg border-b-2 transition-colors flex items-center gap-1.5 ${
+                        className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-1.5 ${
                             activeTab === 'attendance'
-                                ? 'border-indigo-500 text-indigo-700'
+                                ? 'border-blue-500 text-blue-700'
                                 : 'border-transparent text-slate-500 hover:text-slate-700'
                         }`}
                     >
@@ -203,13 +203,13 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
                 </div>
 
                 {error && (
-                    <div className="mx-5 mt-2 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg border border-red-100 shrink-0">
-                        {error}
+                    <div className="mx-6 mt-3 text-sm text-red-600 bg-red-50 px-4 py-2.5 rounded-xl border border-red-200 shrink-0 flex items-center gap-2">
+                        <XCircle size={14} className="shrink-0" /> {error}
                     </div>
                 )}
 
                 {rescheduleSuccess && (
-                    <div className="mx-5 mt-2 text-sm text-green-700 bg-green-50 px-3 py-2 rounded-lg border border-green-200 shrink-0 flex items-center gap-2">
+                    <div className="mx-6 mt-3 text-sm text-emerald-700 bg-emerald-50 px-4 py-2.5 rounded-xl border border-emerald-200 shrink-0 flex items-center gap-2">
                         <CheckCircle size={14} className="shrink-0" />
                         Termin uspješno prekazan na novi datum!
                     </div>
@@ -217,9 +217,12 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
 
                 {/* Tab: Termini */}
                 {activeTab === 'sessions' && (
-                    <div className="overflow-y-auto p-5 space-y-2">
+                    <div className="overflow-y-auto p-6 space-y-3">
                         {loading ? (
-                            <div className="text-center py-10 text-slate-400 text-sm">Ucitavanje...</div>
+                            <div className="flex flex-col items-center gap-3 py-12 text-slate-400">
+                                <div className="w-7 h-7 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                                <span className="text-sm">Ucitavanje...</span>
+                            </div>
                         ) : sessions.map(session => {
                             const isExpanded = expandedSession === session.id;
                             const isSaving = savingSession === session.id;
@@ -240,9 +243,9 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
                             );
 
                             return (
-                                <div key={session.id} className="border border-slate-200 rounded-xl overflow-hidden">
-                                    <div className="flex items-center gap-3 px-4 py-3 bg-slate-50">
-                                        <span className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center shrink-0">
+                                <div key={session.id} className="border border-slate-100 rounded-xl overflow-hidden hover:border-blue-100 transition-colors">
+                                    <div className="flex items-center gap-3 px-4 py-3.5 bg-slate-50">
+                                        <span className="w-7 h-7 rounded-xl bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center shrink-0">
                                             {session.sessionNumber}
                                         </span>
                                         <div className="flex-1 min-w-0">
@@ -256,19 +259,19 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
                                                 <span className="text-xs text-slate-500 flex items-center gap-1">
                                                     <Clock size={11} /> {session.startTime?.slice(0, 5)}
                                                 </span>
-                                                <span className="text-xs font-medium text-indigo-600">
+                                                <span className="text-xs font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
                                                     Casovi {session.lessonFrom}-{session.lessonTo}
                                                 </span>
                                             </div>
                                             <p className="text-xs text-slate-500 mt-0.5 truncate">{session.topic}</p>
                                         </div>
-                                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border shrink-0 ${getStatusColor(session.status)}`}>
+                                        <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border shrink-0 ${getStatusColor(session.status)}`}>
                                             {getStatusLabel(session.status)}
                                         </span>
                                         {!held && (
                                             <button
                                                 onClick={() => handleExpand(session)}
-                                                className={`shrink-0 ${session.status === 'OTKAZANO' ? 'text-red-400 hover:text-red-600' : 'text-slate-400 hover:text-slate-700'}`}
+                                                className={`shrink-0 transition-colors ${session.status === 'OTKAZANO' ? 'text-red-400 hover:text-red-600' : 'text-slate-400 hover:text-slate-700'}`}
                                                 title={session.status === 'OTKAZANO' ? 'Zakaži zamjenski termin' : ''}>
                                                 {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                                             </button>
@@ -276,9 +279,8 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
                                     </div>
 
                                     {isExpanded && (
-                                        <div className="px-4 py-3 border-t border-slate-100 bg-white">
+                                        <div className="px-5 py-4 border-t border-slate-100 bg-white">
                                             {session.status === 'OTKAZANO' ? (
-                                                /* Reschedule form */
                                                 <div>
                                                     <div className="flex items-center gap-2 mb-3">
                                                         <AlertTriangle size={14} className="text-amber-500 shrink-0" />
@@ -289,22 +291,22 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
                                                     </div>
                                                     <div className="grid grid-cols-2 gap-2 mb-3">
                                                         <div>
-                                                            <label className="text-xs text-slate-500 mb-1 block">Datum *</label>
+                                                            <label className="text-xs font-medium text-slate-500 mb-1 block">Datum *</label>
                                                             <input
                                                                 type="date"
                                                                 value={repForm.date}
                                                                 max={maxDate || undefined}
                                                                 onChange={e => setRepForm(f => ({ ...f, date: e.target.value }))}
-                                                                className="w-full text-sm border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                                                className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                                             />
                                                         </div>
                                                         <div>
-                                                            <label className="text-xs text-slate-500 mb-1 block">Početak *</label>
+                                                            <label className="text-xs font-medium text-slate-500 mb-1 block">Početak *</label>
                                                             <input
                                                                 type="time"
                                                                 value={repForm.time}
                                                                 onChange={e => setRepForm(f => ({ ...f, time: e.target.value }))}
-                                                                className="w-full text-sm border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                                                className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                                             />
                                                         </div>
                                                     </div>
@@ -317,43 +319,42 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
                                                         <button
                                                             onClick={() => rescheduleSession(session.id)}
                                                             disabled={savingReschedule || !repForm.date || !repForm.time || conflictSameDay}
-                                                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white rounded-lg">
+                                                            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white rounded-xl transition-colors">
                                                             <Calendar size={13} />
                                                             {savingReschedule ? 'Zakazujem...' : 'Zakaži termin'}
                                                         </button>
                                                         <button
                                                             onClick={() => setExpandedSession(null)}
-                                                            className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">
+                                                            className="px-3.5 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
                                                             Odustani
                                                         </button>
                                                     </div>
                                                 </div>
                                             ) : (
-                                                /* Normal PLANIRANO actions */
                                                 <div>
                                                     <div className="mb-3">
-                                                        <p className="text-xs font-semibold text-slate-600 mb-1">Teme:</p>
+                                                        <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">Teme:</p>
                                                         {session.topic?.split(' | ').map((t, i) => (
-                                                            <p key={i} className="text-xs text-slate-600">- {t}</p>
+                                                            <p key={i} className="text-xs text-slate-600 py-0.5">— {t}</p>
                                                         ))}
                                                     </div>
 
                                                     {candidates.length > 0 && (
                                                         <div className="mb-3">
-                                                            <p className="text-xs font-semibold text-slate-600 mb-1 flex items-center gap-1">
+                                                            <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2 flex items-center gap-1">
                                                                 <Users size={11} /> Prisustvo:
                                                             </p>
-                                                            <div className="space-y-1">
+                                                            <div className="space-y-1.5">
                                                                 {candidates.map(c => {
                                                                     const name = getCandidateName(c.candidateId);
                                                                     const present = (attendanceMap[session.id] || []).includes(c.candidateId);
                                                                     return (
-                                                                        <label key={c.candidateId} className="flex items-center gap-2 cursor-pointer">
+                                                                        <label key={c.candidateId} className="flex items-center gap-2.5 cursor-pointer hover:bg-slate-50 px-2 py-1 rounded-lg transition-colors">
                                                                             <input
                                                                                 type="checkbox"
                                                                                 checked={present}
                                                                                 onChange={() => toggleAttendance(session.id, c.candidateId)}
-                                                                                className="accent-indigo-500"
+                                                                                className="accent-blue-600 w-4 h-4"
                                                                             />
                                                                             <span className="text-sm text-slate-700">{name}</span>
                                                                         </label>
@@ -364,7 +365,7 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
                                                     )}
 
                                                     {previousPending && (
-                                                        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5 mb-2 flex items-center gap-1">
+                                                        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mb-3 flex items-center gap-1.5">
                                                             <AlertTriangle size={11} className="shrink-0" />
                                                             Prethodni termin još nije završen ili otkazan.
                                                         </p>
@@ -373,20 +374,20 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
                                                         <button
                                                             onClick={() => updateSession(session.id, 'ODRZANO', null)}
                                                             disabled={isSaving || previousPending}
-                                                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-green-600 hover:bg-green-700 disabled:bg-green-300 disabled:cursor-not-allowed text-white rounded-lg">
+                                                            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 disabled:cursor-not-allowed text-white rounded-xl transition-colors">
                                                             <CheckCircle size={13} />
                                                             {isSaving ? 'Cuvam...' : 'Oznaci odrzanim'}
                                                         </button>
                                                         <button
                                                             onClick={() => updateSession(session.id, 'OTKAZANO', null)}
                                                             disabled={isSaving}
-                                                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg">
+                                                            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl transition-colors">
                                                             <XCircle size={13} />
                                                             Otkazi
                                                         </button>
                                                         <button
                                                             onClick={() => setExpandedSession(null)}
-                                                            className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">
+                                                            className="px-3.5 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
                                                             Zatvori
                                                         </button>
                                                     </div>
@@ -402,31 +403,34 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
 
                 {/* Tab: Prisustvo */}
                 {activeTab === 'attendance' && (
-                    <div className="overflow-y-auto p-5">
+                    <div className="overflow-y-auto p-6">
                         {summaryLoading ? (
-                            <div className="text-center py-10 text-slate-400 text-sm">Ucitavanje...</div>
+                            <div className="flex flex-col items-center gap-3 py-12 text-slate-400">
+                                <div className="w-7 h-7 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                                <span className="text-sm">Ucitavanje...</span>
+                            </div>
                         ) : maintained === 0 ? (
-                            <div className="text-center py-10 text-slate-400 text-sm">
+                            <div className="text-center py-12 text-slate-400 text-sm">
                                 Nema odrzanih termina jos.
                             </div>
                         ) : (
                             <>
-                                <p className="text-xs text-slate-500 mb-3">
+                                <p className="text-xs text-slate-500 mb-4 bg-slate-50 px-4 py-3 rounded-xl border border-slate-100">
                                     Minimum 60% odsušanih časova (od ukupno {plan.totalLessons}) za pravo izlaska na teorijski ispit.
-                                    Odrzano termina: <strong>{maintained}</strong>.
+                                    Odrzano termina: <strong className="text-slate-700">{maintained}</strong>.
                                 </p>
-                                <div className="space-y-2">
+                                <div className="space-y-3">
                                     {summary.map(s => {
                                         const name = getCandidateName(s.candidateId);
                                         const pct = s.attendancePct;
                                         const eligible = s.eligible;
                                         return (
                                             <div key={s.candidateId}
-                                                className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${
-                                                    eligible
-                                                        ? 'border-green-200 bg-green-50'
-                                                        : 'border-red-200 bg-red-50'
-                                                }`}
+                                                 className={`flex items-center gap-4 px-4 py-3.5 rounded-xl border transition-colors ${
+                                                     eligible
+                                                         ? 'border-emerald-200 bg-emerald-50'
+                                                         : 'border-red-200 bg-red-50'
+                                                 }`}
                                             >
                                                 <div className="flex-1 min-w-0">
                                                     <p className="text-sm font-semibold text-slate-800">{name}</p>
@@ -439,11 +443,11 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
                                                 </div>
 
                                                 <div className="text-right shrink-0">
-                                                    <p className={`text-lg font-bold ${eligible ? 'text-green-700' : 'text-red-700'}`}>
+                                                    <p className={`text-lg font-bold ${eligible ? 'text-emerald-700' : 'text-red-700'}`}>
                                                         {pct}%
                                                     </p>
                                                     {eligible ? (
-                                                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+                                                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
                                                             <CheckCircle size={10} /> Može na ispit
                                                         </span>
                                                     ) : (
@@ -456,7 +460,7 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
                                                 <div className="w-16 shrink-0">
                                                     <div className="w-full bg-white rounded-full h-2">
                                                         <div
-                                                            className={`h-2 rounded-full transition-all ${eligible ? 'bg-green-500' : 'bg-red-400'}`}
+                                                            className={`h-2 rounded-full transition-all duration-500 ${eligible ? 'bg-emerald-500' : 'bg-red-400'}`}
                                                             style={{ width: `${Math.min(pct, 100)}%` }}
                                                         />
                                                     </div>
@@ -473,9 +477,9 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
                     </div>
                 )}
 
-                <div className="px-5 py-4 border-t border-slate-100 shrink-0 flex justify-end">
+                <div className="px-6 py-4 border-t border-slate-100 shrink-0 flex justify-end bg-slate-50/50">
                     <button onClick={onClose}
-                        className="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium text-sm">
+                            className="px-5 py-2.5 border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-xl font-medium text-sm transition-colors">
                         Zatvori
                     </button>
                 </div>

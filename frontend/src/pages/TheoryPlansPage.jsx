@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { getErrorMessage } from '../utils/helpers';
-import { BookOpen, Plus, Users, Calendar, Clock, ArrowLeft, LogOut, ChevronRight, Trash2 } from 'lucide-react';
+import { BookOpen, Plus, Users, Calendar, Clock, LogOut, ChevronRight, Trash2, GraduationCap, DollarSign, UserCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import TheoryPlanCreateModal from '../components/TheoryPlanCreateModal';
 import TheoryPlanViewModal from '../components/TheoryPlanViewModal';
 import { financeApi } from '../services/financeApi';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft } from 'lucide-react';
 
 export default function TheoryPlansPage() {
     const navigate = useNavigate();
@@ -57,62 +58,108 @@ export default function TheoryPlansPage() {
         THURSDAY: 'Cetvrtak', FRIDAY: 'Petak', SATURDAY: 'Subota', SUNDAY: 'Nedjelja',
     };
 
+    const navItems = [
+        { label: 'Korisnici', icon: Users, to: '/users' },
+        { label: 'Resursi', icon: BookOpen, to: '/resources'},
+        { label: 'Kandidati', icon: UserCheck, to: '/candidates' },
+        { label: 'Finansije', icon: DollarSign, to: '/finance' },
+    ];
+
     return (
-        <div className="min-h-screen bg-slate-50">
-            <header className="bg-white border-b border-slate-200">
-                <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-                    <Link
-                        to="/candidates"
-                        className="flex items-center gap-1.5 text-slate-600 hover:text-slate-900 text-sm"
-                    >
-                        <ArrowLeft size={16} /> Nazad
+        <div className="min-h-screen bg-slate-100">
+            {/* ── Header ── */}
+            <header className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-600 shadow-lg">
+                <div className="max-w-7xl mx-auto px-6 py-3 flex items-center gap-6">
+                    <Link to="/dashboard" className="flex items-center gap-3 shrink-0 group">
+                        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white/20 group-hover:bg-white/30 transition-colors">
+                            <GraduationCap size={22} className="text-white" />
+                        </div>
+                        <div>
+                            <p className="text-white font-bold text-base leading-tight">DriveSchool</p>
+                            <p className="text-blue-200 text-xs leading-tight">Plan teorijske nastave</p>
+                        </div>
                     </Link>
-                    <div className="flex items-center gap-4">
+
+                    <nav className="flex items-center gap-1.5 flex-1">
+                        {navItems.map(item => (
+                            <Link
+                                key={item.label}
+                                to={item.to}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                                    item.active
+                                        ? 'bg-white/20 text-white backdrop-blur-sm border border-white/25 shadow-sm'
+                                        : 'text-blue-200 hover:text-white hover:bg-white/10'
+                                }`}
+                            >
+                                <item.icon size={14} />
+                                {item.label}
+                            </Link>
+                        ))}
+                    </nav>
+
+                    <div className="flex items-center gap-3 shrink-0">
                         <div className="text-right hidden sm:block">
-                            <p className="text-sm font-semibold text-slate-800">{email}</p>
-                            <span className="inline-block text-xs px-2 py-0.5 rounded-full font-semibold bg-purple-100 text-purple-700">{role}</span>
+                            <p className="text-white text-sm font-medium leading-tight">{email}</p>
+                            <span className="inline-block text-xs px-2 py-0.5 rounded-full font-semibold bg-white/20 text-white border border-white/25 mt-0.5">
+                                {role}
+                            </span>
                         </div>
                         <button
                             onClick={() => { localStorage.removeItem('token'); navigate('/login'); }}
-                            className="flex items-center gap-1.5 px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
+                            className="flex items-center gap-1.5 px-3 py-2 text-blue-200 hover:text-white hover:bg-white/10 rounded-xl text-sm transition-colors"
                         >
-                            <LogOut size={16} /> Odjava
+                            <LogOut size={15} /> Odjava
                         </button>
                     </div>
                 </div>
             </header>
 
-            <div className="max-w-5xl mx-auto px-4 py-8">
-                <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-                    <div className="flex items-center gap-3">
-                        <div className="bg-indigo-500 w-10 h-10 rounded-lg flex items-center justify-center shrink-0">
-                            <BookOpen className="text-white" size={20} />
+            <div className="max-w-7xl mx-auto px-6 py-8">
+                <Link
+                    to="/candidates"
+                    className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium mb-6"
+                >
+                    <ArrowLeft size={16} />
+                    Nazad na kandidate
+                </Link>
+                <div className="flex flex-wrap items-center justify-between gap-4 mb-7">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-md shadow-blue-200">
+                            <BookOpen className="text-white" size={22} />
                         </div>
                         <div>
-                            <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Plan teorijske nastave</h2>
-                            <p className="text-sm text-slate-500">Pregled svih grupa i rasporeda</p>
+                            <h2 className="text-2xl font-bold text-slate-900">Plan teorijske nastave</h2>
+                            <p className="text-sm text-slate-500 mt-0.5">Pregled svih grupa i rasporeda</p>
                         </div>
                     </div>
+
+
                     <button
                         onClick={() => setCreateOpen(true)}
-                        className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-semibold text-sm shadow-sm"
+                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm shadow-md shadow-blue-200 transition-colors"
                     >
+
                         <Plus size={16} /> Nova grupa
                     </button>
                 </div>
 
+
+
                 {error && (
-                    <div className="mb-4 bg-red-50 text-red-700 px-4 py-3 rounded-lg border border-red-100 text-sm">{error}</div>
+                    <div className="mb-5 bg-red-50 text-red-700 px-5 py-3.5 rounded-2xl border border-red-200 text-sm shadow-sm">{error}</div>
                 )}
 
                 {loading ? (
-                    <div className="text-center py-16 text-slate-400">Učitavanje...</div>
+                    <div className="flex flex-col items-center gap-3 py-20 text-slate-400">
+                        <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                        <span className="text-sm">Učitavanje...</span>
+                    </div>
                 ) : plans.length === 0 ? (
-                    <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center">
-                        <div className="inline-flex w-14 h-14 rounded-full bg-indigo-50 items-center justify-center mb-3">
-                            <BookOpen className="text-indigo-400" size={24} />
+                    <div className="bg-white rounded-2xl border border-slate-100 p-16 text-center shadow-sm">
+                        <div className="inline-flex w-14 h-14 rounded-2xl bg-blue-50 items-center justify-center mb-4">
+                            <BookOpen className="text-blue-400" size={24} />
                         </div>
-                        <h3 className="font-semibold text-slate-800">Nema planova nastave</h3>
+                        <h3 className="font-bold text-slate-800 text-lg">Nema planova nastave</h3>
                         <p className="text-slate-500 text-sm mt-1">Kliknite "Nova grupa" da kreirate prvi plan.</p>
                     </div>
                 ) : (
@@ -126,37 +173,37 @@ export default function TheoryPlansPage() {
                             return (
                                 <div
                                     key={plan.id}
-                                    className="bg-white rounded-xl border border-slate-200 hover:border-indigo-300 transition-colors overflow-hidden"
+                                    className="bg-white rounded-2xl border border-slate-100 hover:border-blue-200 hover:shadow-md transition-all overflow-hidden"
                                 >
-                                    <div className="p-5">
-                                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                                    <div className="p-6">
+                                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                                             <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <span className="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center shrink-0">
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    <span className="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center shrink-0">
                                                         {planCandidates.length}
                                                     </span>
-                                                    <h3 className="font-bold text-slate-900 truncate">{plan.groupName}</h3>
+                                                    <h3 className="font-bold text-slate-900 text-base truncate">{plan.groupName}</h3>
                                                 </div>
 
-                                                <div className="flex flex-wrap gap-3 mt-2 text-xs text-slate-500">
-                                                    <span className="flex items-center gap-1">
-                                                        <Calendar size={12} />
+                                                <div className="flex flex-wrap gap-3 text-xs text-slate-500">
+                                                    <span className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100">
+                                                        <Calendar size={11} className="text-slate-400" />
                                                         Početak: {plan.startDate}
                                                     </span>
-                                                    <span className="flex items-center gap-1">
-                                                        <Clock size={12} />
+                                                    <span className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100">
+                                                        <Clock size={11} className="text-slate-400" />
                                                         {day1} i {day2} u {time}
                                                     </span>
-                                                    <span className="flex items-center gap-1">
-                                                        <BookOpen size={12} />
+                                                    <span className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100">
+                                                        <BookOpen size={11} className="text-slate-400" />
                                                         {plan.totalLessons} časova, {plan.lessonsPerSession} po terminu
                                                     </span>
                                                 </div>
 
                                                 {planCandidates.length > 0 && (
-                                                    <div className="mt-3">
-                                                        <p className="text-xs font-semibold text-slate-600 mb-1.5 flex items-center gap-1">
-                                                            <Users size={11} /> Kandidati ({planCandidates.length}):
+                                                    <div className="mt-4">
+                                                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1">
+                                                            <Users size={11} /> Kandidati ({planCandidates.length})
                                                         </p>
                                                         <div className="flex flex-wrap gap-1.5">
                                                             {planCandidates.map(c => {
@@ -166,7 +213,7 @@ export default function TheoryPlansPage() {
                                                                 return (
                                                                     <span
                                                                         key={c.candidateId}
-                                                                        className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-700 font-medium"
+                                                                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs bg-blue-50 text-blue-700 font-medium border border-blue-100"
                                                                     >
                                                                         {name}
                                                                     </span>
@@ -180,14 +227,14 @@ export default function TheoryPlansPage() {
                                             <div className="flex items-center gap-2 shrink-0">
                                                 <button
                                                     onClick={() => setSelectedPlan(plan)}
-                                                    className="flex items-center gap-1.5 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-sm font-semibold"
+                                                    className="flex items-center gap-1.5 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-sm font-semibold transition-colors border border-blue-100"
                                                 >
                                                     Pregled
                                                     <ChevronRight size={14} />
                                                 </button>
                                                 <button
                                                     onClick={() => setDeletingPlanId(plan.id)}
-                                                    className="flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-sm font-semibold"
+                                                    className="flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-sm font-semibold transition-colors border border-red-100"
                                                     title="Obriši grupu"
                                                 >
                                                     <Trash2 size={14} />
@@ -220,22 +267,24 @@ export default function TheoryPlansPage() {
             )}
 
             {deletingPlanId && (
-                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
-                        <h3 className="font-bold text-slate-800 mb-2">Obriši grupu?</h3>
-                        <p className="text-sm text-slate-500 mb-5">
-                            Ova akcija će obrisati grupu i sve njene termine. Ne može se poništiti.
-                        </p>
-                        <div className="flex justify-end gap-2">
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm border border-slate-100 overflow-hidden">
+                        <div className="bg-gradient-to-r from-red-600 to-red-500 px-6 py-5">
+                            <h3 className="font-bold text-white text-base">Obriši grupu?</h3>
+                            <p className="text-red-100 text-sm mt-1">
+                                Ova akcija će obrisati grupu i sve njene termine. Ne može se poništiti.
+                            </p>
+                        </div>
+                        <div className="p-6 flex justify-end gap-3">
                             <button
                                 onClick={() => setDeletingPlanId(null)}
-                                className="px-4 py-2 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg"
+                                className="px-4 py-2.5 text-sm text-slate-700 border border-slate-200 hover:bg-slate-50 rounded-xl font-medium transition-colors"
                             >
                                 Odustani
                             </button>
                             <button
                                 onClick={() => deletePlan(deletingPlanId)}
-                                className="px-4 py-2 text-sm text-white bg-red-600 hover:bg-red-700 rounded-lg font-semibold"
+                                className="px-4 py-2.5 text-sm text-white bg-red-600 hover:bg-red-700 rounded-xl font-semibold transition-colors shadow-sm"
                             >
                                 Obriši
                             </button>

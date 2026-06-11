@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { LogOut, ArrowLeft, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { LogOut, ArrowLeft, AlertTriangle, CheckCircle, XCircle, GraduationCap, Users, BookOpen, UserCheck, DollarSign, FileText, Search } from 'lucide-react';
 import { financeApi } from '../services/financeApi';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
@@ -14,7 +14,7 @@ const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('bs-BA') : '—');
 
 function ObligationsBar({ obligations }) {
     if (!obligations || obligations.length === 0) return null;
-    const colors = ['bg-indigo-500', 'bg-blue-400', 'bg-cyan-400', 'bg-teal-400', 'bg-green-400'];
+    const colors = ['bg-blue-500', 'bg-blue-400', 'bg-cyan-400', 'bg-teal-400', 'bg-sky-400'];
     return (
         <div className="space-y-1.5">
             {obligations.map((o, i) => {
@@ -27,11 +27,11 @@ function ObligationsBar({ obligations }) {
                             <span className="font-medium">{o.label}</span>
                             <span>
                                 {fmt(o.paidAmount)} / {fmt(o.totalAmount)}
-                                {o.fullyPaid && <span className="ml-1 text-green-600">✓</span>}
+                                {o.fullyPaid && <span className="ml-1 text-emerald-600">✓</span>}
                             </span>
                         </div>
-                        <div className="h-1.5 bg-slate-100 rounded-full">
-                            <div className={`h-full rounded-full transition-all ${colors[i] || 'bg-slate-400'}`}
+                        <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div className={`h-full rounded-full transition-all duration-500 ${colors[i] || 'bg-slate-400'}`}
                                  style={{ width: `${pct}%` }} />
                         </div>
                     </div>
@@ -66,31 +66,34 @@ function PaymentModal({ row, onClose, onSuccess }) {
     const remaining = row.remainingDebt ?? 0;
 
     return (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
-                <div className="p-5 border-b border-gray-100">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm border border-slate-100 overflow-hidden">
+                <div className="bg-gradient-to-r from-blue-700 to-blue-500 px-6 py-5">
                     <div className="flex items-center justify-between">
-                        <h2 className="font-semibold text-gray-900">Evidentiraj uplatu</h2>
-                        <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
+                        <h2 className="font-semibold text-white text-base">Evidentiraj uplatu</h2>
+                        <button onClick={onClose} className="text-blue-200 hover:text-white transition-colors text-lg leading-none">✕</button>
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">
-                        {row._candidateName} — preostalo: <strong className="text-red-600">{fmt(remaining)}</strong>
+                    <p className="text-blue-100 text-sm mt-1">
+                        {row._candidateName} — preostalo: <strong className="text-white">{fmt(remaining)}</strong>
                     </p>
                 </div>
 
-               
-                <div className="px-5 pt-4">
+                <div className="px-6 pt-5">
                     {row.obligations && row.obligations.length > 0 && (
                         <div>
-                            <p className="text-xs text-slate-500 mb-2">Stanje obaveza:</p>
+                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Stanje obaveza:</p>
                             {row.obligations.map((o, i) => (
-                                <div key={i} className="flex items-center justify-between text-xs py-1 border-b border-slate-50">
-                                    <span className={o.fullyPaid ? 'text-green-600 line-through' : 'text-slate-700'}>
+                                <div key={i} className="flex items-center justify-between text-sm py-2 border-b border-slate-50 last:border-0">
+                                    <span className={`flex items-center gap-2 ${o.fullyPaid ? 'text-emerald-600' : 'text-slate-700'}`}>
+                                        {o.fullyPaid
+                                            ? <CheckCircle size={13} className="text-emerald-500 shrink-0" />
+                                            : <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-300 shrink-0" />
+                                        }
                                         {o.label}
                                     </span>
-                                    <span className={o.fullyPaid ? 'text-green-600' : 'text-slate-500'}>
+                                    <span className={`font-medium text-xs ${o.fullyPaid ? 'text-emerald-600' : 'text-slate-500'}`}>
                                         {o.fullyPaid
-                                            ? '✓ Plaćeno'
+                                            ? 'Plaćeno'
                                             : `Preostalo: ${fmt(o.remainingAmount)}`}
                                     </span>
                                 </div>
@@ -99,14 +102,14 @@ function PaymentModal({ row, onClose, onSuccess }) {
                     )}
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-5 space-y-4">
+                <form onSubmit={handleSubmit} className="p-6 space-y-4">
                     {error && (
-                        <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm text-red-700">
-                            {error}
+                        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700 flex items-center gap-2">
+                            <XCircle size={15} className="shrink-0" /> {error}
                         </div>
                     )}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-slate-700 mb-1.5">
                             Iznos uplate (KM) *
                         </label>
                         <input
@@ -115,21 +118,21 @@ function PaymentModal({ row, onClose, onSuccess }) {
                             required
                             value={amount}
                             onChange={e => setAmount(e.target.value)}
-                            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                             placeholder="npr. 300.00"
                             autoFocus
                         />
-                        <p className="text-xs text-slate-400 mt-1">
+                        <p className="text-xs text-slate-400 mt-1.5">
                             Sistem automatski raspoređuje uplatu na obaveze redom.
                         </p>
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex gap-3 pt-1">
                         <button type="button" onClick={onClose}
-                                className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-700 hover:bg-gray-50">
+                                className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
                             Odustani
                         </button>
                         <button type="submit" disabled={loading}
-                                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+                                className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm">
                             {loading ? 'Evidentira...' : 'Potvrdi uplatu'}
                         </button>
                     </div>
@@ -144,59 +147,57 @@ function DetailModal({ row, onClose, onPay }) {
     const total = row.totalAmount ?? 1900;
 
     return (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
-                <div className="p-6 border-b border-gray-100 flex-shrink-0">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col border border-slate-100 overflow-hidden">
+                <div className="bg-gradient-to-r from-blue-800 to-blue-500 px-6 py-6 flex-shrink-0">
                     <div className="flex items-start justify-between">
                         <div>
-                            <h2 className="text-lg font-semibold text-gray-900">{row._candidateName}</h2>
-                            <p className="text-sm text-gray-400 mt-0.5">{row._candidateEmail}</p>
+                            <h2 className="text-lg font-bold text-white">{row._candidateName}</h2>
+                            <p className="text-blue-200 text-sm mt-0.5">{row._candidateEmail}</p>
                         </div>
-                        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg">✕</button>
+                        <button onClick={onClose} className="text-blue-200 hover:text-white text-lg leading-none transition-colors">✕</button>
                     </div>
 
                     {/* Badges */}
-                    <div className="flex gap-2 mt-3 flex-wrap">
+                    <div className="flex gap-2 mt-4 flex-wrap">
                         {row.enrollmentEligible
-                            ? <span className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                                <CheckCircle size={12} /> Upisnina plaćena
+                            ? <span className="flex items-center gap-1.5 px-2.5 py-1 bg-white/20 text-white rounded-full text-xs font-medium backdrop-blur-sm">
+                                <CheckCircle size={11} /> Upisnina plaćena
                               </span>
-                            : <span className="flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">
-                                <XCircle size={12} /> Upisnina nije plaćena
+                            : <span className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-400/30 text-amber-100 rounded-full text-xs font-medium">
+                                <XCircle size={11} /> Upisnina nije plaćena
                               </span>
                         }
                         {row.examEligible
-                            ? <span className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                                <CheckCircle size={12} /> Može na ispit
+                            ? <span className="flex items-center gap-1.5 px-2.5 py-1 bg-white/20 text-white rounded-full text-xs font-medium backdrop-blur-sm">
+                                <CheckCircle size={11} /> Može na ispit
                               </span>
-                            : <span className="flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
-                                <XCircle size={12} /> Ne može na ispit
+                            : <span className="flex items-center gap-1.5 px-2.5 py-1 bg-red-400/30 text-red-100 rounded-full text-xs font-medium">
+                                <XCircle size={11} /> Ne može na ispit
                               </span>
                         }
                     </div>
 
                     {/* Sažetak */}
                     <div className="grid grid-cols-3 gap-3 mt-4">
-                        <div className="bg-slate-50 rounded-xl p-3 text-center">
-                            <p className="text-xs text-slate-500">Ukupno</p>
-                            <p className="font-bold text-slate-800 text-sm mt-0.5">{fmt(total)}</p>
-                        </div>
-                        <div className="bg-green-50 rounded-xl p-3 text-center">
-                            <p className="text-xs text-green-600">Plaćeno</p>
-                            <p className="font-bold text-green-700 text-sm mt-0.5">{fmt(paidTotal)}</p>
-                        </div>
-                        <div className="bg-red-50 rounded-xl p-3 text-center">
-                            <p className="text-xs text-red-500">Preostalo</p>
-                            <p className="font-bold text-red-700 text-sm mt-0.5">{fmt(row.remainingDebt)}</p>
-                        </div>
+                        {[
+                            { label: 'Ukupno', value: fmt(total), cls: 'bg-white/10 text-white' },
+                            { label: 'Plaćeno', value: fmt(paidTotal), cls: 'bg-emerald-400/20 text-emerald-100' },
+                            { label: 'Preostalo', value: fmt(row.remainingDebt), cls: 'bg-red-400/20 text-red-100' },
+                        ].map(s => (
+                            <div key={s.label} className={`${s.cls} rounded-xl p-3 text-center backdrop-blur-sm`}>
+                                <p className="text-xs opacity-80">{s.label}</p>
+                                <p className="font-bold text-sm mt-0.5">{s.value}</p>
+                            </div>
+                        ))}
                     </div>
                 </div>
 
                 {/* Obaveze */}
                 <div className="flex-1 overflow-y-auto p-6">
-                    <h3 className="font-medium text-slate-900 mb-4">Raspored obaveza</h3>
+                    <h3 className="font-semibold text-slate-800 mb-4 text-sm uppercase tracking-wide">Raspored obaveza</h3>
                     {(row.obligations || []).length === 0 ? (
-                        <p className="text-sm text-slate-400 text-center py-4">Nema obaveza</p>
+                        <p className="text-sm text-slate-400 text-center py-8">Nema obaveza</p>
                     ) : (
                         <div className="space-y-3">
                             {(row.obligations || []).map((o, i) => {
@@ -205,14 +206,14 @@ function DetailModal({ row, onClose, onPay }) {
                                     : 0;
                                 return (
                                     <div key={o.id || i}
-                                         className={`border rounded-xl p-4 ${o.fullyPaid ? 'border-green-200 bg-green-50' : 'border-slate-200'}`}>
+                                         className={`border rounded-xl p-4 transition-colors ${o.fullyPaid ? 'border-emerald-200 bg-emerald-50' : 'border-slate-100 bg-white hover:border-blue-100'}`}>
                                         <div className="flex items-center justify-between mb-2">
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-2.5">
                                                 {o.fullyPaid
-                                                    ? <CheckCircle size={16} className="text-green-600 shrink-0" />
+                                                    ? <CheckCircle size={16} className="text-emerald-500 shrink-0" />
                                                     : <div className="w-4 h-4 rounded-full border-2 border-slate-300 shrink-0" />
                                                 }
-                                                <span className={`text-sm font-medium ${o.fullyPaid ? 'text-green-700' : 'text-slate-800'}`}>
+                                                <span className={`text-sm font-medium ${o.fullyPaid ? 'text-emerald-700' : 'text-slate-800'}`}>
                                                     {o.label}
                                                 </span>
                                             </div>
@@ -220,13 +221,13 @@ function DetailModal({ row, onClose, onPay }) {
                                                 {fmt(o.totalAmount)}
                                             </span>
                                         </div>
-                                        <div className="h-1.5 bg-slate-200 rounded-full mb-1.5">
-                                            <div className={`h-full rounded-full ${o.fullyPaid ? 'bg-green-500' : 'bg-blue-500'}`}
+                                        <div className="h-1.5 bg-slate-100 rounded-full mb-2 overflow-hidden">
+                                            <div className={`h-full rounded-full transition-all duration-500 ${o.fullyPaid ? 'bg-emerald-500' : 'bg-blue-500'}`}
                                                  style={{ width: `${pct}%` }} />
                                         </div>
                                         <div className="flex justify-between text-xs text-slate-500">
                                             <span>Plaćeno: {fmt(o.paidAmount)}</span>
-                                            {!o.fullyPaid && <span className="text-red-500">Preostalo: {fmt(o.remainingAmount)}</span>}
+                                            {!o.fullyPaid && <span className="text-red-500 font-medium">Preostalo: {fmt(o.remainingAmount)}</span>}
                                         </div>
                                     </div>
                                 );
@@ -235,15 +236,15 @@ function DetailModal({ row, onClose, onPay }) {
                     )}
                 </div>
 
-                <div className="p-4 border-t border-gray-100 flex gap-3 flex-shrink-0">
+                <div className="px-6 py-4 border-t border-slate-100 flex gap-3 flex-shrink-0 bg-slate-50/50">
                     {(row.remainingDebt ?? 0) > 0 && (
                         <button onClick={onPay}
-                                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700">
+                                className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors shadow-sm">
                             Evidentiraj uplatu
                         </button>
                     )}
                     <button onClick={onClose}
-                            className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-700 hover:bg-gray-50">
+                            className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors">
                         Zatvori
                     </button>
                 </div>
@@ -271,11 +272,11 @@ async function generateReport(rows) {
         </div>
         <div style="display:flex;gap:12px;margin-bottom:24px">
             ${[
-                ['Ukupno zaduženo', fmt(totalAmount), '#2563eb'],
-                ['Naplaćeno',       fmt(totalPaid),   '#16a34a'],
-                ['Preostali dug',   fmt(totalDebt),   '#dc2626'],
-                ['Kandidata',       withAccount.length,'#374151'],
-            ].map(([lbl, val, col]) => `
+        ['Ukupno zaduženo', fmt(totalAmount), '#2563eb'],
+        ['Naplaćeno',       fmt(totalPaid),   '#16a34a'],
+        ['Preostali dug',   fmt(totalDebt),   '#dc2626'],
+        ['Kandidata',       withAccount.length,'#374151'],
+    ].map(([lbl, val, col]) => `
                 <div style="flex:1;border:1px solid #e5e7eb;border-radius:8px;padding:12px;text-align:center">
                     <div style="font-size:10px;color:#6b7280;text-transform:uppercase">${lbl}</div>
                     <div style="font-size:16px;font-weight:700;color:${col};margin-top:4px">${val}</div>
@@ -285,21 +286,21 @@ async function generateReport(rows) {
             <thead>
                 <tr style="background:#f8fafc">
                     ${['#','Kandidat','Upisnina','Ukupno','Plaćeno','Preostalo','Status'].map(h =>
-                        `<th style="padding:9px 10px;text-align:left;font-size:11px;color:#374151;border-bottom:1px solid #e5e7eb">${h}</th>`
-                    ).join('')}
+        `<th style="padding:9px 10px;text-align:left;font-size:11px;color:#374151;border-bottom:1px solid #e5e7eb">${h}</th>`
+    ).join('')}
                 </tr>
             </thead>
             <tbody>
                 ${withAccount.map((a, i) => {
-                    const enroll = (a.obligations || []).find(o => o.type === 'ENROLLMENT');
-                    const enrollOk = enroll?.fullyPaid;
-                    const debt = parseFloat(a.remainingDebt || 0);
-                    const paid = parseFloat(a.paidAmount || 0);
-                    const tot  = parseFloat(a.totalAmount || 1900);
-                    let bgS = '#dcfce7', colS = '#166534', lbl = 'Izmireno';
-                    if (debt > 0 && debt < tot) { bgS = '#fef3c7'; colS = '#92400e'; lbl = Math.round((paid/tot)*100)+'% plaćeno'; }
-                    if (paid === 0) { bgS = '#fee2e2'; colS = '#991b1b'; lbl = 'Nije plaćeno'; }
-                    return `<tr style="border-bottom:1px solid #f3f4f6">
+        const enroll = (a.obligations || []).find(o => o.type === 'ENROLLMENT');
+        const enrollOk = enroll?.fullyPaid;
+        const debt = parseFloat(a.remainingDebt || 0);
+        const paid = parseFloat(a.paidAmount || 0);
+        const tot  = parseFloat(a.totalAmount || 1900);
+        let bgS = '#dcfce7', colS = '#166534', lbl = 'Izmireno';
+        if (debt > 0 && debt < tot) { bgS = '#fef3c7'; colS = '#92400e'; lbl = Math.round((paid/tot)*100)+'% plaćeno'; }
+        if (paid === 0) { bgS = '#fee2e2'; colS = '#991b1b'; lbl = 'Nije plaćeno'; }
+        return `<tr style="border-bottom:1px solid #f3f4f6">
                         <td style="padding:8px 10px">${i+1}</td>
                         <td style="padding:8px 10px;font-weight:600">${a._candidateName}</td>
                         <td style="padding:8px 10px">
@@ -314,7 +315,7 @@ async function generateReport(rows) {
                             <span style="background:${bgS};color:${colS};padding:2px 7px;border-radius:999px;font-size:11px">${lbl}</span>
                         </td>
                     </tr>`;
-                }).join('')}
+    }).join('')}
             </tbody>
         </table>
         <div style="margin-top:24px;text-align:center;color:#9ca3af;font-size:11px">
@@ -352,6 +353,7 @@ export default function FinanceDashboard() {
     const { user, logout } = useAuth();
     const email  = user.email;
     const role   = user.role;
+
     const loadData = useCallback(async () => {
         setLoading(true);
         setLoadError(null);
@@ -413,31 +415,76 @@ export default function FinanceDashboard() {
         String(r.candidateId).includes(search)
     );
 
+    const navItems = [
+        { label: 'Korisnici', icon: Users, to: '/users' },
+        { label: 'Resursi', icon: BookOpen, to: '/resources' },
+        { label: 'Kandidati', icon: UserCheck, to: '/candidates' },
+        { label: 'Finansije', icon: DollarSign, to: '/finance', active: true },
+    ];
+
     return (
-        <div className="min-h-screen bg-slate-50">
-            <header className="bg-white border-b border-slate-200">
-                <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-                    <Link to="/dashboard" className="flex items-center gap-1.5 text-slate-600 hover:text-slate-900 text-sm">
-                        <ArrowLeft size={16} /> Nazad na početnu
-                    </Link>
-                    <div className="flex items-center gap-4">
-                        <div className="text-right hidden sm:block">
-                            <p className="text-sm font-semibold text-slate-800">{email}</p>
-                            <span className="inline-block text-xs px-2 py-0.5 rounded-full font-semibold bg-purple-100 text-purple-700">{role}</span>
+        <div className="min-h-screen bg-slate-100">
+            {/* ── Header ── */}
+            <header className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-600 shadow-lg">
+                <div className="max-w-7xl mx-auto px-6 py-3 flex items-center gap-6">
+                    {/* Logo */}
+                    <Link to="/dashboard" className="flex items-center gap-3 shrink-0 group">
+                        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white/20 group-hover:bg-white/30 transition-colors">
+                            <GraduationCap size={22} className="text-white" />
                         </div>
-                        <button onClick={() => { localStorage.removeItem('token'); navigate('/login'); }}
-                                className="flex items-center gap-1.5 px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">
-                            <LogOut size={16} /> Odjava
+                        <div>
+                            <p className="text-white font-bold text-base leading-tight">DriveSchool</p>
+                            <p className="text-blue-200 text-xs leading-tight">Finansije</p>
+                        </div>
+                    </Link>
+
+                    {/* Nav */}
+                    <nav className="flex items-center gap-1.5 flex-1">
+                        {navItems.map(item => (
+                            <Link
+                                key={item.label}
+                                to={item.to}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                                    item.active
+                                        ? 'bg-white/20 text-white backdrop-blur-sm border border-white/25 shadow-sm'
+                                        : 'text-blue-200 hover:text-white hover:bg-white/10'
+                                }`}
+                            >
+                                <item.icon size={14} />
+                                {item.label}
+                            </Link>
+                        ))}
+                    </nav>
+
+                    {/* User */}
+                    <div className="flex items-center gap-3 shrink-0">
+                        <div className="text-right hidden sm:block">
+                            <p className="text-white text-sm font-medium leading-tight">{email}</p>
+                            <span className="inline-block text-xs px-2 py-0.5 rounded-full font-semibold bg-white/20 text-white border border-white/25 mt-0.5">
+                                {role}
+                            </span>
+                        </div>
+                        <button
+                            onClick={() => { localStorage.removeItem('token'); navigate('/login'); }}
+                            className="flex items-center gap-1.5 px-3 py-2 text-blue-200 hover:text-white hover:bg-white/10 rounded-xl text-sm transition-colors"
+                        >
+                            <LogOut size={15} /> Odjava
                         </button>
                     </div>
                 </div>
             </header>
 
-            <div className="max-w-5xl mx-auto px-4 py-8">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-                    <div>
-                        <h2 className="text-2xl font-bold text-slate-900">Finansije</h2>
-                        <p className="text-slate-500 text-sm mt-0.5">Evidencija uplata kandidata</p>
+            <div className="max-w-7xl mx-auto px-6 py-8">
+                {/* ── Page title ── */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-md shadow-blue-200">
+                            <DollarSign size={22} className="text-white" />
+                        </div>
+                        <div>
+                            <h2 className="text-2xl font-bold text-slate-900">Finansije</h2>
+                            <p className="text-slate-500 text-sm mt-0.5">Evidencija uplata kandidata</p>
+                        </div>
                     </div>
                     <button
                         onClick={async () => {
@@ -446,8 +493,9 @@ export default function FinanceDashboard() {
                             finally { setGeneratingPdf(false); }
                         }}
                         disabled={withAccounts.length === 0 || generatingPdf}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-40 shadow-sm"
+                        className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 disabled:opacity-40 transition-colors shadow-md shadow-blue-200"
                     >
+                        <FileText size={15} />
                         {generatingPdf ? 'Generišem...' : 'Izvještaj'}
                     </button>
                 </div>
@@ -455,127 +503,175 @@ export default function FinanceDashboard() {
                 {loadError && <ErrorState message={loadError} onRetry={loadData} />}
 
                 {noAccountCount > 0 && !loadError && (
-                    <div className="mb-5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center gap-2 text-sm text-amber-800">
-                        <AlertTriangle size={15} />
-                        {noAccountCount} kandidat(a) nema finansijski račun — kliknite "Kreiraj račun" pored njihovog imena.
+                    <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 flex items-center gap-3 text-sm text-amber-800 shadow-sm">
+                        <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center shrink-0">
+                            <AlertTriangle size={15} className="text-amber-600" />
+                        </div>
+                        <span>
+                            <strong>{noAccountCount} kandidat(a)</strong> nema finansijski račun — kliknite "Kreiraj račun" pored njihovog imena.
+                        </span>
                     </div>
                 )}
 
                 {/* Sažetak */}
-                {!loadError && <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                    {[
-                        { label: 'Ukupno zaduženo', value: fmt(totalAmount),  icon: '📋', color: 'text-slate-900' },
-                        { label: 'Naplaćeno',        value: fmt(totalPaid),   icon: '✅', color: 'text-green-700' },
-                        { label: 'Preostali dug',    value: fmt(totalDebt),   icon: '⏳', color: 'text-red-600'  },
-                        { label: 'Kandidata',        value: rows.length,      icon: '👥', color: 'text-blue-700' },
-                    ].map(s => (
-                        <div key={s.label} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-                            <div className="text-xl mb-1">{s.icon}</div>
-                            <div className={`text-lg font-bold ${s.color}`}>{s.value}</div>
-                            <div className="text-xs text-slate-400 mt-0.5">{s.label}</div>
-                        </div>
-                    ))}
-                </div>}
+                {!loadError && (
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                        {[
+                            { label: 'Ukupno zaduženo', value: fmt(totalAmount), icon: '📋', color: 'text-slate-900' },
+                            { label: 'Naplaćeno',        value: fmt(totalPaid),   icon: '✅', color: 'text-emerald-700' },
+                            { label: 'Preostali dug',    value: fmt(totalDebt),   icon: '⏳', color: 'text-red-600'    },
+                            { label: 'Kandidata',        value: rows.length,      icon: '👥', color: 'text-blue-700'   },
+                        ].map(s => (
+                            <div key={s.label} className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                                <div className="text-xl mb-2">{s.icon}</div>
+                                <div className={`text-xl font-bold ${s.color}`}>{s.value}</div>
+                                <div className="text-xs text-slate-400 mt-1 font-medium">{s.label}</div>
+                            </div>
+                        ))}
+                    </div>
+                )}
 
                 {/* Tabela */}
-                {!loadError && <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                    <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-                        <h3 className="font-semibold text-slate-900">Svi kandidati</h3>
-                        <input type="text" placeholder="Pretraži..."
-                               value={search} onChange={e => setSearch(e.target.value)}
-                               className="border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-56" />
-                    </div>
+                {!loadError && (
+                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                        <div className="px-6 py-5 border-b border-slate-100 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+                            <div>
+                                <h3 className="font-bold text-slate-900">Svi kandidati</h3>
+                                <p className="text-xs text-slate-400 mt-0.5">{rows.length} ukupno</p>
+                            </div>
+                            <div className="relative">
+                                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                <input
+                                    type="text"
+                                    placeholder="Pretraži..."
+                                    value={search}
+                                    onChange={e => setSearch(e.target.value)}
+                                    className="pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full sm:w-60 transition-all bg-slate-50 focus:bg-white"
+                                />
+                            </div>
+                        </div>
 
-                    {error && (
-                        <div className="mx-5 mt-4 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">{error}</div>
-                    )}
+                        {error && (
+                            <div className="mx-6 mt-4 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700 flex items-center gap-2">
+                                <XCircle size={14} className="shrink-0" /> {error}
+                            </div>
+                        )}
 
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="bg-slate-50 text-left">
-                                    <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Kandidat</th>
-                                    <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Status</th>
-                                    <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Obaveze</th>
-                                    <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Preostalo</th>
-                                    <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide"></th>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead>
+                                <tr className="bg-slate-50 border-b border-slate-100">
+                                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Kandidat</th>
+                                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Obaveze</th>
+                                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Preostalo</th>
+                                    <th className="px-6 py-3.5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider"></th>
                                 </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-50">
+                                </thead>
+                                <tbody className="divide-y divide-slate-50">
                                 {loading ? (
-                                    <tr><td colSpan={5} className="px-5 py-12 text-center text-slate-400">Učitavanje...</td></tr>
+                                    <tr>
+                                        <td colSpan={5} className="px-6 py-16 text-center">
+                                            <div className="flex flex-col items-center gap-3 text-slate-400">
+                                                <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                                                <span className="text-sm">Učitavanje...</span>
+                                            </div>
+                                        </td>
+                                    </tr>
                                 ) : filtered.length === 0 ? (
-                                    <tr><td colSpan={5} className="px-5 py-12 text-center text-slate-400">Nema kandidata</td></tr>
+                                    <tr>
+                                        <td colSpan={5} className="px-6 py-16 text-center text-slate-400 text-sm">
+                                            Nema kandidata
+                                        </td>
+                                    </tr>
                                 ) : filtered.map(row => (
-                                    <tr key={row.candidateId} className="hover:bg-slate-50 transition-colors">
-                                        <td className="px-5 py-4">
+                                    <tr key={row.candidateId} className="hover:bg-slate-50/70 transition-colors">
+                                        <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center shrink-0">
-                                                    {row._candidateName.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                                                <div className="w-9 h-9 rounded-xl bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0 shadow-sm">
+                                                    {row._candidateName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                                                 </div>
                                                 <div>
-                                                    <div className="font-medium text-slate-900">{row._candidateName}</div>
-                                                    <div className="text-xs text-slate-400">{row._candidateEmail}</div>
+                                                    <div className="font-semibold text-slate-900 text-sm">{row._candidateName}</div>
+                                                    <div className="text-xs text-slate-400 mt-0.5">{row._candidateEmail}</div>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-5 py-4">
+                                        <td className="px-6 py-4">
                                             {!row._hasAccount ? (
-                                                <span className="text-xs text-amber-600 font-medium">Nema račun</span>
+                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-xs font-semibold">
+                                                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                                                        Nema račun
+                                                    </span>
                                             ) : (
-                                                <div className="flex flex-col gap-1">
-                                                    <span className={`inline-flex items-center gap-1 text-xs font-medium ${row.enrollmentEligible ? 'text-green-600' : 'text-amber-600'}`}>
-                                                        {row.enrollmentEligible ? <CheckCircle size={11} /> : <XCircle size={11} />}
-                                                        Upisnina
-                                                    </span>
-                                                    <span className={`inline-flex items-center gap-1 text-xs font-medium ${row.examEligible ? 'text-green-600' : 'text-slate-400'}`}>
-                                                        {row.examEligible ? <CheckCircle size={11} /> : <XCircle size={11} />}
+                                                <div className="flex flex-col gap-1.5">
+                                                        <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${row.enrollmentEligible ? 'text-emerald-700' : 'text-amber-600'}`}>
+                                                            {row.enrollmentEligible
+                                                                ? <CheckCircle size={12} className="text-emerald-500" />
+                                                                : <XCircle size={12} className="text-amber-500" />
+                                                            }
+                                                            Upisnina
+                                                        </span>
+                                                    <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${row.examEligible ? 'text-emerald-700' : 'text-slate-400'}`}>
+                                                            {row.examEligible
+                                                                ? <CheckCircle size={12} className="text-emerald-500" />
+                                                                : <XCircle size={12} className="text-slate-300" />
+                                                            }
                                                         Ispit
-                                                    </span>
+                                                        </span>
                                                 </div>
                                             )}
                                         </td>
-                                        <td className="px-5 py-4 min-w-[180px]">
+                                        <td className="px-6 py-4 min-w-[200px]">
                                             {row._hasAccount
                                                 ? <ObligationsBar obligations={row.obligations} />
-                                                : <span className="text-xs text-slate-400">—</span>
+                                                : <span className="text-slate-300 text-xs">—</span>
                                             }
                                         </td>
-                                        <td className="px-5 py-4">
+                                        <td className="px-6 py-4">
                                             {row._hasAccount ? (
-                                                <span className={`font-semibold text-sm ${parseFloat(row.remainingDebt || 0) > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                                                    {fmt(row.remainingDebt)}
-                                                </span>
-                                            ) : '—'}
+                                                <span className={`font-bold text-sm ${parseFloat(row.remainingDebt || 0) > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                                                        {fmt(row.remainingDebt)}
+                                                    </span>
+                                            ) : <span className="text-slate-300 text-xs">—</span>}
                                         </td>
-                                        <td className="px-5 py-4 text-right">
-                                            {!row._hasAccount ? (
-                                                <button onClick={() => ensureAccount(row.candidateId)}
-                                                        disabled={ensuringId === row.candidateId}
-                                                        className="px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-medium hover:bg-amber-100 disabled:opacity-50">
-                                                    {ensuringId === row.candidateId ? 'Kreira...' : 'Kreiraj račun'}
-                                                </button>
-                                            ) : (
-                                                <div className="flex gap-2 justify-end">
-                                                    {parseFloat(row.remainingDebt || 0) > 0 && (
-                                                        <button onClick={() => setPayingRow(row)}
-                                                                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700">
-                                                            + Uplata
-                                                        </button>
-                                                    )}
-                                                    <button onClick={() => setSelectedRow(row)}
-                                                            className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-medium hover:bg-slate-200">
-                                                        Detalji
+                                        <td className="px-6 py-4">
+                                            <div className="flex gap-2 justify-end">
+                                                {!row._hasAccount ? (
+                                                    <button onClick={() => ensureAccount(row.candidateId)}
+                                                            disabled={ensuringId === row.candidateId}
+                                                            className="px-3.5 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-semibold hover:bg-amber-100 disabled:opacity-50 transition-colors">
+                                                        {ensuringId === row.candidateId ? 'Kreira...' : 'Kreiraj račun'}
                                                     </button>
-                                                </div>
-                                            )}
+                                                ) : (
+                                                    <>
+                                                        {parseFloat(row.remainingDebt || 0) > 0 && (
+                                                            <button onClick={() => setPayingRow(row)}
+                                                                    className="px-3.5 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition-colors shadow-sm">
+                                                                + Uplata
+                                                            </button>
+                                                        )}
+                                                        <button onClick={() => setSelectedRow(row)}
+                                                                className="px-3.5 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-200 transition-colors">
+                                                            Detalji
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
-                            </tbody>
-                        </table>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {filtered.length > 0 && (
+                            <div className="px-6 py-3.5 border-t border-slate-100 bg-slate-50/50">
+                                <p className="text-xs text-slate-400">Prikazano {filtered.length} od {rows.length} kandidata</p>
+                            </div>
+                        )}
                     </div>
-                </div>}
+                )}
             </div>
 
             {selectedRow && !payingRow && (
