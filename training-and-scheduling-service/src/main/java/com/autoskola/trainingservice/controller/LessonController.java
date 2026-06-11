@@ -7,18 +7,18 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import java.util.List;
+import java.util.Map;
 import java.time.LocalDateTime;
 
 
 @RestController
-@EnableMethodSecurity
 @RequestMapping("/api/lessons")
 public class LessonController {
 
@@ -28,12 +28,16 @@ public class LessonController {
         this.lessonService = lessonService;
     }
 
+    private Long getAuthenticatedUserId() {
+        Object details = SecurityContextHolder.getContext().getAuthentication().getDetails();
+        return ((Number) details).longValue();
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR', 'CANDIDATE')")
     public LessonDTO getLesson(@PathVariable Long id) {
         return lessonService.getLessonDetails(id);
     }
-
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR', 'CANDIDATE')")
@@ -49,12 +53,12 @@ public class LessonController {
 
     @PostMapping("/{id}/complete")
     @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
-    public ResponseEntity<String> completeLesson(
+    public ResponseEntity<Map<String, String>> completeLesson(
             @PathVariable Long id,
             @RequestParam(required = false) String topicCovered,
             @RequestParam(required = false) String teacherNotes) {
-        String result = lessonService.completeLessonAndIncreaseProgress(id, topicCovered, teacherNotes);
-        return ResponseEntity.ok(result);
+        lessonService.completeLessonAndIncreaseProgress(id, topicCovered, teacherNotes);
+        return ResponseEntity.accepted().body(Map.of("message", "Akcija je pokrenuta"));
     }
 
     @GetMapping("/paged")
@@ -90,7 +94,6 @@ public class LessonController {
     @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
     public ResponseEntity<Boolean> hasActiveSessions(@PathVariable Long userId) {
         return ResponseEntity.ok(lessonService.hasActiveSessions(userId));
-
     }
 
     @GetMapping("/instructor/{instructorId}/availability")
@@ -104,12 +107,12 @@ public class LessonController {
     @GetMapping("/my-lessons")
     @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR', 'CANDIDATE')")
     public ResponseEntity<Page<LessonDTO>> getMyLessons(
-            @RequestParam Long userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size,
             @RequestParam(defaultValue = "dateTime") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
 
+        Long userId = getAuthenticatedUserId();
         Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
 
@@ -118,23 +121,23 @@ public class LessonController {
 
     @GetMapping("/eligibility")
     @PreAuthorize("hasAnyRole('ADMIN', 'CANDIDATE')")
-    public ResponseEntity<java.util.Map<String, Object>> getEligibility(@RequestParam Long userId) {
+    public ResponseEntity<java.util.Map<String, Object>> getEligibility() {
+        Long userId = getAuthenticatedUserId();
         return ResponseEntity.ok(lessonService.getBookingEligibility(userId));
     }
 
     @GetMapping("/instructor-lessons")
     @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
     public ResponseEntity<Page<LessonDTO>> getInstructorLessons(
-            @RequestParam Long userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "dateTime") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
+        Long userId = getAuthenticatedUserId();
         Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
         return ResponseEntity.ok(lessonService.getLessonsByInstructorUserId(userId, pageable));
     }
-
 
     @PostMapping("/propose")
     @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
@@ -144,35 +147,41 @@ public class LessonController {
             LocalDateTime dateTime = LocalDateTime.parse(body.get("dateTime").toString());
             Integer duration = body.containsKey("duration") ? Integer.valueOf(body.get("duration").toString()) : 45;
             String notes = body.containsKey("notes") ? (String) body.get("notes") : null;
-            return ResponseEntity.ok(lessonService.proposeLesson(candidateId, dateTime, duration, notes));
+            lessonService.proposeLesson(candidateId, dateTime, duration, notes);
+            return ResponseEntity.accepted().body(Map.of("message", "Akcija je pokrenuta"));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(java.util.Map.of("message", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
 
     @PatchMapping("/{id}/confirm")
     @PreAuthorize("hasAnyRole('ADMIN', 'CANDIDATE')")
-    public ResponseEntity<?> confirmLesson(@PathVariable Long id, @RequestParam Long userId) {
+    public ResponseEntity<?> confirmLesson(@PathVariable Long id) {
         try {
-            return ResponseEntity.ok(lessonService.confirmLesson(id, userId));
+            Long userId = getAuthenticatedUserId();
+            lessonService.confirmLesson(id, userId);
+            return ResponseEntity.accepted().body(Map.of("message", "Akcija je pokrenuta"));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(java.util.Map.of("message", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
 
     @PatchMapping("/{id}/reject")
     @PreAuthorize("hasAnyRole('ADMIN', 'CANDIDATE')")
-    public ResponseEntity<?> rejectLesson(@PathVariable Long id, @RequestParam Long userId) {
+    public ResponseEntity<?> rejectLesson(@PathVariable Long id) {
         try {
-            return ResponseEntity.ok(lessonService.rejectLesson(id, userId));
+            Long userId = getAuthenticatedUserId();
+            lessonService.rejectLesson(id, userId);
+            return ResponseEntity.accepted().body(Map.of("message", "Akcija je pokrenuta"));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(java.util.Map.of("message", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
 
     @GetMapping("/pending")
     @PreAuthorize("hasAnyRole('ADMIN', 'CANDIDATE')")
-    public ResponseEntity<java.util.List<LessonDTO>> getPending(@RequestParam Long userId) {
+    public ResponseEntity<java.util.List<LessonDTO>> getPending() {
+        Long userId = getAuthenticatedUserId();
         return ResponseEntity.ok(lessonService.getPendingForCandidate(userId));
     }
 
@@ -184,14 +193,11 @@ public class LessonController {
             @RequestHeader("Authorization") String authHeader) {
         try {
             LocalDateTime newDateTime = LocalDateTime.parse(body.get("dateTime"));
-            Long userId = Long.parseLong(body.get("userId"));
-            LessonDTO updated = lessonService.rescheduleLesson(id, newDateTime, userId);
-            return ResponseEntity.ok(updated);
+            Long userId = getAuthenticatedUserId();
+            lessonService.rescheduleLesson(id, newDateTime, userId);
+            return ResponseEntity.accepted().body(Map.of("message", "Akcija je pokrenuta"));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(java.util.Map.of("message", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
-
-
-
 }

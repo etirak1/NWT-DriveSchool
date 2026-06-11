@@ -1,5 +1,6 @@
 package com.autoskola.trainingservice.service;
 
+import com.autoskola.trainingservice.dto.AddSessionRequest;
 import com.autoskola.trainingservice.dto.CandidateAttendanceSummary;
 import com.autoskola.trainingservice.dto.TheoryEligibilityDTO;
 import com.autoskola.trainingservice.dto.TheoryPlanRequest;
@@ -203,12 +204,26 @@ public class TheoryPlanService {
 
     @Transactional
     public TheorySession updateSession(Long sessionId, String status, String note,
-                                       List<Long> presentCandidateIds) {
+                                       List<Long> presentCandidateIds,
+                                       String dateStr, String startTimeStr) {
         TheorySession session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new RuntimeException("Termin nije pronađen"));
 
+        if ("ODRZANO".equals(status)) {
+            boolean previousPending = sessionRepository
+                    .findByPlanIdOrderBySessionNumber(session.getPlan().getId())
+                    .stream()
+                    .anyMatch(s -> s.getSessionNumber() < session.getSessionNumber()
+                            && "PLANIRANO".equals(s.getStatus()));
+            if (previousPending) {
+                throw new RuntimeException("Ne možete označiti ovaj termin kao održan dok prethodni termini nisu završeni ili otkazani.");
+            }
+        }
+
         session.setStatus(status);
         if (note != null) session.setNote(note);
+        if (dateStr != null) session.setDate(java.time.LocalDate.parse(dateStr));
+        if (startTimeStr != null) session.setStartTime(java.time.LocalTime.parse(startTimeStr));
 
         if ("ODRZANO".equals(status) && presentCandidateIds != null) {
             attendanceRepository.deleteBySessionId(sessionId);
@@ -309,6 +324,31 @@ public class TheoryPlanService {
         boolean eligible = attendancePct >= 60.0;
 
         return new TheoryEligibilityDTO(true, groupFinished, attendedLessons, totalLessons, attendancePct, eligible);
+    }
+
+    @Transactional
+    public TheorySession addReplacementSession(Long planId, AddSessionRequest req) {
+        TheoryPlan plan = planRepository.findById(planId)
+                .orElseThrow(() -> new RuntimeException("Plan nije pronađen: " + planId));
+
+        List<TheorySession> sessions = sessionRepository.findByPlanIdOrderBySessionNumber(planId);
+        int maxSessionNumber = sessions.stream()
+                .mapToInt(TheorySession::getSessionNumber)
+                .max()
+                .orElse(0);
+
+        TheorySession session = new TheorySession();
+        session.setPlan(plan);
+        session.setSessionNumber(maxSessionNumber + 1);
+        session.setDate(req.getDate());
+        session.setStartTime(req.getStartTime());
+        session.setDurationMinutes(plan.getDurationMinutes());
+        session.setLessonFrom(req.getLessonFrom());
+        session.setLessonTo(req.getLessonTo());
+        session.setTopic(req.getTopic());
+        session.setStatus("PLANIRANO");
+
+        return sessionRepository.save(session);
     }
 
     public List<CandidateAttendanceSummary> getAttendanceSummary(Long planId) {

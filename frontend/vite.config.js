@@ -6,6 +6,11 @@ export default defineConfig({
   define: {
     global: 'globalThis',
   },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './src/test/setup.js',
+  },
   server: {
     port: 5173,
     proxy: {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { getErrorMessage } from '../utils/helpers';
@@ -7,58 +7,45 @@ import { useAuth } from '../context/AuthContext';
 import TheoryPlanCreateModal from '../components/TheoryPlanCreateModal';
 import TheoryPlanViewModal from '../components/TheoryPlanViewModal';
 import { financeApi } from '../services/financeApi';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 export default function TheoryPlansPage() {
     const navigate = useNavigate();
-    const { user, logout } = useAuth();
-    const email  = user.email;
-    const role   = user.role;
+    const { user } = useAuth();
+    const email = user.email;
+    const role  = user.role;
+    const queryClient = useQueryClient();
 
-    const [plans, setPlans] = useState([]);
-    const [candidates, setCandidates] = useState([]);
-    const [enrollmentEligibleIds, setEnrollmentEligibleIds] = useState(null);
-    const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [createOpen, setCreateOpen] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState(null);
     const [deletingPlanId, setDeletingPlanId] = useState(null);
 
-    const loadData = async () => {
-        setLoading(true);
-        setError('');
-        try {
-            const [plansRes, candRes] = await Promise.all([
-                api.get('/api/theory-plans'),
-                api.get('/api/candidates'),
-            ]);
-            setPlans(plansRes.data);
-            setCandidates(candRes.data);
+    const { data: plans = [], isLoading: plansLoading } = useQuery({
+        queryKey: ['theoryPlans'],
+        queryFn: () => api.get('/api/theory-plans').then(r => r.data),
+    });
 
-            // Učitaj finance status da znamo ko je platio upisninu
-            try {
-                const accountsRes = await financeApi.getAll();
-                const accounts = accountsRes.data || [];
-                const eligible = accounts
-                    .filter(a => a.enrollmentEligible)
-                    .map(a => a.candidateId);
-                setEnrollmentEligibleIds(eligible);
-            } catch {
-                setEnrollmentEligibleIds(null); // finance nije dostupan, ne blokiramo
-            }
-        } catch (e) {
-            setError(getErrorMessage(e));
-        } finally {
-            setLoading(false);
-        }
-    };
+    const { data: candidates = [] } = useQuery({
+        queryKey: ['candidates'],
+        queryFn: () => api.get('/api/candidates').then(r => r.data),
+    });
 
-    useEffect(() => { loadData(); }, []);
+    const { data: enrollmentEligibleIds = null } = useQuery({
+        queryKey: ['enrollmentEligible'],
+        queryFn: () => financeApi.getAll().then(r => {
+            const accounts = r.data || [];
+            return accounts.filter(a => a.enrollmentEligible).map(a => a.candidateId);
+        }),
+    });
+
+    const loading = plansLoading;
 
     const deletePlan = async (planId) => {
         try {
             await api.delete(`/api/theory-plans/${planId}`);
             setDeletingPlanId(null);
-            loadData();
+            queryClient.invalidateQueries({ queryKey: ['theoryPlans'] });
         } catch (e) {
             setError(e.response?.data?.message || 'Greška pri brisanju grupe.');
             setDeletingPlanId(null);
@@ -75,10 +62,10 @@ export default function TheoryPlansPage() {
             <header className="bg-white border-b border-slate-200">
                 <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
                     <Link
-                        to="/dashboard"
+                        to="/candidates"
                         className="flex items-center gap-1.5 text-slate-600 hover:text-slate-900 text-sm"
                     >
-                        <ArrowLeft size={16} /> Nazad na početnu
+                        <ArrowLeft size={16} /> Nazad
                     </Link>
                     <div className="flex items-center gap-4">
                         <div className="text-right hidden sm:block">
@@ -96,13 +83,13 @@ export default function TheoryPlansPage() {
             </header>
 
             <div className="max-w-5xl mx-auto px-4 py-8">
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
                     <div className="flex items-center gap-3">
-                        <div className="bg-indigo-500 w-10 h-10 rounded-lg flex items-center justify-center">
+                        <div className="bg-indigo-500 w-10 h-10 rounded-lg flex items-center justify-center shrink-0">
                             <BookOpen className="text-white" size={20} />
                         </div>
                         <div>
-                            <h2 className="text-2xl font-bold text-slate-900">Plan teorijske nastave</h2>
+                            <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Plan teorijske nastave</h2>
                             <p className="text-sm text-slate-500">Pregled svih grupa i rasporeda</p>
                         </div>
                     </div>
@@ -142,7 +129,7 @@ export default function TheoryPlansPage() {
                                     className="bg-white rounded-xl border border-slate-200 hover:border-indigo-300 transition-colors overflow-hidden"
                                 >
                                     <div className="p-5">
-                                        <div className="flex items-start justify-between gap-4">
+                                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2 mb-1">
                                                     <span className="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center shrink-0">
@@ -221,7 +208,7 @@ export default function TheoryPlansPage() {
                     assignedCandidateIds={plans.flatMap(p => (p.candidates || []).map(c => c.candidateId))}
                     enrollmentEligibleIds={enrollmentEligibleIds}
                     onClose={() => setCreateOpen(false)}
-                    onCreated={() => { setCreateOpen(false); loadData(); }}
+                    onCreated={() => { setCreateOpen(false); queryClient.invalidateQueries({ queryKey: ['theoryPlans'] }); }}
                 />
             )}
 

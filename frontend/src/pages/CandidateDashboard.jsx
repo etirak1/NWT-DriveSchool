@@ -1,15 +1,14 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
     GraduationCap, LogOut, CheckCircle, Clock, BookOpen,
     ChevronLeft, ChevronRight, MessageSquare, TrendingUp,
     DollarSign, AlertCircle, Plus, Car, XCircle, AlertTriangle,
     Info, Calendar
 } from 'lucide-react';
-import { api } from '../api/client';
 import FeedbackModal from '../components/FeedbackModal';
 import RescheduleModal from '../components/RescheduleModal';
-import { useAuth } from '../context/AuthContext';
+import LessonTable from '../components/LessonTable';
+import { useCandidateDashboard } from '../hooks/useCandidateDashboard';
 
 const PHASE_COLORS = {
     'POLOŽENO':   'bg-green-100 text-green-700',
@@ -19,181 +18,21 @@ const PHASE_COLORS = {
 };
 
 export default function CandidateDashboard() {
-    const navigate = useNavigate();
-    const { user, logout } = useAuth();
-    const userId = user.userId;
-    const email  = user.email;
-    const role   = user.role;
-
-    const [candidate,        setCandidate]        = useState(null);
-    const [phases,           setPhases]           = useState([]);
-    const [payments,         setPayments]         = useState([]);
-    const [account,          setAccount]          = useState(null);
-    const [financeStatus,    setFinanceStatus]    = useState(null);
-    const [announcements,    setAnnouncements]    = useState([]);
-    const [pageData,         setPageData]         = useState({ content: [], totalPages: 0, number: 0 });
-    const [loading,          setLoading]          = useState(true);
-    const [alreadyRated,     setAlreadyRated]     = useState(false);
-    const [showFeedback,     setShowFeedback]     = useState(false);
-    const [activeSection,    setActiveSection]    = useState('overview');
-    const [drivingCompleted,  setDrivingCompleted]  = useState(0);
-    const [theoryCompleted,   setTheoryCompleted]   = useState(0);
-    const [rescheduleLesson,  setRescheduleLesson]  = useState(null);
-    const [timeline,          setTimeline]          = useState([]);
-    const [pendingLessons,    setPendingLessons]    = useState([]);
-    const [theoryEligibility, setTheoryEligibility] = useState(null);
-
-    const fetchLessons = async (page = 0) => {
-        try {
-            const res = await api.get(
-                `/api/lessons/my-lessons?userId=${userId}&page=${page}&size=5&sortBy=dateTime&sortDir=desc`
-            );
-            setPageData(res.data);
-        } catch (e) { console.error(e); }
-    };
-
-    const loadProgress = async (candId) => {
-        // Theory progress
-        try {
-            const theoryRes = await api.get(`/api/theory-lessons/candidate/${candId}`);
-            const tCount = (theoryRes.data || []).filter(l => l.completed).length;
-            setTheoryCompleted(tCount);
-        } catch (e) { /* ignore */ }
-
-        // Phases (stari zapisi — za theoryPassed provjeru)
-        try {
-            const phaseRes = await api.get(`/api/phases/candidate/${candId}`);
-            setPhases(phaseRes.data);
-        } catch (e) { /* phases optional */ }
-
-        // Timeline (novi computed prikaz — za Progress tab)
-        try {
-            const tlRes = await api.get(`/api/phases/candidate/${candId}/timeline`);
-            setTimeline(tlRes.data);
-        } catch (e) { /* timeline optional */ }
-
-        // Feedback eligibility
-        try {
-            const ratedRes = await api.get(`/api/feedbacks/candidate/${candId}/exists`);
-            setAlreadyRated(ratedRes.data);
-        } catch (e) { /* ignore */ }
-
-        // Theory eligibility (je li nastava gotova i je li kandidat bio dovoljno prisutan)
-        try {
-            const eligRes = await api.get(`/api/theory-plans/candidate/${candId}/theory-eligibility`);
-            setTheoryEligibility(eligRes.data);
-        } catch (e) { /* ignore */ }
-    };
-
-    useEffect(() => {
-        let candIdRef = null;
-
-        const load = async () => {
-            try {
-                const candRes = await api.get(`/api/candidates/by-user/${userId}`);
-                const cand = candRes.data;
-                setCandidate(cand);
-
-                const candId = cand.candidateId;
-                candIdRef = candId;
-
-                await fetchLessons(0);
-
-                // Driving progress — koristi driving_lessons tabelu (ista kao timeline)
-                try {
-                    const drivingRes = await api.get(`/api/driving-lessons/candidate/${cand.candidateId}/count`);
-                    setDrivingCompleted(drivingRes.data.completed || 0);
-                } catch (e) { /* ignore */ }
-
-                await loadProgress(candId);
-
-                // Finance — koristimo candidateId (ne userId!)
-                try {
-                    const statusRes = await api.get(`/accounts/${candId}/status`);
-                    setFinanceStatus(statusRes.data);
-                } catch (e) { /* finance optional — korisnik mozda nema racun */ }
-                // Historija pojedinacnih uplata
-                try {
-                    const pmtRes = await api.get(`/accounts/${candId}/payments`);
-                    setPayments(pmtRes.data || []);
-                } catch (e) { /* ignore */ }
-
-                // Announcements
-                try {
-                    const annRes = await api.get('/api/announcements');
-                    setAnnouncements(annRes.data);
-                } catch (e) { /* announcements optional */ }
-
-                // Pending prijedlozi od instruktora
-                try {
-                    const pendRes = await api.get(`/api/lessons/pending?userId=${userId}`);
-                    setPendingLessons(pendRes.data || []);
-                } catch (e) { /* ignore */ }
-
-            } catch (err) {
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        load();
-
-        // Osvježi napredak kad se korisnik vrati na tab
-        const handleVisibilityChange = () => {
-            if (document.visibilityState === 'visible' && candIdRef) {
-                loadProgress(candIdRef);
-            }
-        };
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-
-        // Polling svakih 30 sekundi
-        const interval = setInterval(() => {
-            if (candIdRef) loadProgress(candIdRef);
-        }, 30000);
-
-        return () => {
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
-            clearInterval(interval);
-        };
-    }, []);
-
-    const handleLogout = () => {
-        logout();
-        navigate('/login');
-    };
-
-    const respondToLesson = async (lessonId, action) => {
-        try {
-            await api.patch(`/api/lessons/${lessonId}/${action}?userId=${userId}`);
-            const pendRes = await api.get(`/api/lessons/pending?userId=${userId}`);
-            setPendingLessons(pendRes.data || []);
-            await fetchLessons(0);
-        } catch (e) {
-            console.error(e);
-        }
-    };
-
-    const rule               = candidate?.rule;
-    const theoryTotal        = rule?.minTheoryLessons    ?? 40;
-    const drivingTotal       = rule?.minPracticalLessons ?? 40;
-    const theoryPct          = theoryTotal  > 0 ? Math.round((theoryCompleted  / theoryTotal)  * 100) : 0;
-    // Koristimo timeline kao autoritativan izvor — isti podaci kao u "Tok obuke" prikazu
-    const theoryExamPhase   = timeline.find(p => p.key === 'TEORIJSKI_ISPIT');
-    const practicalExamPhase = timeline.find(p => p.key === 'PRAKTICNI_ISPIT');
-    const theoryPassed    = theoryExamPhase?.examStatus?.toUpperCase()   === 'POLOŽENO';
-    const drivingExamPassed = practicalExamPhase?.examStatus?.toUpperCase() === 'POLOŽENO';
-    const effectiveDrivingCompleted = drivingExamPassed ? drivingTotal : drivingCompleted;
-    const drivingPct         = drivingTotal > 0 ? Math.round((effectiveDrivingCompleted / drivingTotal) * 100) : 0;
-    const allDone            = theoryPassed && drivingExamPassed;
-
-    // Finance helpers — oslanjamo se na financeStatus (CandidateStatusDTO)
-    const totalAmount       = Number(financeStatus?.totalAmount   ?? 0);
-    const amountPaid        = Number(financeStatus?.paidAmount    ?? 0);
-    const remainingDebt     = Number(financeStatus?.remainingDebt ?? 0);
-    const paymentPct        = totalAmount > 0 ? Math.round((amountPaid / totalAmount) * 100) : 0;
-    const enrollmentPaid    = financeStatus?.enrollmentEligible ?? false;
-    const examEligible      = financeStatus?.examEligible ?? false;
-    const obligations       = financeStatus?.obligations ?? [];
+    const {
+        email, role,
+        candidate, payments, financeStatus, announcements,
+        pageData, loading, alreadyRated, showFeedback, setShowFeedback,
+        activeSection, setActiveSection,
+        rescheduleLesson, setRescheduleLesson,
+        theoryCompleted, drivingCompleted,
+        timeline, pendingLessons, theoryEligibility,
+        fetchLessons, handleLogout, respondToLesson, setAlreadyRated,
+        theoryTotal, drivingTotal, theoryPct, drivingPct,
+        theoryPassed, drivingExamPassed, effectiveDrivingCompleted,
+        allDone,
+        totalAmount, amountPaid, remainingDebt, paymentPct,
+        enrollmentPaid, examEligible, obligations,
+    } = useCandidateDashboard();
 
     const navItems = [
         { id: 'overview',      label: 'Pregled'      },
@@ -241,12 +80,12 @@ export default function CandidateDashboard() {
                 </div>
 
                 <div className="max-w-5xl mx-auto px-4">
-                    <nav className="flex gap-1 border-t border-slate-100">
+                    <nav className="flex gap-1 border-t border-slate-100 overflow-x-auto">
                         {navItems.map(item => (
                             <button
                                 key={item.id}
                                 onClick={() => setActiveSection(item.id)}
-                                className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                                className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
                                     activeSection === item.id
                                         ? 'border-blue-500 text-blue-600'
                                         : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -366,7 +205,7 @@ export default function CandidateDashboard() {
                                 </div>
                                 <div className="divide-y divide-slate-100">
                                     {pendingLessons.map(lesson => (
-                                        <div key={lesson.lessonId} className="px-5 py-4 flex items-center justify-between gap-4">
+                                        <div key={lesson.lessonId} className="px-4 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                             <div>
                                                 <p className="text-sm font-semibold text-slate-800">
                                                     {(() => {
@@ -431,14 +270,14 @@ export default function CandidateDashboard() {
                                 <BookOpen size={16} className="text-purple-500" />
                                 Časovi teorije
                             </h2>
-                            <div className="grid grid-cols-3 gap-4 mb-5">
+                            <div className="grid grid-cols-3 sm:grid-cols-3 gap-3 mb-5">
                                 {[
                                     { label: 'Završeno',      value: theoryCompleted,               color: 'text-green-600'  },
                                     { label: 'Ukupno potrebno', value: theoryTotal,                    color: 'text-slate-800'  },
                                     { label: 'Preostalo',      value: Math.max(0, theoryTotal - theoryCompleted), color: 'text-purple-600' },
                                 ].map(s => (
-                                    <div key={s.label} className="bg-slate-50 rounded-lg p-4 text-center">
-                                        <p className={`text-3xl font-bold ${s.color}`}>{s.value}</p>
+                                    <div key={s.label} className="bg-slate-50 rounded-lg p-3 sm:p-4 text-center">
+                                        <p className={`text-2xl sm:text-3xl font-bold ${s.color}`}>{s.value}</p>
                                         <p className="text-xs text-slate-500 mt-1">{s.label}</p>
                                     </div>
                                 ))}
@@ -465,14 +304,14 @@ export default function CandidateDashboard() {
                                 <Car size={16} className="text-blue-500" />
                                 Časovi vožnje
                             </h2>
-                            <div className="grid grid-cols-3 gap-4 mb-5">
+                            <div className="grid grid-cols-3 sm:grid-cols-3 gap-3 mb-5">
                                 {[
                                     { label: 'Završeno',      value: effectiveDrivingCompleted,               color: 'text-green-600' },
                                     { label: 'Ukupno potrebno', value: drivingTotal,                                  color: 'text-slate-800' },
                                     { label: 'Preostalo',      value: Math.max(0, drivingTotal - effectiveDrivingCompleted), color: 'text-blue-600'  },
                                 ].map(s => (
-                                    <div key={s.label} className="bg-slate-50 rounded-lg p-4 text-center">
-                                        <p className={`text-3xl font-bold ${s.color}`}>{s.value}</p>
+                                    <div key={s.label} className="bg-slate-50 rounded-lg p-3 sm:p-4 text-center">
+                                        <p className={`text-2xl sm:text-3xl font-bold ${s.color}`}>{s.value}</p>
                                         <p className="text-xs text-slate-500 mt-1">{s.label}</p>
                                     </div>
                                 ))}
@@ -627,7 +466,7 @@ export default function CandidateDashboard() {
 
                         {/* Status badges */}
                         {financeStatus && (
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className={`rounded-xl border p-4 flex items-center gap-3 ${
                                     enrollmentPaid ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'
                                 }`}>
@@ -686,14 +525,14 @@ export default function CandidateDashboard() {
                             </div>
                             {financeStatus ? (
                                 <>
-                                    <div className="grid grid-cols-3 gap-4 mb-5">
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
                                         {[
                                             { label: 'Ukupna cijena obuke', value: `${totalAmount.toFixed(2)} KM`,   color: 'text-slate-800' },
                                             { label: 'Uplaćeno',            value: `${amountPaid.toFixed(2)} KM`,    color: 'text-green-600' },
                                             { label: 'Preostalo dugovanje', value: `${remainingDebt.toFixed(2)} KM`, color: remainingDebt > 0 ? 'text-red-500' : 'text-green-600' },
                                         ].map(s => (
-                                            <div key={s.label} className="bg-slate-50 rounded-lg p-4 text-center">
-                                                <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+                                            <div key={s.label} className="bg-slate-50 rounded-lg p-3 sm:p-4 text-center">
+                                                <p className={`text-xl sm:text-2xl font-bold ${s.color}`}>{s.value}</p>
                                                 <p className="text-xs text-slate-500 mt-1">{s.label}</p>
                                             </div>
                                         ))}
@@ -857,112 +696,6 @@ export default function CandidateDashboard() {
                         setAlreadyRated(true);
                     }}
                 />
-            )}
-        </div>
-    );
-}
-
-/* ── Lesson table sub-component ── */
-function LessonTable({ pageData, onPageChange, onReschedule, theoryPassed, drivingDone }) {
-    return (
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                    <BookOpen size={16} className="text-blue-500" />
-                    Historija časova
-                </h2>
-                {!drivingDone && theoryPassed ? (
-                    <Link
-                        to="/book-lesson"
-                        className="flex items-center gap-1.5 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg font-medium text-sm transition"
-                    >
-                        <Plus size={14} /> Zakaži čas
-                    </Link>
-                ) : !drivingDone ? (
-                    <span className="text-xs text-slate-400 italic">Teorijski ispit potreban</span>
-                ) : null}
-            </div>
-
-            {pageData.content.length === 0 ? (
-                <div className="px-6 py-10 text-center text-sm text-slate-400 italic">Nema pronađenih časova.</div>
-            ) : (
-                <table className="w-full text-left">
-                    <thead className="bg-slate-50 text-slate-500 text-xs">
-                        <tr>
-                            <th className="px-6 py-3 font-medium">Datum & vrijeme</th>
-                            <th className="px-6 py-3 font-medium">Instruktor</th>
-                            <th className="px-6 py-3 font-medium">Status</th>
-                            <th className="px-6 py-3 font-medium">Napomena</th>
-                            <th className="px-6 py-3 font-medium"></th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                        {pageData.content.map(lesson => (
-                            <tr key={lesson.lessonId} className="hover:bg-slate-50 transition-colors">
-                                <td className="px-6 py-4 text-sm font-medium text-slate-800">
-                                    {new Date(lesson.dateTime).toLocaleString('en-GB', {
-                                        day: '2-digit', month: 'short', year: 'numeric',
-                                        hour: '2-digit', minute: '2-digit'
-                                    })}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-slate-600">
-                                    {lesson.instructor?.firstName} {lesson.instructor?.lastName}
-                                </td>
-                                <td className="px-6 py-4">
-                                    <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
-                                        lesson.status === 'ODRAĐENO' ? 'bg-green-100 text-green-700'   :
-                                        lesson.status === 'ZAKAZANO' ? 'bg-blue-100 text-blue-700'     :
-                                        lesson.status === 'OTKAZANO' ? 'bg-red-100 text-red-700'       :
-                                        lesson.status === 'PENDING'  ? 'bg-yellow-100 text-yellow-700' :
-                                        'bg-slate-100 text-slate-600'
-                                    }`}>
-                                        {lesson.status === 'ODRAĐENO' ? 'Završeno'     :
-                                         lesson.status === 'ZAKAZANO' ? 'Zakazano'     :
-                                         lesson.status === 'OTKAZANO' ? 'Otkazano'     :
-                                         lesson.status === 'PENDING'  ? 'Na čekanju'   : lesson.status}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4 text-sm text-slate-400 italic">
-                                    {lesson.notes || '—'}
-                                </td>
-                                <td className="px-6 py-4">
-                                    {lesson.status === 'ZAKAZANO' && onReschedule && (
-                                        <button
-                                            onClick={() => onReschedule(lesson)}
-                                            className="text-xs px-2.5 py-1 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 font-medium transition"
-                                        >
-                                            Promijeni termin
-                                        </button>
-                                    )}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            )}
-
-            {pageData.totalPages > 1 && (
-                <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between">
-                    <p className="text-xs text-slate-400">
-                        Page {pageData.number + 1} of {pageData.totalPages}
-                    </p>
-                    <div className="flex gap-2">
-                        <button
-                            disabled={pageData.number === 0}
-                            onClick={() => onPageChange(pageData.number - 1)}
-                            className="p-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
-                            <ChevronLeft size={16} />
-                        </button>
-                        <button
-                            disabled={pageData.number + 1 === pageData.totalPages}
-                            onClick={() => onPageChange(pageData.number + 1)}
-                            className="p-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
-                            <ChevronRight size={16} />
-                        </button>
-                    </div>
-                </div>
             )}
         </div>
     );

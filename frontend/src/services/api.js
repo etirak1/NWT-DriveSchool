@@ -1,6 +1,6 @@
 import { api } from '../api/client';
 
-// ── USERS ────────────────────────────────────────────────────────────────────
+
 export const userApi = {
     getActiveInstructors: () => api.get('/api/users/active?role=INSTRUCTOR'),
     getAll:               () => api.get('/api/users'),
@@ -12,7 +12,7 @@ export const userApi = {
     delete: (id) => api.delete(`/api/users/${id}`),
 };
 
-// ── INSTRUCTORS ───────────────────────────────────────────────────────────────
+
 export const instructorApi = {
     getAll:    ()           => api.get('/api/instructors'),
     getById:   (id)         => api.get(`/api/instructors/${id}`),
@@ -21,7 +21,7 @@ export const instructorApi = {
     assignVehicle:      (id, vehicleId) => api.patch(`/api/instructors/${id}/assign-vehicle`, { vehicleId }),
 };
 
-// ── VEHICLES ──────────────────────────────────────────────────────────────────
+
 export const vehicleApi = {
     getAll:    ()         => api.get('/vehicles'),
     getById:   (id)       => api.get(`/vehicles/${id}`),
@@ -30,7 +30,7 @@ export const vehicleApi = {
     delete:    (id)       => api.delete(`/vehicles/${id}`),
 };
 
-// ── REPAIRS ───────────────────────────────────────────────────────────────────
+
 export const repairApi = {
     getAll:    ()         => api.get('/repairs'),
     getById:   (id)       => api.get(`/repairs/${id}`),

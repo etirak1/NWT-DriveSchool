@@ -9,6 +9,8 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../hooks/useNotifications';
 import { getErrorMessage } from '../utils/helpers';
+import AddDrivingLessonForm from '../components/AddDrivingLessonForm';
+import { TOTAL_DRIVING_LESSONS } from '../constants';
 
 const DAYS = ['Ned', 'Pon', 'Uto', 'Sri', 'Čet', 'Pet', 'Sub'];
 const MONTHS = [
@@ -69,7 +71,7 @@ export default function InstructorDashboard() {
         const loadScheduled = async () => {
             try {
                 const res = await api.get(
-                    `/api/lessons/instructor-lessons?userId=${userId}&size=200&sortBy=dateTime&sortDir=asc`
+                    `/api/lessons/instructor-lessons?size=200&sortBy=dateTime&sortDir=asc`
                 );
                 setScheduledLessons(res.data.content || []);
             } catch (e) {
@@ -83,7 +85,7 @@ export default function InstructorDashboard() {
     const refreshScheduled = async () => {
         try {
             const res = await api.get(
-                `/api/lessons/instructor-lessons?userId=${userId}&size=200&sortBy=dateTime&sortDir=asc`
+                `/api/lessons/instructor-lessons?size=200&sortBy=dateTime&sortDir=asc`
             );
             setScheduledLessons(res.data.content || []);
         } catch (e) {
@@ -287,7 +289,7 @@ export default function InstructorDashboard() {
             </header>
 
 
-            <div className="max-w-6xl mx-auto px-4 pb-10">
+            <div className="max-w-6xl mx-auto px-4 pt-6 pb-10">
 
                 {/* ══ KALENDAR ══════════════════════════════════════════════════ */}
                 {activeTab === 'calendar' && (
@@ -495,7 +497,7 @@ export default function InstructorDashboard() {
                             <div className="space-y-2">
                                 {candidates.map(c => {
                                     const cl = lessons[c.candidateId] || [];
-                                    const pct = Math.round((cl.length / 40) * 100);
+                                    const pct = Math.round((cl.length / TOTAL_DRIVING_LESSONS) * 100);
                                     const isSelected = c.candidateId === selectedCandidateId;
                                     const initials = ((c.user?.firstName?.[0] || '') + (c.user?.lastName?.[0] || '')).toUpperCase();
 
@@ -522,13 +524,13 @@ export default function InstructorDashboard() {
                                                     <p className="text-xs text-slate-400 truncate">{c.user?.email}</p>
                                                     <div className="mt-1.5">
                                                         <div className="flex items-center justify-between text-xs mb-0.5">
-                                                            <span className={cl.length >= 40 ? 'text-green-600 font-semibold' : 'text-slate-500'}>
-                                                                {cl.length}/40 časova
+                                                            <span className={cl.length >= TOTAL_DRIVING_LESSONS ? 'text-green-600 font-semibold' : 'text-slate-500'}>
+                                                                {cl.length}/{TOTAL_DRIVING_LESSONS} časova
                                                             </span>
                                                         </div>
                                                         <div className="w-full bg-slate-200 rounded-full h-1">
                                                             <div
-                                                                className={`h-1 rounded-full transition-all ${cl.length >= 40 ? 'bg-green-500' : 'bg-blue-400'}`}
+                                                                className={`h-1 rounded-full transition-all ${cl.length >= TOTAL_DRIVING_LESSONS ? 'bg-green-500' : 'bg-blue-400'}`}
                                                                 style={{ width: `${Math.min(100, pct)}%` }}
                                                             />
                                                         </div>
@@ -564,7 +566,7 @@ export default function InstructorDashboard() {
                                             </div>
                                             {(() => {
                                                 const cl = lessons[selectedCandidate.candidateId] || [];
-                                                const total = selectedCandidate.rule?.minPracticalLessons ?? 40;
+                                                const total = selectedCandidate.rule?.minPracticalLessons ?? TOTAL_DRIVING_LESSONS;
                                                 const allDone = cl.length >= total;
                                                 return !allDone ? (
                                                     <button
@@ -586,10 +588,10 @@ export default function InstructorDashboard() {
                                         </div>
 
                                         {/* Stats row */}
-                                        <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-slate-100">
+                                        <div className="grid grid-cols-3 sm:grid-cols-3 gap-2 mt-4 pt-4 border-t border-slate-100">
                                             {(() => {
                                                 const cl = lessons[selectedCandidate.candidateId] || [];
-                                                const total = selectedCandidate.rule?.minPracticalLessons ?? 40;
+                                                const total = selectedCandidate.rule?.minPracticalLessons ?? TOTAL_DRIVING_LESSONS;
                                                 const pct = Math.round((cl.length / total) * 100);
                                                 return (
                                                     <>
@@ -620,7 +622,7 @@ export default function InstructorDashboard() {
 
                                         {(() => {
                                             const cl = lessons[selectedCandidate.candidateId] || [];
-                                            const total = selectedCandidate.rule?.minPracticalLessons ?? 40;
+                                            const total = selectedCandidate.rule?.minPracticalLessons ?? TOTAL_DRIVING_LESSONS;
                                             const allDone = cl.length >= total;
 
                                             return (
@@ -816,30 +818,3 @@ export default function InstructorDashboard() {
     );
 }
 
-function AddDrivingLessonForm({ candidateId, existingNumbers, onAdd }) {
-    const available = Array.from({ length: 40 }, (_, i) => i + 1).filter(n => !existingNumbers.includes(n));
-    const [lessonNumber, setLessonNumber] = useState(available[0] ?? 1);
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-    const [notes, setNotes] = useState('');
-
-    useEffect(() => {
-        if (available.length > 0 && !available.includes(lessonNumber)) setLessonNumber(available[0]);
-    }, [existingNumbers.length]);
-
-    return (
-        <div className="flex items-center gap-2 flex-wrap bg-slate-50 rounded-lg px-4 py-3 border border-slate-200">
-            <select value={lessonNumber} onChange={e => setLessonNumber(Number(e.target.value))}
-                className="text-sm border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                {available.map(n => <option key={n} value={n}>Čas {n}</option>)}
-            </select>
-            <input type="date" value={date} onChange={e => setDate(e.target.value)}
-                className="text-sm border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
-            <input type="text" placeholder="Bilješka (opcionalno)" value={notes} onChange={e => setNotes(e.target.value)}
-                className="text-sm border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white flex-1 min-w-28" />
-            <button onClick={() => onAdd(candidateId, lessonNumber, date, notes)}
-                className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
-                <Plus size={14} /> Dodaj čas
-            </button>
-        </div>
-    );
-}

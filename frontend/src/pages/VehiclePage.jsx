@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useAsync } from '../hooks/useAsync';
+import { Car } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { vehicleApi, repairApi } from '../services/api';
 import VehicleTable from '../components/VehicleTable';
 import VehicleForm from '../components/VehicleForm';
@@ -10,13 +11,20 @@ import { Spinner, ErrorState } from '../components/States';
 import { useToast } from '../context/ToastContext';
 import { getErrorMessage } from '../utils/helpers';
 
+
 export default function VehiclesPage() {
     const { addToast } = useToast();
-    const { data: vRes, loading, error, refetch } = useAsync(() => vehicleApi.getAll());
-    const { data: rRes } = useAsync(() => repairApi.getAll());
+    const queryClient = useQueryClient();
 
-    const vehicles = vRes?.data || [];
-    const repairs = rRes?.data || [];
+    const { data: vehicles = [], isLoading: loading, isError: error, refetch } = useQuery({
+        queryKey: ['vehicles'],
+        queryFn: () => vehicleApi.getAll().then(r => r.data || []),
+    });
+
+    const { data: repairs = [] } = useQuery({
+        queryKey: ['repairs'],
+        queryFn: () => repairApi.getAll().then(r => r.data || []),
+    });
 
     const [showForm, setShowForm] = useState(false);
     const [editTarget, setEditTarget] = useState(null);
@@ -42,7 +50,7 @@ export default function VehiclesPage() {
             }
             setShowForm(false);
             setEditTarget(null);
-            refetch();
+            queryClient.invalidateQueries({ queryKey: ['vehicles'] });
         } catch (e) {
             addToast(getErrorMessage(e), 'error');
         } finally {
@@ -51,12 +59,13 @@ export default function VehiclesPage() {
     };
 
     const handleDelete = async () => {
+        if (!deleteTarget) return;
         setDeleting(true);
         try {
             await vehicleApi.delete(deleteTarget.vehicleId);
             addToast('Vozilo obrisano.', 'success');
             setDeleteTarget(null);
-            refetch();
+            queryClient.invalidateQueries({ queryKey: ['vehicles'] });
         } catch (e) {
             addToast(getErrorMessage(e), 'error');
             setDeleteTarget(null);
@@ -71,15 +80,23 @@ export default function VehiclesPage() {
     return (
         <div className="page">
             <div className="page-header">
-                <div>
-                    <h1 className="page-title">Vozila</h1>
-                    <p className="page-sub">Upravljanje voznim parkom autoškole</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <div className="page-icon">
+                        <Car size={22} />
+                    </div>
+                    <div>
+                        <h1 className="page-title">Vozila</h1>
+                        <p className="page-sub">Upravljanje voznim parkom autoškole</p>
+                    </div>
                 </div>
-                <button className="btn btn-primary" onClick={openAdd} disabled={!!error}>+ Dodaj vozilo</button>
+                <button className="btn btn-primary" onClick={openAdd} disabled={!!error}>
+                    + Dodaj vozilo
+                </button>
             </div>
 
             {loading && <Spinner />}
             {error && <ErrorState message={error} onRetry={refetch} />}
+
             {!loading && !error && (
                 <>
                     <div className="page-toolbar">

@@ -1,5 +1,6 @@
 package com.autoskola.trainingservice.controller;
 
+import com.autoskola.trainingservice.dto.AddSessionRequest;
 import com.autoskola.trainingservice.dto.CandidateAttendanceSummary;
 import com.autoskola.trainingservice.dto.TheoryEligibilityDTO;
 import com.autoskola.trainingservice.dto.TheoryPlanRequest;
@@ -54,6 +55,8 @@ public class TheoryPlanController {
 
         String status = (String) body.get("status");
         String note = (String) body.get("note");
+        String dateStr = (String) body.get("date");
+        String startTimeStr = (String) body.get("startTime");
 
         @SuppressWarnings("unchecked")
         List<Integer> rawIds = (List<Integer>) body.get("presentCandidateIds");
@@ -62,8 +65,16 @@ public class TheoryPlanController {
                 : null;
 
         return ResponseEntity.ok(
-                theoryPlanService.updateSession(sessionId, status, note, presentIds)
+                theoryPlanService.updateSession(sessionId, status, note, presentIds, dateStr, startTimeStr)
         );
+    }
+
+    @PostMapping("/{planId}/sessions/add")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<TheorySession> addReplacementSession(
+            @PathVariable Long planId,
+            @RequestBody AddSessionRequest request) {
+        return ResponseEntity.ok(theoryPlanService.addReplacementSession(planId, request));
     }
 
     @DeleteMapping("/{planId}")

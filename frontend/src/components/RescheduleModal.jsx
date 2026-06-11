@@ -71,7 +71,6 @@ export default function RescheduleModal({ lesson, onClose, onRescheduled }) {
             const dateTime = `${date}T${time}:00`;
             await api.patch(`/api/lessons/${lesson.lessonId}/reschedule`, {
                 dateTime,
-                userId: String(userId),
             });
             setSuccess(true);
             setTimeout(() => {

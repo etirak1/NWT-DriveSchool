@@ -8,7 +8,6 @@ import com.autoskola.trainingservice.service.InstructorService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -16,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@EnableMethodSecurity
 @RequestMapping("/api/instructors")
 public class InstructorController {
 

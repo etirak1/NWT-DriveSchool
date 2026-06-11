@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, Calendar, Clock, Users, BookOpen } from 'lucide-react';
 import { api } from '../api/client';
+import { TOTAL_THEORY_LESSONS } from '../constants';
 
 const DAYS = [
     { value: 'MONDAY',    label: 'Ponedjeljak' },
@@ -20,7 +21,7 @@ export default function TheoryPlanCreateModal({ candidates, onClose, onCreated, 
         day2OfWeek: 'THURSDAY',
         startTime: '09:00',
         durationMinutes: 45,
-        totalLessons: 40,
+        totalLessons: TOTAL_THEORY_LESSONS,
         lessonsPerSession: 3,
     });
     const [saving, setSaving] = useState(false);

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { getErrorMessage } from '../utils/helpers';
+import { SCHEDULE_TIMEOUT_MS } from '../constants';
 import { Calendar, Clock, Car, ArrowLeft, CheckCircle, User } from 'lucide-react';
 
 export default function BookLesson() {
@@ -23,9 +24,10 @@ export default function BookLesson() {
     const [eligibility, setEligibility] = useState(null);
 
     const TIME_SLOTS = [];
-    for (let h = 8; h <= 16; h++) {
-        TIME_SLOTS.push(`${String(h).padStart(2, '0')}:00`);
-        if (h < 16) TIME_SLOTS.push(`${String(h).padStart(2, '0')}:30`);
+    for (let minutes = 8 * 60; minutes <= 16 * 60; minutes += 45) {
+        const h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        TIME_SLOTS.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
     }
 
     useEffect(() => {
@@ -35,7 +37,7 @@ export default function BookLesson() {
                 setCandidate(res.data);
 
                 try {
-                    const elig = await api.get(`/api/lessons/eligibility?userId=${userId}`);
+                    const elig = await api.get(`/api/lessons/eligibility`);
                     setEligibility(elig.data);
                 } catch (e) {
                     console.error('Greška pri provjeri eligibility-ja:', e);
@@ -62,11 +64,24 @@ export default function BookLesson() {
                 const res = await api.get(
                     `/api/lessons/instructor/${instructor.instructorId}/availability?date=${date}`
                 );
-                const slots = res.data.map(lesson => {
-                    const dt = new Date(lesson.dateTime);
-                    return `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
+                const busy = new Set();
+                res.data.forEach(lesson => {
+                    const lessonStart = new Date(lesson.dateTime);
+                    const duration = lesson.duration || 45;
+                    const lessonEnd = new Date(lessonStart.getTime() + duration * 60 * 1000);
+
+                    TIME_SLOTS.forEach(slot => {
+                        const [h, m] = slot.split(':').map(Number);
+                        const slotStart = new Date(lessonStart);
+                        slotStart.setHours(h, m, 0, 0);
+                        const slotEnd = new Date(slotStart.getTime() + 45 * 60 * 1000);
+
+                        if (slotStart < lessonEnd && slotEnd > lessonStart) {
+                            busy.add(slot);
+                        }
+                    });
                 });
-                setBusySlots(slots);
+                setBusySlots([...busy]);
             } catch (err) {
                 console.error('Greška pri dohvatu rasporeda:', err);
                 setBusySlots([]);
@@ -102,7 +117,7 @@ export default function BookLesson() {
             };
             await api.post('/api/lessons', payload);
             setSuccess(true);
-            setTimeout(() => navigate('/dashboard'), 1800);
+            setTimeout(() => navigate('/dashboard'), SCHEDULE_TIMEOUT_MS);
         } catch (err) {
             const body = err?.response?.data;
             let msg = 'Greška pri zakazivanju časa.';

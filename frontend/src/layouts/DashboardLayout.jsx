@@ -29,7 +29,7 @@ export default function DashboardLayout() {
                         to="/dashboard"
                         className="flex items-center gap-1.5 text-slate-600 hover:text-slate-900 text-sm"
                     >
-                        <ArrowLeft size={16} /> Nazad na početnu
+                        <ArrowLeft size={16} /> <span className="hidden sm:inline">Nazad na početnu</span><span className="sm:hidden">Nazad</span>
                     </Link>
                     <div className="flex items-center gap-4">
                         <div className="text-right hidden sm:block">
@@ -42,11 +42,29 @@ export default function DashboardLayout() {
                             onClick={() => { localStorage.removeItem('token'); navigate('/login'); }}
                             className="flex items-center gap-1.5 px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
                         >
-                            <LogOut size={16} /> Odjava
+                            <LogOut size={16} /> <span className="hidden sm:inline">Odjava</span>
                         </button>
                     </div>
                 </div>
             </header>
+
+            {/* Mobile horizontal nav (visible only on small screens) */}
+            <nav className="sm:hidden bg-white border-b border-slate-200 flex overflow-x-auto">
+                {NAV.map(item => (
+                    <Link
+                        key={item.path}
+                        to={item.path}
+                        className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                            location.pathname === item.path
+                                ? 'border-blue-500 text-blue-600'
+                                : 'border-transparent text-slate-500 hover:text-slate-700'
+                        }`}
+                    >
+                        <span>{item.icon}</span>
+                        {item.label}
+                    </Link>
+                ))}
+            </nav>
 
             {/* Sidebar + Content */}
             <div className={`app-layout flex-1 ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>

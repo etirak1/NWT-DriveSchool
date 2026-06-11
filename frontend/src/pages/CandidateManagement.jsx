@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../api/client';
 import { LogOut, UserCheck, BookOpen, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react';
@@ -7,19 +7,15 @@ import TheoryLessonsModal from '../components/TheoryLessonsModal';
 import TrainingTimeline from '../components/TrainingTimeline';
 import { getErrorMessage } from '../utils/helpers';
 import { ErrorState, Spinner } from '../components/States';
-
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 export default function CandidateManagement() {
     const navigate = useNavigate();
-    const { user, logout } = useAuth();
-    const email  = user.email;
-    const role   = user.role;
+    const { user } = useAuth();
+    const email = user.email;
+    const role  = user.role;
+    const queryClient = useQueryClient();
 
-    const [candidates, setCandidates] = useState([]);
-    const [instructors, setInstructors] = useState([]);
-    const [instructorsUnavailable, setInstructorsUnavailable] = useState(false);
-    const [loading, setLoading] = useState(true);
-    const [loadError, setLoadError] = useState(null);
     const [expandedCandidate, setExpandedCandidate] = useState(null);
     const [successMsg, setSuccessMsg] = useState('');
     const [errorMsg, setErrorMsg] = useState('');
@@ -28,43 +24,27 @@ export default function CandidateManagement() {
     const [inlineErrors, setInlineErrors] = useState({});
     const [inlineSuccess, setInlineSuccess] = useState({});
 
-    const loadCandidates = async () => {
-        setLoading(true);
-        setLoadError(null);
-        try {
-            const candRes = await api.get('/api/candidates');
-            setCandidates(candRes.data);
-        } catch (err) {
-            setLoadError(getErrorMessage(err));
-        } finally {
-            setLoading(false);
-        }
-    };
+    const { data: candidates = [], isLoading: loading, isError: loadError, refetch: refetchCandidates } = useQuery({
+        queryKey: ['candidates'],
+        queryFn: () => api.get('/api/candidates').then(r => r.data),
+    });
 
-    useEffect(() => {
-        const loadData = async () => {
-            await loadCandidates();
-
-            try {
-                const instRes = await api.get('/api/instructors');
-                setInstructors(instRes.data);
-            } catch {
-                setInstructorsUnavailable(true);
-            }
-        };
-        loadData();
-    }, []);
+    const { data: instructors = [], isError: instructorsError } = useQuery({
+        queryKey: ['instructors-list'],
+        queryFn: () => api.get('/api/instructors').then(r => r.data),
+    });
+    const instructorsUnavailable = instructorsError;
 
     const toggleExpand = (candidateId) => {
         setExpandedCandidate(prev => prev === candidateId ? null : candidateId);
     };
+
     const assignInstructor = async (candidateId, instructorUserId) => {
         if (!instructorUserId) return;
         setInlineErrors(prev => ({ ...prev, [candidateId]: null }));
         try {
             await api.patch(`/api/candidates/${candidateId}/assign-instructor/${instructorUserId}`);
-            const res = await api.get('/api/candidates');
-            setCandidates(res.data);
+            queryClient.invalidateQueries({ queryKey: ['candidates'] });
             setInlineSuccess(prev => ({ ...prev, [candidateId]: 'Instruktor uspješno dodijeljen!' }));
             setTimeout(() => setInlineSuccess(prev => ({ ...prev, [candidateId]: null })), 3000);
         } catch (err) {
@@ -114,7 +94,7 @@ export default function CandidateManagement() {
             </header>
 
             <div className="max-w-5xl mx-auto px-4 py-8">
-                {loadError && <ErrorState message={loadError} onRetry={loadCandidates} />}
+                {loadError && <ErrorState message="Greška pri učitavanju kandidata." onRetry={refetchCandidates} />}
                 {successMsg && (
                     <div className="mb-4 bg-green-50 text-green-700 px-4 py-3 rounded-lg border border-green-100 text-sm">{successMsg}</div>
                 )}
@@ -137,7 +117,7 @@ export default function CandidateManagement() {
                 <div className="space-y-4">
                     {candidates.map(candidate => (
                         <div key={candidate.candidateId} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                            <div className="p-5 flex items-center justify-between">
+                            <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                 <div className="flex items-center gap-3">
                                     <div className="bg-blue-100 w-9 h-9 rounded-full flex items-center justify-center shrink-0">
                                         <span className="text-blue-600 font-bold text-sm">
@@ -149,12 +129,12 @@ export default function CandidateManagement() {
                                     </p>
                                 </div>
 
-                                <div className="flex items-center gap-3">
-                                    <div className="flex flex-col gap-1">
+                                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                                    <div className="flex flex-col gap-1 min-w-0">
                                         <div className="flex items-center gap-2">
-                                            <UserCheck size={16} className="text-slate-400" />
+                                            <UserCheck size={16} className="text-slate-400 shrink-0" />
                                             <select
-                                                className={`text-sm border rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 ${inlineErrors[candidate.candidateId] ? 'border-red-400' : 'border-slate-200'}`}
+                                                className={`text-sm border rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-0 ${inlineErrors[candidate.candidateId] ? 'border-red-400' : 'border-slate-200'}`}
                                                 value={candidate.assignedInstructor?.user?.userId || ''}
                                                 onChange={e => assignInstructor(candidate.candidateId, e.target.value)}
                                                 disabled={instructorsUnavailable}
@@ -214,16 +194,16 @@ export default function CandidateManagement() {
                     candidate={theoryModalCandidate}
                     onClose={() => { setTheoryModalCandidate(null); setTimelineRefreshCount(c => c + 1); }}
                     onProgressUpdate={(candidateId, newPct) => {
-                        setCandidates(prev => prev.map(c =>
-                            c.candidateId === candidateId
-                                ? { ...c, progressPercentage: newPct }
-                                : c
-                        ));
+                        queryClient.setQueryData(['candidates'], prev =>
+                            (prev || []).map(c =>
+                                c.candidateId === candidateId
+                                    ? { ...c, progressPercentage: newPct }
+                                    : c
+                            )
+                        );
                     }}
                 />
             )}
-
         </div>
     );
 }
-
