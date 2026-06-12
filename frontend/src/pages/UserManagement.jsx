@@ -113,7 +113,7 @@ export default function UserManagement() {
       <div className="min-h-screen bg-slate-50">
         {/* Header */}
         <header
-            className="relative"
+            className="relative overflow-hidden"
             style={{ background: 'linear-gradient(135deg, #1a3a8f 0%, #1e5adb 50%, #3b82f6 100%)' }}
         >
           <div

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { LogOut, ArrowLeft, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { LogOut, ArrowLeft, AlertTriangle, CheckCircle, XCircle, DollarSign, GraduationCap } from 'lucide-react';
 import { financeApi } from '../services/financeApi';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
@@ -45,6 +45,7 @@ function PaymentModal({ row, onClose, onSuccess }) {
     const [amount, setAmount] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [focused, setFocused] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -66,29 +67,44 @@ function PaymentModal({ row, onClose, onSuccess }) {
     const remaining = row.remainingDebt ?? 0;
 
     return (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
-                <div className="p-5 border-b border-gray-100">
-                    <div className="flex items-center justify-between">
-                        <h2 className="font-semibold text-gray-900">Evidentiraj uplatu</h2>
-                        <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
+        <div className="fixed inset-0 flex items-center justify-center p-4 z-50" style={{ background: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(4px)' }}>
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden" style={{ boxShadow: '0 25px 60px rgba(0,0,0,0.2)' }}>
+                <div
+                    className="flex items-center justify-between px-6 py-5"
+                    style={{ background: 'linear-gradient(135deg, #1e5adb 0%, #3b82f6 100%)' }}
+                >
+                    <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.2)' }}>
+                            <DollarSign className="text-white" size={17} />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-white leading-none">Evidentiraj uplatu</h3>
+                            <p className="text-xs text-blue-100 mt-1">{row._candidateName}</p>
+                        </div>
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">
-                        {row._candidateName} — preostalo: <strong className="text-red-600">{fmt(remaining)}</strong>
-                    </p>
+                    <button
+                        onClick={onClose}
+                        className="w-9 h-9 flex items-center justify-center rounded-xl text-blue-100 hover:text-white transition-colors"
+                        style={{ background: 'rgba(255,255,255,0.15)' }}
+                    >
+                        ✕
+                    </button>
                 </div>
 
-               
-                <div className="px-5 pt-4">
+                <div className="px-6 pt-5">
+                    <p className="text-sm text-slate-500">
+                        Preostalo: <strong className="text-red-600">{fmt(remaining)}</strong>
+                    </p>
+
                     {row.obligations && row.obligations.length > 0 && (
-                        <div>
-                            <p className="text-xs text-slate-500 mb-2">Stanje obaveza:</p>
+                        <div className="mt-3">
+                            <p className="text-xs font-semibold text-slate-500 mb-2">Stanje obaveza:</p>
                             {row.obligations.map((o, i) => (
-                                <div key={i} className="flex items-center justify-between text-xs py-1 border-b border-slate-50">
+                                <div key={i} className="flex items-center justify-between text-xs py-1.5 border-b border-slate-100 last:border-0">
                                     <span className={o.fullyPaid ? 'text-green-600 line-through' : 'text-slate-700'}>
                                         {o.label}
                                     </span>
-                                    <span className={o.fullyPaid ? 'text-green-600' : 'text-slate-500'}>
+                                    <span className={o.fullyPaid ? 'text-green-600 font-medium' : 'text-slate-500'}>
                                         {o.fullyPaid
                                             ? '✓ Plaćeno'
                                             : `Preostalo: ${fmt(o.remainingAmount)}`}
@@ -99,14 +115,15 @@ function PaymentModal({ row, onClose, onSuccess }) {
                     )}
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-5 space-y-4">
+                <form onSubmit={handleSubmit} className="p-6 space-y-5">
                     {error && (
-                        <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm text-red-700">
+                        <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl border border-red-200 flex items-center gap-3">
+                            <AlertTriangle className="w-5 h-5 flex-shrink-0" />
                             {error}
                         </div>
                     )}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">
                             Iznos uplate (KM) *
                         </label>
                         <input
@@ -115,22 +132,59 @@ function PaymentModal({ row, onClose, onSuccess }) {
                             required
                             value={amount}
                             onChange={e => setAmount(e.target.value)}
-                            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            onFocus={() => setFocused(true)}
+                            onBlur={() => setFocused(false)}
                             placeholder="npr. 300.00"
                             autoFocus
+                            className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-sm transition-all duration-200"
+                            style={{
+                                outline: 'none',
+                                borderColor: focused ? '#3b82f6' : '',
+                                boxShadow: focused ? '0 0 0 4px rgba(59,130,246,0.12)' : '',
+                                backgroundColor: focused ? '#fff' : '',
+                            }}
                         />
-                        <p className="text-xs text-slate-400 mt-1">
+                        <p className="text-xs text-slate-400 mt-2">
                             Sistem automatski raspoređuje uplatu na obaveze redom.
                         </p>
                     </div>
-                    <div className="flex gap-3">
-                        <button type="button" onClick={onClose}
-                                className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-700 hover:bg-gray-50">
+                    <div className="flex gap-3 pt-1">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="flex-1 px-4 py-3 border-2 border-slate-200 rounded-xl font-semibold text-sm text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all duration-200"
+                        >
                             Odustani
                         </button>
-                        <button type="submit" disabled={loading}
-                                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
-                            {loading ? 'Evidentira...' : 'Potvrdi uplatu'}
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="flex-1 px-4 py-3 rounded-xl font-semibold text-sm text-white transition-all duration-200"
+                            style={{
+                                background: loading ? '#93c5fd' : 'linear-gradient(135deg, #1e5adb 0%, #3b82f6 100%)',
+                                boxShadow: loading ? 'none' : '0 4px 15px rgba(59,130,246,0.4)',
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!loading) {
+                                    e.currentTarget.style.background = 'linear-gradient(135deg, #1a4fc4 0%, #2563eb 100%)';
+                                    e.currentTarget.style.transform = 'translateY(-1px)';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (!loading) {
+                                    e.currentTarget.style.background = 'linear-gradient(135deg, #1e5adb 0%, #3b82f6 100%)';
+                                    e.currentTarget.style.transform = '';
+                                }
+                            }}
+                        >
+                            {loading ? (
+                                <span className="flex items-center justify-center gap-2">
+                                    <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin inline-block" />
+                                    Evidentiram…
+                                </span>
+                            ) : (
+                                'Potvrdi uplatu'
+                            )}
                         </button>
                     </div>
                 </form>
@@ -144,57 +198,71 @@ function DetailModal({ row, onClose, onPay }) {
     const total = row.totalAmount ?? 1900;
 
     return (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
-                <div className="p-6 border-b border-gray-100 flex-shrink-0">
+        <div className="fixed inset-0 flex items-center justify-center p-4 z-50" style={{ background: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(4px)' }}>
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden" style={{ boxShadow: '0 25px 60px rgba(0,0,0,0.2)' }}>
+                <div
+                    className="px-6 py-5 flex-shrink-0"
+                    style={{ background: 'linear-gradient(135deg, #1e5adb 0%, #3b82f6 100%)' }}
+                >
                     <div className="flex items-start justify-between">
-                        <div>
-                            <h2 className="text-lg font-semibold text-gray-900">{row._candidateName}</h2>
-                            <p className="text-sm text-gray-400 mt-0.5">{row._candidateEmail}</p>
+                        <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.2)' }}>
+                                <DollarSign className="text-white" size={17} />
+                            </div>
+                            <div>
+                                <h2 className="text-lg font-bold text-white leading-none">{row._candidateName}</h2>
+                                <p className="text-xs text-blue-100 mt-1">{row._candidateEmail}</p>
+                            </div>
                         </div>
-                        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg">✕</button>
+                        <button
+                            onClick={onClose}
+                            className="w-9 h-9 flex items-center justify-center rounded-xl text-blue-100 hover:text-white transition-colors"
+                            style={{ background: 'rgba(255,255,255,0.15)' }}
+                        >
+                            ✕
+                        </button>
                     </div>
 
                     {/* Badges */}
-                    <div className="flex gap-2 mt-3 flex-wrap">
+                    <div className="flex gap-2 mt-4 flex-wrap">
                         {row.enrollmentEligible
-                            ? <span className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                            ? <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold" style={{ background: 'rgba(255,255,255,0.2)', color: '#bbf7d0' }}>
                                 <CheckCircle size={12} /> Upisnina plaćena
                               </span>
-                            : <span className="flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">
+                            : <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold" style={{ background: 'rgba(255,255,255,0.15)', color: '#fde68a' }}>
                                 <XCircle size={12} /> Upisnina nije plaćena
                               </span>
                         }
                         {row.examEligible
-                            ? <span className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                            ? <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold" style={{ background: 'rgba(255,255,255,0.2)', color: '#bbf7d0' }}>
                                 <CheckCircle size={12} /> Može na ispit
                               </span>
-                            : <span className="flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
+                            : <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold" style={{ background: 'rgba(255,255,255,0.15)', color: '#fecaca' }}>
                                 <XCircle size={12} /> Ne može na ispit
                               </span>
                         }
                     </div>
+                </div>
 
-                    {/* Sažetak */}
-                    <div className="grid grid-cols-3 gap-3 mt-4">
-                        <div className="bg-slate-50 rounded-xl p-3 text-center">
-                            <p className="text-xs text-slate-500">Ukupno</p>
-                            <p className="font-bold text-slate-800 text-sm mt-0.5">{fmt(total)}</p>
-                        </div>
-                        <div className="bg-green-50 rounded-xl p-3 text-center">
-                            <p className="text-xs text-green-600">Plaćeno</p>
-                            <p className="font-bold text-green-700 text-sm mt-0.5">{fmt(paidTotal)}</p>
-                        </div>
-                        <div className="bg-red-50 rounded-xl p-3 text-center">
-                            <p className="text-xs text-red-500">Preostalo</p>
-                            <p className="font-bold text-red-700 text-sm mt-0.5">{fmt(row.remainingDebt)}</p>
-                        </div>
+                {/* Sažetak */}
+                <div className="grid grid-cols-3 gap-3 px-6 pt-5 flex-shrink-0">
+                    <div className="rounded-2xl p-3 text-center" style={{ background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)' }}>
+                        <p className="text-xs text-blue-500 font-semibold">Ukupno</p>
+                        <p className="font-bold text-slate-800 text-sm mt-1">{fmt(total)}</p>
+                    </div>
+                    <div className="bg-green-50 rounded-2xl p-3 text-center">
+                        <p className="text-xs text-green-600 font-semibold">Plaćeno</p>
+                        <p className="font-bold text-green-700 text-sm mt-1">{fmt(paidTotal)}</p>
+                    </div>
+                    <div className="bg-red-50 rounded-2xl p-3 text-center">
+                        <p className="text-xs text-red-500 font-semibold">Preostalo</p>
+                        <p className="font-bold text-red-700 text-sm mt-1">{fmt(row.remainingDebt)}</p>
                     </div>
                 </div>
 
                 {/* Obaveze */}
                 <div className="flex-1 overflow-y-auto p-6">
-                    <h3 className="font-medium text-slate-900 mb-4">Raspored obaveza</h3>
+                    <h3 className="font-bold text-slate-900 mb-4">Raspored obaveza</h3>
                     {(row.obligations || []).length === 0 ? (
                         <p className="text-sm text-slate-400 text-center py-4">Nema obaveza</p>
                     ) : (
@@ -205,18 +273,18 @@ function DetailModal({ row, onClose, onPay }) {
                                     : 0;
                                 return (
                                     <div key={o.id || i}
-                                         className={`border rounded-xl p-4 ${o.fullyPaid ? 'border-green-200 bg-green-50' : 'border-slate-200'}`}>
+                                         className={`border-2 rounded-2xl p-4 transition-all ${o.fullyPaid ? 'border-green-200 bg-green-50' : 'border-slate-100'}`}>
                                         <div className="flex items-center justify-between mb-2">
                                             <div className="flex items-center gap-2">
                                                 {o.fullyPaid
                                                     ? <CheckCircle size={16} className="text-green-600 shrink-0" />
                                                     : <div className="w-4 h-4 rounded-full border-2 border-slate-300 shrink-0" />
                                                 }
-                                                <span className={`text-sm font-medium ${o.fullyPaid ? 'text-green-700' : 'text-slate-800'}`}>
+                                                <span className={`text-sm font-semibold ${o.fullyPaid ? 'text-green-700' : 'text-slate-800'}`}>
                                                     {o.label}
                                                 </span>
                                             </div>
-                                            <span className="text-xs font-semibold text-slate-600">
+                                            <span className="text-xs font-bold text-slate-600">
                                                 {fmt(o.totalAmount)}
                                             </span>
                                         </div>
@@ -235,15 +303,29 @@ function DetailModal({ row, onClose, onPay }) {
                     )}
                 </div>
 
-                <div className="p-4 border-t border-gray-100 flex gap-3 flex-shrink-0">
+                <div className="p-5 border-t border-slate-100 flex gap-3 flex-shrink-0">
                     {(row.remainingDebt ?? 0) > 0 && (
-                        <button onClick={onPay}
-                                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700">
+                        <button
+                            onClick={onPay}
+                            className="flex-1 px-4 py-3 rounded-xl font-semibold text-sm text-white transition-all duration-200"
+                            style={{
+                                background: 'linear-gradient(135deg, #1e5adb 0%, #3b82f6 100%)',
+                                boxShadow: '0 4px 15px rgba(59,130,246,0.4)',
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.background = 'linear-gradient(135deg, #1a4fc4 0%, #2563eb 100%)';
+                                e.currentTarget.style.transform = 'translateY(-1px)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'linear-gradient(135deg, #1e5adb 0%, #3b82f6 100%)';
+                                e.currentTarget.style.transform = '';
+                            }}
+                        >
                             Evidentiraj uplatu
                         </button>
                     )}
                     <button onClick={onClose}
-                            className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-700 hover:bg-gray-50">
+                            className="flex-1 px-4 py-3 border-2 border-slate-200 rounded-xl font-semibold text-sm text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all duration-200">
                         Zatvori
                     </button>
                 </div>
@@ -271,11 +353,11 @@ async function generateReport(rows) {
         </div>
         <div style="display:flex;gap:12px;margin-bottom:24px">
             ${[
-                ['Ukupno zaduženo', fmt(totalAmount), '#2563eb'],
-                ['Naplaćeno',       fmt(totalPaid),   '#16a34a'],
-                ['Preostali dug',   fmt(totalDebt),   '#dc2626'],
-                ['Kandidata',       withAccount.length,'#374151'],
-            ].map(([lbl, val, col]) => `
+        ['Ukupno zaduženo', fmt(totalAmount), '#2563eb'],
+        ['Naplaćeno',       fmt(totalPaid),   '#16a34a'],
+        ['Preostali dug',   fmt(totalDebt),   '#dc2626'],
+        ['Kandidata',       withAccount.length,'#374151'],
+    ].map(([lbl, val, col]) => `
                 <div style="flex:1;border:1px solid #e5e7eb;border-radius:8px;padding:12px;text-align:center">
                     <div style="font-size:10px;color:#6b7280;text-transform:uppercase">${lbl}</div>
                     <div style="font-size:16px;font-weight:700;color:${col};margin-top:4px">${val}</div>
@@ -285,21 +367,21 @@ async function generateReport(rows) {
             <thead>
                 <tr style="background:#f8fafc">
                     ${['#','Kandidat','Upisnina','Ukupno','Plaćeno','Preostalo','Status'].map(h =>
-                        `<th style="padding:9px 10px;text-align:left;font-size:11px;color:#374151;border-bottom:1px solid #e5e7eb">${h}</th>`
-                    ).join('')}
+        `<th style="padding:9px 10px;text-align:left;font-size:11px;color:#374151;border-bottom:1px solid #e5e7eb">${h}</th>`
+    ).join('')}
                 </tr>
             </thead>
             <tbody>
                 ${withAccount.map((a, i) => {
-                    const enroll = (a.obligations || []).find(o => o.type === 'ENROLLMENT');
-                    const enrollOk = enroll?.fullyPaid;
-                    const debt = parseFloat(a.remainingDebt || 0);
-                    const paid = parseFloat(a.paidAmount || 0);
-                    const tot  = parseFloat(a.totalAmount || 1900);
-                    let bgS = '#dcfce7', colS = '#166534', lbl = 'Izmireno';
-                    if (debt > 0 && debt < tot) { bgS = '#fef3c7'; colS = '#92400e'; lbl = Math.round((paid/tot)*100)+'% plaćeno'; }
-                    if (paid === 0) { bgS = '#fee2e2'; colS = '#991b1b'; lbl = 'Nije plaćeno'; }
-                    return `<tr style="border-bottom:1px solid #f3f4f6">
+        const enroll = (a.obligations || []).find(o => o.type === 'ENROLLMENT');
+        const enrollOk = enroll?.fullyPaid;
+        const debt = parseFloat(a.remainingDebt || 0);
+        const paid = parseFloat(a.paidAmount || 0);
+        const tot  = parseFloat(a.totalAmount || 1900);
+        let bgS = '#dcfce7', colS = '#166534', lbl = 'Izmireno';
+        if (debt > 0 && debt < tot) { bgS = '#fef3c7'; colS = '#92400e'; lbl = Math.round((paid/tot)*100)+'% plaćeno'; }
+        if (paid === 0) { bgS = '#fee2e2'; colS = '#991b1b'; lbl = 'Nije plaćeno'; }
+        return `<tr style="border-bottom:1px solid #f3f4f6">
                         <td style="padding:8px 10px">${i+1}</td>
                         <td style="padding:8px 10px;font-weight:600">${a._candidateName}</td>
                         <td style="padding:8px 10px">
@@ -314,7 +396,7 @@ async function generateReport(rows) {
                             <span style="background:${bgS};color:${colS};padding:2px 7px;border-radius:999px;font-size:11px">${lbl}</span>
                         </td>
                     </tr>`;
-                }).join('')}
+    }).join('')}
             </tbody>
         </table>
         <div style="margin-top:24px;text-align:center;color:#9ca3af;font-size:11px">
@@ -352,6 +434,14 @@ export default function FinanceDashboard() {
     const { user, logout } = useAuth();
     const email  = user.email;
     const role   = user.role;
+
+    const roleBadgeStyle =
+        role === 'ADMIN'
+            ? { background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)' }
+            : role === 'INSTRUCTOR'
+                ? { background: 'rgba(255,255,255,0.15)', color: '#bfdbfe', border: '1px solid rgba(255,255,255,0.25)' }
+                : { background: 'rgba(255,255,255,0.15)', color: '#a7f3d0', border: '1px solid rgba(255,255,255,0.25)' };
+
     const loadData = useCallback(async () => {
         setLoading(true);
         setLoadError(null);
@@ -401,6 +491,11 @@ export default function FinanceDashboard() {
         }
     };
 
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        navigate('/login');
+    };
+
     const withAccounts   = rows.filter(r => r._hasAccount);
     const noAccountCount = rows.filter(r => !r._hasAccount).length;
     const totalAmount    = withAccounts.reduce((s, a) => s + parseFloat(a.totalAmount || 0), 0);
@@ -415,30 +510,100 @@ export default function FinanceDashboard() {
 
     return (
         <div className="min-h-screen bg-slate-50">
-            <header className="bg-white border-b border-slate-200">
-                <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-                    <Link to="/dashboard" className="flex items-center gap-1.5 text-slate-600 hover:text-slate-900 text-sm">
-                        <ArrowLeft size={16} /> Nazad na početnu
-                    </Link>
+            {/* Header */}
+            <header
+                className="relative overflow-hidden"
+                style={{ background: 'linear-gradient(135deg, #1a3a8f 0%, #1e5adb 50%, #3b82f6 100%)' }}
+            >
+                {/* Subtle decorative orb */}
+                <div
+                    className="absolute top-0 right-0 w-96 h-full rounded-full blur-3xl pointer-events-none"
+                    style={{ background: 'rgba(147,197,253,0.1)', transform: 'translate(30%, -20%)' }}
+                />
+
+                <div className="relative max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <div className="text-right hidden sm:block">
-                            <p className="text-sm font-semibold text-slate-800">{email}</p>
-                            <span className="inline-block text-xs px-2 py-0.5 rounded-full font-semibold bg-purple-100 text-purple-700">{role}</span>
+                        <div className="flex items-center gap-3">
+                            <div
+                                className="w-11 h-11 rounded-xl flex items-center justify-center border"
+                                style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', borderColor: 'rgba(255,255,255,0.3)' }}
+                            >
+                                <DollarSign className="text-white" size={22} />
+                            </div>
+                            <div className="hidden sm:block">
+                                <h1 className="text-lg font-bold text-white leading-none">Finansije</h1>
+                                <p className="text-xs text-blue-200 mt-0.5">Evidencija uplata kandidata</p>
+                            </div>
                         </div>
-                        <button onClick={() => { localStorage.removeItem('token'); navigate('/login'); }}
-                                className="flex items-center gap-1.5 px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">
-                            <LogOut size={16} /> Odjava
+
+                        <Link
+                            to="/dashboard"
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-blue-100 transition-all duration-200 hover:text-white"
+                            style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.2)' }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+                        >
+                            <ArrowLeft size={15} />
+                            <span className="hidden sm:inline">Nazad na početnu</span>
+                        </Link>
+                    </div>
+
+                    {/* Right side */}
+                    <div className="flex items-center gap-3">
+                        <div className="hidden sm:flex flex-col items-end">
+                            <p className="text-sm font-semibold text-white leading-none">{email}</p>
+                            <span
+                                className="inline-block text-xs px-2 py-0.5 rounded-full font-semibold mt-1"
+                                style={roleBadgeStyle}
+                            >
+                                {role || 'USER'}
+                            </span>
+                        </div>
+
+                        <button
+                            onClick={handleLogout}
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-blue-100 hover:text-white transition-all duration-200"
+                            style={{ background: 'rgba(255,255,255,0.1)' }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                            }}
+                        >
+                            <LogOut size={16} />
+                            <span className="hidden sm:inline">Odjava</span>
                         </button>
                     </div>
                 </div>
+
+                {/* Mobile nazad link */}
+                <div className="sm:hidden border-t px-4 py-3" style={{ borderColor: 'rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.15)', backdropFilter: 'blur(8px)' }}>
+                    <Link
+                        to="/dashboard"
+                        className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold text-blue-100 hover:text-white transition-all"
+                        style={{ background: 'rgba(255,255,255,0.08)' }}
+                    >
+                        <ArrowLeft size={15} />
+                        Nazad na početnu
+                    </Link>
+                </div>
             </header>
 
-            <div className="max-w-5xl mx-auto px-4 py-8">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-                    <div>
-                        <h2 className="text-2xl font-bold text-slate-900">Finansije</h2>
-                        <p className="text-slate-500 text-sm mt-0.5">Evidencija uplata kandidata</p>
+            {/* Main */}
+            <main className="max-w-6xl mx-auto px-4 py-10">
+                {/* Section header */}
+                <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
+                    <div className="flex items-center gap-3">
+                        <div
+                            className="w-10 h-10 rounded-xl flex items-center justify-center"
+                            style={{ background: 'linear-gradient(135deg, #1e5adb 0%, #3b82f6 100%)', boxShadow: '0 4px 15px rgba(59,130,246,0.35)' }}
+                        >
+                            <DollarSign className="text-white" size={18} />
+                        </div>
+                        <h2 className="text-2xl font-extrabold text-slate-900">Finansijski Pregled</h2>
                     </div>
+
                     <button
                         onClick={async () => {
                             setGeneratingPdf(true);
@@ -446,151 +611,240 @@ export default function FinanceDashboard() {
                             finally { setGeneratingPdf(false); }
                         }}
                         disabled={withAccounts.length === 0 || generatingPdf}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-40 shadow-sm"
+                        className="flex items-center gap-2 text-white px-4 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 disabled:opacity-40"
+                        style={{
+                            background: 'linear-gradient(135deg, #1e5adb 0%, #3b82f6 100%)',
+                            boxShadow: '0 4px 15px rgba(59,130,246,0.4)',
+                        }}
+                        onMouseEnter={(e) => {
+                            if (withAccounts.length === 0 || generatingPdf) return;
+                            e.currentTarget.style.background = 'linear-gradient(135deg, #1a4fc4 0%, #2563eb 100%)';
+                            e.currentTarget.style.boxShadow = '0 6px 20px rgba(59,130,246,0.5)';
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'linear-gradient(135deg, #1e5adb 0%, #3b82f6 100%)';
+                            e.currentTarget.style.boxShadow = '0 4px 15px rgba(59,130,246,0.4)';
+                            e.currentTarget.style.transform = '';
+                        }}
                     >
                         {generatingPdf ? 'Generišem...' : 'Izvještaj'}
                     </button>
                 </div>
 
+                <p className="text-slate-500 text-sm mb-8">
+                    Pratite uplate, obaveze i status kandidata na jednom mjestu.
+                </p>
+
                 {loadError && <ErrorState message={loadError} onRetry={loadData} />}
 
                 {noAccountCount > 0 && !loadError && (
-                    <div className="mb-5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center gap-2 text-sm text-amber-800">
-                        <AlertTriangle size={15} />
+                    <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 flex items-center gap-3 text-sm text-amber-800">
+                        <AlertTriangle size={16} className="flex-shrink-0" />
                         {noAccountCount} kandidat(a) nema finansijski račun — kliknite "Kreiraj račun" pored njihovog imena.
                     </div>
                 )}
 
                 {/* Sažetak */}
-                {!loadError && <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                    {[
-                        { label: 'Ukupno zaduženo', value: fmt(totalAmount),  icon: '📋', color: 'text-slate-900' },
-                        { label: 'Naplaćeno',        value: fmt(totalPaid),   icon: '✅', color: 'text-green-700' },
-                        { label: 'Preostali dug',    value: fmt(totalDebt),   icon: '⏳', color: 'text-red-600'  },
-                        { label: 'Kandidata',        value: rows.length,      icon: '👥', color: 'text-blue-700' },
-                    ].map(s => (
-                        <div key={s.label} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-                            <div className="text-xl mb-1">{s.icon}</div>
-                            <div className={`text-lg font-bold ${s.color}`}>{s.value}</div>
-                            <div className="text-xs text-slate-400 mt-0.5">{s.label}</div>
-                        </div>
-                    ))}
-                </div>}
+                {!loadError && (
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                        {[
+                            { label: 'Ukupno zaduženo', value: fmt(totalAmount), icon: DollarSign, bg: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)', iconColor: 'text-blue-500', valueColor: 'text-slate-900' },
+                            { label: 'Naplaćeno', value: fmt(totalPaid), icon: CheckCircle, bg: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)', iconColor: 'text-green-500', valueColor: 'text-green-700' },
+                            { label: 'Preostali dug', value: fmt(totalDebt), icon: AlertTriangle, bg: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)', iconColor: 'text-red-500', valueColor: 'text-red-600' },
+                            { label: 'Kandidata', value: rows.length, icon: GraduationCap, bg: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)', iconColor: 'text-blue-500', valueColor: 'text-blue-700' },
+                        ].map(s => (
+                            <div
+                                key={s.label}
+                                className="bg-white rounded-2xl border-2 border-slate-100 p-5 transition-all duration-300"
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.borderColor = '#3b82f6';
+                                    e.currentTarget.style.boxShadow = '0 8px 30px rgba(59,130,246,0.12)';
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.borderColor = '#f1f5f9';
+                                    e.currentTarget.style.boxShadow = '';
+                                    e.currentTarget.style.transform = '';
+                                }}
+                            >
+                                <div
+                                    className="w-10 h-10 rounded-xl flex items-center justify-center mb-3"
+                                    style={{ background: s.bg }}
+                                >
+                                    <s.icon className={s.iconColor} size={18} />
+                                </div>
+                                <div className={`text-lg font-bold ${s.valueColor}`}>{s.value}</div>
+                                <div className="text-xs text-slate-400 mt-0.5">{s.label}</div>
+                            </div>
+                        ))}
+                    </div>
+                )}
 
                 {/* Tabela */}
-                {!loadError && <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                    <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-                        <h3 className="font-semibold text-slate-900">Svi kandidati</h3>
-                        <input type="text" placeholder="Pretraži..."
-                               value={search} onChange={e => setSearch(e.target.value)}
-                               className="border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-56" />
-                    </div>
+                {!loadError && (
+                    <div className="bg-white rounded-2xl border-2 border-slate-100 shadow-sm overflow-hidden">
+                        <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+                            <h3 className="font-bold text-slate-900 text-lg">Svi kandidati</h3>
+                            <input
+                                type="text" placeholder="Pretraži..."
+                                value={search} onChange={e => setSearch(e.target.value)}
+                                className="border-2 border-slate-200 bg-slate-50 rounded-xl px-4 py-2.5 text-sm transition-all duration-200 w-full sm:w-56"
+                                style={{ outline: 'none' }}
+                                onFocus={(e) => {
+                                    e.currentTarget.style.borderColor = '#3b82f6';
+                                    e.currentTarget.style.boxShadow = '0 0 0 4px rgba(59,130,246,0.12)';
+                                    e.currentTarget.style.backgroundColor = '#fff';
+                                }}
+                                onBlur={(e) => {
+                                    e.currentTarget.style.borderColor = '#e2e8f0';
+                                    e.currentTarget.style.boxShadow = '';
+                                    e.currentTarget.style.backgroundColor = '#f8fafc';
+                                }}
+                            />
+                        </div>
 
-                    {error && (
-                        <div className="mx-5 mt-4 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">{error}</div>
-                    )}
+                        {error && (
+                            <div className="mx-6 mt-4 bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl border border-red-200 flex items-center gap-3">
+                                <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+                                {error}
+                            </div>
+                        )}
 
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead>
                                 <tr className="bg-slate-50 text-left">
-                                    <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Kandidat</th>
-                                    <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Status</th>
-                                    <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Obaveze</th>
-                                    <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Preostalo</th>
-                                    <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide"></th>
+                                    <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Kandidat</th>
+                                    <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Status</th>
+                                    <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Obaveze</th>
+                                    <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Preostalo</th>
+                                    <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide"></th>
                                 </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-50">
+                                </thead>
+                                <tbody className="divide-y divide-slate-50">
                                 {loading ? (
-                                    <tr><td colSpan={5} className="px-5 py-12 text-center text-slate-400">Učitavanje...</td></tr>
+                                    <tr><td colSpan={5} className="px-6 py-16 text-center text-slate-400">
+                                        <div
+                                            className="inline-flex w-12 h-12 rounded-xl items-center justify-center mb-3"
+                                            style={{ background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)' }}
+                                        >
+                                            <DollarSign className="text-blue-400" size={20} />
+                                        </div>
+                                        <p className="font-medium text-slate-500">Učitavanje...</p>
+                                    </td></tr>
                                 ) : filtered.length === 0 ? (
-                                    <tr><td colSpan={5} className="px-5 py-12 text-center text-slate-400">Nema kandidata</td></tr>
+                                    <tr><td colSpan={5} className="px-6 py-16 text-center text-slate-400">Nema kandidata</td></tr>
                                 ) : filtered.map(row => (
                                     <tr key={row.candidateId} className="hover:bg-slate-50 transition-colors">
-                                        <td className="px-5 py-4">
+                                        <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center shrink-0">
+                                                <div
+                                                    className="w-9 h-9 rounded-xl text-xs font-bold flex items-center justify-center shrink-0"
+                                                    style={{ background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)', color: '#3b82f6' }}
+                                                >
                                                     {row._candidateName.split(' ').map(n => n[0]).join('').slice(0, 2)}
                                                 </div>
                                                 <div>
-                                                    <div className="font-medium text-slate-900">{row._candidateName}</div>
+                                                    <div className="font-semibold text-slate-900">{row._candidateName}</div>
                                                     <div className="text-xs text-slate-400">{row._candidateEmail}</div>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-5 py-4">
+                                        <td className="px-6 py-4">
                                             {!row._hasAccount ? (
-                                                <span className="text-xs text-amber-600 font-medium">Nema račun</span>
+                                                <span className="text-xs text-amber-600 font-semibold">Nema račun</span>
                                             ) : (
                                                 <div className="flex flex-col gap-1">
-                                                    <span className={`inline-flex items-center gap-1 text-xs font-medium ${row.enrollmentEligible ? 'text-green-600' : 'text-amber-600'}`}>
-                                                        {row.enrollmentEligible ? <CheckCircle size={11} /> : <XCircle size={11} />}
-                                                        Upisnina
-                                                    </span>
-                                                    <span className={`inline-flex items-center gap-1 text-xs font-medium ${row.examEligible ? 'text-green-600' : 'text-slate-400'}`}>
-                                                        {row.examEligible ? <CheckCircle size={11} /> : <XCircle size={11} />}
+                                                        <span className={`inline-flex items-center gap-1 text-xs font-semibold ${row.enrollmentEligible ? 'text-green-600' : 'text-amber-600'}`}>
+                                                            {row.enrollmentEligible ? <CheckCircle size={11} /> : <XCircle size={11} />}
+                                                            Upisnina
+                                                        </span>
+                                                    <span className={`inline-flex items-center gap-1 text-xs font-semibold ${row.examEligible ? 'text-green-600' : 'text-slate-400'}`}>
+                                                            {row.examEligible ? <CheckCircle size={11} /> : <XCircle size={11} />}
                                                         Ispit
-                                                    </span>
+                                                        </span>
                                                 </div>
                                             )}
                                         </td>
-                                        <td className="px-5 py-4 min-w-[180px]">
+                                        <td className="px-6 py-4 min-w-[180px]">
                                             {row._hasAccount
                                                 ? <ObligationsBar obligations={row.obligations} />
                                                 : <span className="text-xs text-slate-400">—</span>
                                             }
                                         </td>
-                                        <td className="px-5 py-4">
+                                        <td className="px-6 py-4">
                                             {row._hasAccount ? (
-                                                <span className={`font-semibold text-sm ${parseFloat(row.remainingDebt || 0) > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                                                    {fmt(row.remainingDebt)}
-                                                </span>
-                                            ) : '—'}
-                                        </td>
-                                        <td className="px-5 py-4 text-right">
-                                            {!row._hasAccount ? (
-                                                <button onClick={() => ensureAccount(row.candidateId)}
-                                                        disabled={ensuringId === row.candidateId}
-                                                        className="px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-medium hover:bg-amber-100 disabled:opacity-50">
-                                                    {ensuringId === row.candidateId ? 'Kreira...' : 'Kreiraj račun'}
-                                                </button>
+                                                <span className={`font-bold text-sm ${parseFloat(row.remainingDebt || 0) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                                        {fmt(row.remainingDebt)}
+                                                    </span>
                                             ) : (
-                                                <div className="flex gap-2 justify-end">
-                                                    {parseFloat(row.remainingDebt || 0) > 0 && (
-                                                        <button onClick={() => setPayingRow(row)}
-                                                                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700">
-                                                            + Uplata
+                                                <span className="text-xs text-slate-400">—</span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            {row._hasAccount ? (
+                                                <div className="flex items-center justify-end gap-2">
+                                                    {(row.remainingDebt ?? 0) > 0 && (
+                                                        <button
+                                                            onClick={() => setPayingRow(row)}
+                                                            className="px-3 py-1.5 rounded-xl text-xs font-semibold text-white transition-all duration-200"
+                                                            style={{
+                                                                background: 'linear-gradient(135deg, #1e5adb 0%, #3b82f6 100%)',
+                                                                boxShadow: '0 2px 8px rgba(59,130,246,0.35)',
+                                                            }}
+                                                            onMouseEnter={(e) => {
+                                                                e.currentTarget.style.background = 'linear-gradient(135deg, #1a4fc4 0%, #2563eb 100%)';
+                                                            }}
+                                                            onMouseLeave={(e) => {
+                                                                e.currentTarget.style.background = 'linear-gradient(135deg, #1e5adb 0%, #3b82f6 100%)';
+                                                            }}
+                                                        >
+                                                            Uplata
                                                         </button>
                                                     )}
-                                                    <button onClick={() => setSelectedRow(row)}
-                                                            className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-medium hover:bg-slate-200">
+                                                    <button
+                                                        onClick={() => setSelectedRow(row)}
+                                                        className="px-3 py-1.5 border-2 border-slate-200 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all duration-200"
+                                                    >
                                                         Detalji
                                                     </button>
                                                 </div>
+                                            ) : (
+                                                <button
+                                                    onClick={() => ensureAccount(row.candidateId)}
+                                                    disabled={ensuringId === row.candidateId}
+                                                    className="px-3 py-1.5 rounded-xl text-xs font-semibold text-white transition-all duration-200 disabled:opacity-50"
+                                                    style={{
+                                                        background: 'linear-gradient(135deg, #1e5adb 0%, #3b82f6 100%)',
+                                                        boxShadow: '0 2px 8px rgba(59,130,246,0.35)',
+                                                    }}
+                                                >
+                                                    {ensuringId === row.candidateId ? 'Kreiram...' : 'Kreiraj račun'}
+                                                </button>
                                             )}
                                         </td>
                                     </tr>
                                 ))}
-                            </tbody>
-                        </table>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>}
-            </div>
+                )}
+            </main>
 
-            {selectedRow && !payingRow && (
+            {selectedRow && (
                 <DetailModal
                     row={selectedRow}
                     onClose={() => setSelectedRow(null)}
                     onPay={() => { setPayingRow(selectedRow); setSelectedRow(null); }}
                 />
             )}
-
             {payingRow && (
                 <PaymentModal
                     row={payingRow}
                     onClose={() => setPayingRow(null)}
-                    onSuccess={() => { loadData(); setPayingRow(null); }}
+                    onSuccess={loadData}
                 />
             )}
         </div>
