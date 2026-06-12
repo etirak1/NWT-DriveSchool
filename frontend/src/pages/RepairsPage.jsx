@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Wrench, Plus } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { repairApi, vehicleApi } from '../services/api';
 import RepairTable from '../components/RepairTable';
@@ -22,6 +23,7 @@ export default function RepairsPage() {
         queryKey: ['vehicles'],
         queryFn: () => vehicleApi.getAll().then(r => r.data || []),
     });
+
     const [showForm, setShowForm] = useState(false);
     const [editTarget, setEditTarget] = useState(null);
     const [deleteTarget, setDeleteTarget] = useState(null);
@@ -72,41 +74,55 @@ export default function RepairsPage() {
     const openAdd = () => { setEditTarget(null); setShowForm(true); };
 
     return (
-        <div className="page">
-            <div className="page-header">
-                <div>
-                    <h1 className="page-title">Servisne popravke</h1>
-                    <p className="page-sub">Evidencija svih popravki i servisa vozila</p>
+        <div className="space-y-5">
+            {/* Page header */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <div className="w-11 h-11 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
+                            <Wrench size={20} className="text-blue-600" />
+                        </div>
+                        <div>
+                            <h1 className="text-xl font-bold text-slate-900">Servisne popravke</h1>
+                            <p className="text-sm text-slate-500 mt-0.5">Evidencija svih popravki i servisa vozila</p>
+                        </div>
+                    </div>
+                    <button
+                        className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm shadow-blue-200 disabled:opacity-50"
+                        onClick={openAdd}
+                        disabled={!!error}
+                    >
+                        <Plus size={15} /> Dodaj popravku
+                    </button>
                 </div>
-                <button className="btn btn-primary" onClick={openAdd} disabled={!!error}>+ Dodaj popravku</button>
             </div>
 
-            {loading && <Spinner />}
-            {error && <ErrorState message={error} onRetry={refetch} />}
-            {!loading && !error && (
-                <>
-                    <div className="page-toolbar">
-                        <select
-                            className="search-input"
-                            value={filterVehicle}
-                            onChange={e => setFilterVehicle(e.target.value)}
-                        >
-                            <option value="">Sva vozila</option>
-                            {(vehicles || []).map(v => (
-                                <option key={v.vehicleId} value={v.vehicleId}>
-                                    {v.brand} {v.model} ({v.registrationNumber})
-                                </option>
-                            ))}
-                        </select>
-                        <span className="toolbar-count">{filtered.length} popravki</span>
-                    </div>
-                    <RepairTable
-                        repairs={filtered}
-                        onEdit={openEdit}
-                        onDelete={setDeleteTarget}
-                    />
-                </>
-            )}
+            {/* Content */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                {loading && <Spinner />}
+                {error && <ErrorState message={error} onRetry={refetch} />}
+
+                {!loading && !error && (
+                    <>
+                        <div className="flex items-center justify-between mb-5 gap-3">
+                            <select
+                                className="text-sm border border-slate-200 rounded-xl px-3 py-2.5 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 focus:bg-white transition-colors"
+                                value={filterVehicle}
+                                onChange={e => setFilterVehicle(e.target.value)}
+                            >
+                                <option value="">Sva vozila</option>
+                                {(vehicles || []).map(v => (
+                                    <option key={v.vehicleId} value={v.vehicleId}>
+                                        {v.brand} {v.model} ({v.registrationNumber})
+                                    </option>
+                                ))}
+                            </select>
+                            <span className="text-xs font-semibold text-slate-400 whitespace-nowrap">{filtered.length} popravki</span>
+                        </div>
+                        <RepairTable repairs={filtered} onEdit={openEdit} onDelete={setDeleteTarget} />
+                    </>
+                )}
+            </div>
 
             <Modal
                 isOpen={showForm}
