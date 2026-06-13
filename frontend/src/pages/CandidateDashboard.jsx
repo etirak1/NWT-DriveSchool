@@ -1,21 +1,13 @@
 import { Link } from 'react-router-dom';
 import {
     GraduationCap, LogOut, CheckCircle, Clock, BookOpen,
-    ChevronLeft, ChevronRight, MessageSquare, TrendingUp,
-    DollarSign, AlertCircle, Plus, Car, XCircle, AlertTriangle,
-    Info, Calendar
+    MessageSquare, TrendingUp, DollarSign, AlertCircle,
+    Car, XCircle, AlertTriangle, Info, Calendar
 } from 'lucide-react';
 import FeedbackModal from '../components/FeedbackModal';
 import RescheduleModal from '../components/RescheduleModal';
 import LessonTable from '../components/LessonTable';
 import { useCandidateDashboard } from '../hooks/useCandidateDashboard';
-
-const PHASE_COLORS = {
-    'POLOŽENO':   'bg-green-100 text-green-700',
-    'U TOKU':     'bg-blue-100 text-blue-700',
-    'NEPOLOŽENO': 'bg-red-100 text-red-700',
-    'ZAKAZANO':   'bg-yellow-100 text-yellow-700',
-};
 
 export default function CandidateDashboard() {
     const {
@@ -35,78 +27,105 @@ export default function CandidateDashboard() {
     } = useCandidateDashboard();
 
     const navItems = [
-        { id: 'overview',      label: 'Pregled'      },
+        { id: 'overview',      label: 'Pregled'       },
         { id: 'progress',      label: 'Napredak'      },
-        { id: 'finances',      label: 'Finansije'      },
-        { id: 'announcements', label: 'Obavještenja' },
+        { id: 'finances',      label: 'Finansije'     },
+        { id: 'announcements', label: 'Obavještenja'  },
     ];
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-                <p className="text-slate-500 text-sm">Učitavanje...</p>
+            <div className="min-h-screen bg-slate-100 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-3">
+                    <div className="w-10 h-10 rounded-full border-4 border-blue-600 border-t-transparent animate-spin" />
+                    <p className="text-slate-500 text-sm font-medium">Učitavanje...</p>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-slate-50">
+        <div className="min-h-screen bg-slate-100">
 
-            <header className="bg-white border-b border-slate-200">
-                <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="bg-blue-500 w-10 h-10 rounded-lg flex items-center justify-center">
-                            <GraduationCap className="text-white" size={22} />
+            {/* ── Header ──────────────────────────────────────────────────── */}
+            <header className="bg-gradient-to-r from-blue-700 to-blue-800 shadow-lg">
+                <div className="max-w-5xl mx-auto px-4 sm:px-6">
+                    <div className="flex items-center justify-between h-16">
+                        {/* Logo */}
+                        <div className="flex items-center gap-3">
+                            <div className="bg-white/20 backdrop-blur-sm w-9 h-9 rounded-lg flex items-center justify-center ring-1 ring-white/30">
+                                <GraduationCap className="text-white" size={18} />
+                            </div>
+                            <div>
+                                <h1 className="text-base font-bold text-white leading-tight">DriveSchool</h1>
+                                <p className="text-xs text-blue-200 leading-tight">Nadzorna ploča kandidata</p>
+                            </div>
                         </div>
-                        <div>
-                            <h1 className="text-lg font-bold text-slate-900">DriveSchool</h1>
-                            <p className="text-xs text-slate-500">Nadzorna ploča kandidata</p>
+
+                        {/* Nav — desktop */}
+                        <nav className="hidden md:flex items-center gap-1">
+                            {navItems.map(item => (
+                                <button
+                                    key={item.id}
+                                    onClick={() => setActiveSection(item.id)}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                        activeSection === item.id
+                                            ? 'bg-white/20 text-white shadow-sm'
+                                            : 'text-blue-100 hover:bg-white/10 hover:text-white'
+                                    }`}
+                                >
+                                    {item.label}
+                                </button>
+                            ))}
+                        </nav>
+
+                        {/* Right */}
+                        <div className="flex items-center gap-2">
+                            <div className="hidden sm:flex flex-col items-end mr-1">
+                                <p className="text-sm font-semibold text-white leading-tight">{email}</p>
+                                <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-white/20 text-white ring-1 ring-white/30 leading-tight">
+                                    {role || 'CANDIDATE'}
+                                </span>
+                            </div>
+                            <button
+                                onClick={handleLogout}
+                                className="flex items-center gap-1.5 px-3 py-2 text-sm text-blue-100 hover:bg-white/15 hover:text-white rounded-lg transition-colors"
+                            >
+                                <LogOut size={15} />
+                                <span className="hidden sm:inline">Odjava</span>
+                            </button>
                         </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                        <div className="text-right hidden sm:block">
-                            <p className="text-sm font-semibold text-slate-800">{email}</p>
-                            <span className="inline-block text-xs px-2 py-0.5 rounded-full font-semibold bg-emerald-100 text-emerald-700">
-                                {role || 'CANDIDATE'}
-                            </span>
-                        </div>
-                        <button
-                            onClick={handleLogout}
-                            className="flex items-center gap-1.5 px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
-                        >
-                            <LogOut size={16} /> Odjava
-                        </button>
-                    </div>
-                </div>
 
-                <div className="max-w-5xl mx-auto px-4">
-                    <nav className="flex gap-1 border-t border-slate-100 overflow-x-auto">
+                    {/* Nav — mobile */}
+                    <div className="flex md:hidden gap-1 pb-2 overflow-x-auto">
                         {navItems.map(item => (
                             <button
                                 key={item.id}
                                 onClick={() => setActiveSection(item.id)}
-                                className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
+                                className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                                     activeSection === item.id
-                                        ? 'border-blue-500 text-blue-600'
-                                        : 'border-transparent text-slate-500 hover:text-slate-700'
+                                        ? 'bg-white/20 text-white'
+                                        : 'text-blue-200 hover:bg-white/10 hover:text-white'
                                 }`}
                             >
                                 {item.label}
                             </button>
                         ))}
-                    </nav>
+                    </div>
                 </div>
             </header>
 
-            <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
+            {/* ── Content ─────────────────────────────────────────────────── */}
+            <main className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 pb-12 space-y-5">
 
-                {/* ── OVERVIEW ── */}
+                {/* ══ OVERVIEW ══════════════════════════════════════════════ */}
                 {activeSection === 'overview' && (
                     <>
-                        {/* Finance upozorenje — upisnina nije plaćena */}
+                        {/* Upisnina nije plaćena */}
                         {financeStatus && !enrollmentPaid && (
-                            <div className="bg-amber-50 border border-amber-300 rounded-xl p-4 flex items-start gap-3">
-                                <AlertTriangle size={20} className="text-amber-500 flex-shrink-0 mt-0.5" />
+                            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
+                                <AlertTriangle size={18} className="text-amber-500 shrink-0 mt-0.5" />
                                 <div>
                                     <p className="font-semibold text-amber-800 text-sm">Upisnina nije plaćena</p>
                                     <p className="text-amber-700 text-sm mt-0.5">
@@ -116,31 +135,28 @@ export default function CandidateDashboard() {
                             </div>
                         )}
 
-                        {/* Teorijska nastava završena — kandidat nije ispunio uslov prisustva */}
+                        {/* Nije ispunjen uslov prisustva */}
                         {theoryEligibility?.hasGroup && theoryEligibility?.groupFinished && !theoryEligibility?.eligible && !theoryPassed && (
-                            <div className="bg-red-50 border border-red-300 rounded-xl p-4 flex items-start gap-3">
-                                <AlertTriangle size={20} className="text-red-500 flex-shrink-0 mt-0.5" />
+                            <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-3">
+                                <AlertTriangle size={18} className="text-red-500 shrink-0 mt-0.5" />
                                 <div>
                                     <p className="font-semibold text-red-800 text-sm">Niste ispunili uslov za teorijski ispit</p>
                                     <p className="text-red-700 text-sm mt-0.5">
                                         Teorijska nastava za Vašu grupu je završena. Prisustvovali ste{' '}
                                         <span className="font-bold">{theoryEligibility.attendedLessons} od {theoryEligibility.totalLessons}</span>{' '}
                                         časova ({theoryEligibility.attendancePct}%), što je ispod minimalnog praga od 60%.
-                                        Stoga nemate pravo pristupa teorijskom ispitu.
                                         Za više informacija kontaktirajte administratora.
                                     </p>
                                 </div>
                             </div>
                         )}
 
-                        {/* Finance info — dugovanje */}
+                        {/* Dugovanje */}
                         {financeStatus && remainingDebt > 0 && (
-                            <div className={`rounded-xl border p-4 flex items-start gap-3 ${
-                                enrollmentPaid
-                                    ? 'bg-blue-50 border-blue-200'
-                                    : 'bg-slate-50 border-slate-200'
+                            <div className={`rounded-2xl border p-4 flex items-start gap-3 ${
+                                enrollmentPaid ? 'bg-blue-50 border-blue-200' : 'bg-slate-50 border-slate-200'
                             }`}>
-                                <Info size={20} className={`flex-shrink-0 mt-0.5 ${enrollmentPaid ? 'text-blue-500' : 'text-slate-400'}`} />
+                                <Info size={18} className={`shrink-0 mt-0.5 ${enrollmentPaid ? 'text-blue-500' : 'text-slate-400'}`} />
                                 <div>
                                     <p className="font-semibold text-slate-800 text-sm">Finansijski status</p>
                                     <p className="text-slate-600 text-sm mt-0.5">
@@ -155,69 +171,71 @@ export default function CandidateDashboard() {
                             </div>
                         )}
 
-                        {/* Sve plaćeno + sve faze završene — može finalni ispit */}
+                        {/* Sve završeno */}
                         {financeStatus && remainingDebt === 0 && totalAmount > 0 && drivingExamPassed && (
-                            <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3">
-                                <CheckCircle size={20} className="text-green-500 flex-shrink-0" />
+                            <div className="bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center gap-3">
+                                <CheckCircle size={18} className="text-green-500 shrink-0" />
                                 <p className="text-green-800 text-sm font-medium">
                                     Sve finansijske obaveze su izmirene i obuka je završena. Možete pristupiti finalnom ispitu.
                                 </p>
                             </div>
                         )}
 
-                        {/* Sve plaćeno ALI obuka nije završena */}
+                        {/* Plaćeno ali obuka traje */}
                         {financeStatus && remainingDebt === 0 && totalAmount > 0 && !drivingExamPassed && theoryPct < 100 && drivingPct < 100 && (
-                            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center gap-3">
-                                <CheckCircle size={20} className="text-blue-500 flex-shrink-0" />
+                            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex items-center gap-3">
+                                <CheckCircle size={18} className="text-blue-500 shrink-0" />
                                 <p className="text-blue-800 text-sm font-medium">
                                     Sve finansijske obaveze su izmirene. Nastavite sa obukom — finalni ispit je dostupan nakon završetka svih faza.
                                 </p>
                             </div>
                         )}
 
-                        {/* Obavještenje: teorijski ispit položen — može zakazati čas vožnje */}
+                        {/* Teorija položena — može zakazati vožnju */}
                         {theoryPassed && effectiveDrivingCompleted < drivingTotal && (
-                            <div className="bg-green-50 border border-green-300 rounded-xl p-4 flex items-start gap-3">
-                                <CheckCircle size={20} className="text-green-500 flex-shrink-0 mt-0.5" />
+                            <div className="bg-green-50 border border-green-200 rounded-2xl p-4 flex items-start gap-3">
+                                <CheckCircle size={18} className="text-green-500 shrink-0 mt-0.5" />
                                 <div className="flex-1">
-                                    <p className="font-semibold text-green-800 text-sm">Položili ste teorijski ispit! 🎉</p>
+                                    <p className="font-semibold text-green-800 text-sm">Položili ste teorijski ispit!</p>
                                     <p className="text-green-700 text-sm mt-0.5">
                                         Imate pravo zakazati časove praktične vožnje. Kontaktirajte instruktora ili zakažite čas direktno.
                                     </p>
                                 </div>
                                 <Link
                                     to="/book-lesson"
-                                    className="shrink-0 flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium"
+                                    className="shrink-0 flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-xl text-sm font-semibold transition-colors"
                                 >
-                                    <Car size={14} /> Zakaži čas
+                                    <Car size={13} /> Zakaži čas
                                 </Link>
                             </div>
                         )}
 
                         {/* Prijedlozi termina od instruktora */}
                         {pendingLessons.length > 0 && (
-                            <div className="bg-white rounded-xl border border-indigo-200 overflow-hidden">
-                                <div className="px-5 py-3 bg-indigo-50 border-b border-indigo-100 flex items-center gap-2">
-                                    <Calendar size={16} className="text-indigo-600" />
-                                    <span className="font-semibold text-indigo-800 text-sm">
+                            <div className="bg-white rounded-2xl shadow-sm border border-blue-200/80 overflow-hidden">
+                                <div className="px-5 py-3.5 bg-blue-50 border-b border-blue-100 flex items-center gap-2">
+                                    <div className="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center">
+                                        <Calendar size={13} className="text-blue-600" />
+                                    </div>
+                                    <span className="font-semibold text-blue-800 text-sm">
                                         Prijedlozi termina od instruktora ({pendingLessons.length})
                                     </span>
                                 </div>
-                                <div className="divide-y divide-slate-100">
-                                    {pendingLessons.map(lesson => (
-                                        <div key={lesson.lessonId} className="px-4 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div className="divide-y divide-slate-50">
+                                    {pendingLessons.map((lesson) => (
+                                        <div key={lesson.lessonId} className="px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                             <div>
                                                 <p className="text-sm font-semibold text-slate-800">
                                                     {(() => {
                                                         const DANI = ['Nedjelja','Ponedjeljak','Utorak','Srijeda','Četvrtak','Petak','Subota'];
-                                                        const MJESECI = ['januar','februar','mart','april','maj','juni','juli','august','septembar','oktobar','novembar','decembar'];
+                                                        const MJES = ['januar','februar','mart','april','maj','juni','juli','august','septembar','oktobar','novembar','decembar'];
                                                         const d = new Date(lesson.dateTime);
                                                         const h = String(d.getHours()).padStart(2,'0');
                                                         const m = String(d.getMinutes()).padStart(2,'0');
-                                                        return `${DANI[d.getDay()]}, ${d.getDate()}. ${MJESECI[d.getMonth()]} ${d.getFullYear()} u ${h}:${m}`;
+                                                        return `${DANI[d.getDay()]}, ${d.getDate()}. ${MJES[d.getMonth()]} ${d.getFullYear()} u ${h}:${m}`;
                                                     })()}
                                                 </p>
-                                                <p className="text-xs text-slate-500 mt-0.5">
+                                                <p className="text-xs text-slate-400 mt-0.5">
                                                     Instruktor: {lesson.instructor?.firstName} {lesson.instructor?.lastName}
                                                     {lesson.notes && ` · ${lesson.notes}`}
                                                 </p>
@@ -225,15 +243,15 @@ export default function CandidateDashboard() {
                                             <div className="flex items-center gap-2 shrink-0">
                                                 <button
                                                     onClick={() => respondToLesson(lesson.lessonId, 'confirm')}
-                                                    className="flex items-center gap-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs rounded-lg font-medium"
+                                                    className="flex items-center gap-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs rounded-xl font-semibold transition-colors"
                                                 >
-                                                    <CheckCircle size={13} /> Prihvati
+                                                    <CheckCircle size={12} /> Prihvati
                                                 </button>
                                                 <button
                                                     onClick={() => respondToLesson(lesson.lessonId, 'reject')}
-                                                    className="flex items-center gap-1 px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs rounded-lg font-medium"
+                                                    className="flex items-center gap-1 px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs rounded-xl font-semibold transition-colors"
                                                 >
-                                                    <XCircle size={13} /> Odbij
+                                                    <XCircle size={12} /> Odbij
                                                 </button>
                                             </div>
                                         </div>
@@ -244,9 +262,9 @@ export default function CandidateDashboard() {
 
                         {/* Completion banner */}
                         {allDone && (
-                            <div className="bg-white rounded-xl border border-slate-200 p-5 flex items-center justify-between">
+                            <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 flex items-center justify-between gap-4 flex-wrap">
                                 <div>
-                                    <p className="font-semibold text-slate-800">Obuka je završena!</p>
+                                    <p className="font-bold text-slate-800">Obuka je završena!</p>
                                     <p className="text-sm text-slate-500 mt-0.5">
                                         {alreadyRated
                                             ? 'Već ste ocijenili vašeg instruktora.'
@@ -256,76 +274,80 @@ export default function CandidateDashboard() {
                                 {!alreadyRated && (
                                     <button
                                         onClick={() => setShowFeedback(true)}
-                                        className="flex items-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+                                        className="flex items-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors shadow-sm"
                                     >
-                                        <MessageSquare size={16} /> Ocijeni instruktora
+                                        <MessageSquare size={15} /> Ocijeni instruktora
                                     </button>
                                 )}
                             </div>
                         )}
 
-                        {/* Theory progress card */}
-                        <div className="bg-white rounded-xl border border-slate-200 p-6">
-                            <h2 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                                <BookOpen size={16} className="text-purple-500" />
-                                Časovi teorije
-                            </h2>
-                            <div className="grid grid-cols-3 sm:grid-cols-3 gap-3 mb-5">
+                        {/* Theory progress */}
+                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6">
+                            <div className="flex items-center gap-2 mb-5">
+                                <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center">
+                                    <BookOpen size={14} className="text-blue-600" />
+                                </div>
+                                <h2 className="text-sm font-bold text-slate-800">Časovi teorije</h2>
+                            </div>
+                            <div className="grid grid-cols-3 gap-3 mb-5">
                                 {[
-                                    { label: 'Završeno',      value: theoryCompleted,               color: 'text-green-600'  },
-                                    { label: 'Ukupno potrebno', value: theoryTotal,                    color: 'text-slate-800'  },
-                                    { label: 'Preostalo',      value: Math.max(0, theoryTotal - theoryCompleted), color: 'text-purple-600' },
+                                    { label: 'Završeno',        value: theoryCompleted,                          color: 'text-green-600' },
+                                    { label: 'Ukupno potrebno', value: theoryTotal,                              color: 'text-slate-800' },
+                                    { label: 'Preostalo',       value: Math.max(0, theoryTotal - theoryCompleted), color: 'text-blue-600' },
                                 ].map(s => (
-                                    <div key={s.label} className="bg-slate-50 rounded-lg p-3 sm:p-4 text-center">
-                                        <p className={`text-2xl sm:text-3xl font-bold ${s.color}`}>{s.value}</p>
-                                        <p className="text-xs text-slate-500 mt-1">{s.label}</p>
+                                    <div key={s.label} className="bg-slate-50 rounded-xl p-4 text-center border border-slate-100">
+                                        <p className={`text-3xl font-bold ${s.color}`}>{s.value}</p>
+                                        <p className="text-xs text-slate-400 mt-1">{s.label}</p>
                                     </div>
                                 ))}
                             </div>
-                            <div className="space-y-1">
-                                <div className="flex justify-between text-xs text-slate-500">
-                                    <span>Napredak u teoriji</span>
-                                    <span className={`font-medium ${theoryPct >= 100 ? 'text-green-600' : 'text-purple-600'}`}>
+                            <div className="space-y-1.5">
+                                <div className="flex justify-between text-xs">
+                                    <span className="text-slate-500">Napredak u teoriji</span>
+                                    <span className={`font-semibold ${theoryPct >= 100 ? 'text-green-600' : 'text-blue-600'}`}>
                                         {theoryPct}% završeno
                                     </span>
                                 </div>
-                                <div className="w-full bg-slate-100 rounded-full h-2.5">
+                                <div className="w-full bg-slate-100 rounded-full h-2">
                                     <div
-                                        className={`h-2.5 rounded-full transition-all ${theoryPct >= 100 ? 'bg-green-500' : 'bg-purple-500'}`}
+                                        className={`h-2 rounded-full transition-all ${theoryPct >= 100 ? 'bg-green-500' : 'bg-blue-500'}`}
                                         style={{ width: `${Math.min(100, theoryPct)}%` }}
                                     />
                                 </div>
                             </div>
                         </div>
 
-                        {/* Driving progress card */}
-                        <div className="bg-white rounded-xl border border-slate-200 p-6">
-                            <h2 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                                <Car size={16} className="text-blue-500" />
-                                Časovi vožnje
-                            </h2>
-                            <div className="grid grid-cols-3 sm:grid-cols-3 gap-3 mb-5">
+                        {/* Driving progress */}
+                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6">
+                            <div className="flex items-center gap-2 mb-5">
+                                <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center">
+                                    <Car size={14} className="text-blue-600" />
+                                </div>
+                                <h2 className="text-sm font-bold text-slate-800">Časovi vožnje</h2>
+                            </div>
+                            <div className="grid grid-cols-3 gap-3 mb-5">
                                 {[
-                                    { label: 'Završeno',      value: effectiveDrivingCompleted,               color: 'text-green-600' },
-                                    { label: 'Ukupno potrebno', value: drivingTotal,                                  color: 'text-slate-800' },
-                                    { label: 'Preostalo',      value: Math.max(0, drivingTotal - effectiveDrivingCompleted), color: 'text-blue-600'  },
+                                    { label: 'Završeno',        value: effectiveDrivingCompleted,                           color: 'text-green-600' },
+                                    { label: 'Ukupno potrebno', value: drivingTotal,                                        color: 'text-slate-800' },
+                                    { label: 'Preostalo',       value: Math.max(0, drivingTotal - effectiveDrivingCompleted), color: 'text-blue-600'  },
                                 ].map(s => (
-                                    <div key={s.label} className="bg-slate-50 rounded-lg p-3 sm:p-4 text-center">
-                                        <p className={`text-2xl sm:text-3xl font-bold ${s.color}`}>{s.value}</p>
-                                        <p className="text-xs text-slate-500 mt-1">{s.label}</p>
+                                    <div key={s.label} className="bg-slate-50 rounded-xl p-4 text-center border border-slate-100">
+                                        <p className={`text-3xl font-bold ${s.color}`}>{s.value}</p>
+                                        <p className="text-xs text-slate-400 mt-1">{s.label}</p>
                                     </div>
                                 ))}
                             </div>
-                            <div className="space-y-1">
-                                <div className="flex justify-between text-xs text-slate-500">
-                                    <span>Napredak u vožnji</span>
-                                    <span className={`font-medium ${drivingPct >= 100 ? 'text-green-600' : 'text-blue-600'}`}>
+                            <div className="space-y-1.5">
+                                <div className="flex justify-between text-xs">
+                                    <span className="text-slate-500">Napredak u vožnji</span>
+                                    <span className={`font-semibold ${drivingPct >= 100 ? 'text-green-600' : 'text-blue-600'}`}>
                                         {drivingPct}% završeno
                                     </span>
                                 </div>
-                                <div className="w-full bg-slate-100 rounded-full h-2.5">
+                                <div className="w-full bg-slate-100 rounded-full h-2">
                                     <div
-                                        className={`h-2.5 rounded-full transition-all ${drivingPct >= 100 ? 'bg-green-500' : 'bg-blue-500'}`}
+                                        className={`h-2 rounded-full transition-all ${drivingPct >= 100 ? 'bg-green-500' : 'bg-blue-500'}`}
                                         style={{ width: `${Math.min(100, drivingPct)}%` }}
                                     />
                                 </div>
@@ -334,10 +356,10 @@ export default function CandidateDashboard() {
 
                         {/* Instructor card */}
                         {candidate?.assignedInstructor && (
-                            <div className="bg-white rounded-xl border border-slate-200 p-6">
-                                <h2 className="text-sm font-semibold text-slate-700 mb-3">Vaš instruktor</h2>
+                            <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6">
+                                <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Vaš instruktor</h2>
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm">
+                                    <div className="w-11 h-11 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm">
                                         {candidate.assignedInstructor?.user?.firstName?.[0]}
                                         {candidate.assignedInstructor?.user?.lastName?.[0]}
                                     </div>
@@ -352,7 +374,6 @@ export default function CandidateDashboard() {
                             </div>
                         )}
 
-                        {/* Lesson history */}
                         <LessonTable
                             pageData={pageData}
                             onPageChange={fetchLessons}
@@ -363,66 +384,65 @@ export default function CandidateDashboard() {
                     </>
                 )}
 
-                {/* ── PROGRESS ── */}
+                {/* ══ PROGRESS ══════════════════════════════════════════════ */}
                 {activeSection === 'progress' && (() => {
-                    const completedCount = timeline.filter(p => p.status === 'ZAVRŠENO').length;
+                    const completedCount = timeline.filter((p) => p.status === 'ZAVRŠENO').length;
                     const totalCount = timeline.length || 6;
                     const overallPct = Math.round((completedCount / totalCount) * 100);
 
                     const statusStyle = {
-                        'ZAVRŠENO':      { bar: 'bg-green-500',  badge: 'bg-green-100 text-green-700',   label: 'Završeno'       },
-                        'U TOKU':        { bar: 'bg-blue-500',   badge: 'bg-blue-100 text-blue-700',     label: 'U toku'         },
-                        'NIJE ZAPOČETO': { bar: 'bg-slate-200',  badge: 'bg-slate-100 text-slate-500',   label: 'Nije započeto'  },
-                        'ZAKLJUČANO':    { bar: 'bg-slate-100',  badge: 'bg-slate-100 text-slate-400',   label: 'Zaključano'     },
+                        'ZAVRŠENO':      { badge: 'bg-green-100 text-green-700',  label: 'Završeno'      },
+                        'U TOKU':        { badge: 'bg-blue-100 text-blue-700',    label: 'U toku'        },
+                        'NIJE ZAPOČETO': { badge: 'bg-slate-100 text-slate-500',  label: 'Nije započeto' },
+                        'ZAKLJUČANO':    { badge: 'bg-slate-100 text-slate-400',  label: 'Zaključano'    },
                     };
 
                     return (
-                        <div className="bg-white rounded-xl border border-slate-200 p-6">
+                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6">
                             <div className="flex items-center gap-2 mb-1">
-                                <TrendingUp size={18} className="text-blue-500" />
-                                <h2 className="text-base font-semibold text-slate-800">Tok obuke</h2>
-                            </div>
-                            <p className="text-sm text-slate-500 mb-5">Pratite napredak kroz sve faze obuke</p>
-
-                            {/* Overall bar */}
-                            <div className="mb-6 space-y-1">
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-slate-600">Ukupni napredak</span>
-                                    <span className="font-semibold text-blue-600">{overallPct}%</span>
+                                <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center">
+                                    <TrendingUp size={14} className="text-blue-600" />
                                 </div>
-                                <div className="w-full bg-slate-100 rounded-full h-2.5">
-                                    <div className="bg-blue-500 h-2.5 rounded-full transition-all" style={{ width: `${overallPct}%` }} />
+                                <h2 className="font-bold text-slate-800">Tok obuke</h2>
+                            </div>
+                            <p className="text-sm text-slate-400 mb-6 ml-9">Pratite napredak kroz sve faze obuke</p>
+
+                            <div className="mb-7 space-y-1.5">
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-slate-600 font-medium">Ukupni napredak</span>
+                                    <span className="font-bold text-blue-600">{overallPct}%</span>
+                                </div>
+                                <div className="w-full bg-slate-100 rounded-full h-2">
+                                    <div className="bg-blue-500 h-2 rounded-full transition-all" style={{ width: `${overallPct}%` }} />
                                 </div>
                                 <p className="text-xs text-slate-400">{completedCount} od {totalCount} faza završeno</p>
                             </div>
 
-                            {/* Phase cards */}
                             {timeline.length === 0 ? (
                                 <p className="text-sm text-slate-400 italic">Nema podataka o toku obuke.</p>
                             ) : (
                                 <div className="space-y-3">
                                     {timeline.map((phase, idx) => {
-                                        const s = statusStyle[phase.status] || statusStyle['NIJE ZAPOČETO'];
+                                        const s = statusStyle[phase.status] ?? statusStyle['NIJE ZAPOČETO'];
                                         const locked = phase.status === 'ZAKLJUČANO';
                                         return (
-                                            <div key={phase.key}
-                                                className={`rounded-lg border p-4 ${
-                                                    phase.status === 'ZAVRŠENO' ? 'border-green-200 bg-green-50' :
+                                            <div key={phase.key} className={`rounded-xl border p-4 transition-all ${
+                                                phase.status === 'ZAVRŠENO' ? 'border-green-200 bg-green-50' :
                                                     phase.status === 'U TOKU'   ? 'border-blue-200 bg-blue-50'  :
-                                                    locked                       ? 'border-slate-100 bg-slate-50 opacity-60' :
-                                                    'border-slate-200 bg-white'
-                                                }`}
-                                            >
+                                                        locked                       ? 'border-slate-100 bg-slate-50 opacity-60' :
+                                                            'border-slate-200 bg-white'
+                                            }`}>
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center gap-3">
-                                                        <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold
-                                                            ${phase.status === 'ZAVRŠENO' ? 'border-green-500 bg-green-500 text-white' :
-                                                              phase.status === 'U TOKU'   ? 'border-blue-500 bg-blue-500 text-white'   :
-                                                              'border-slate-300 text-slate-400'}`}>
+                                                        <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold ${
+                                                            phase.status === 'ZAVRŠENO' ? 'border-green-500 bg-green-500 text-white' :
+                                                                phase.status === 'U TOKU'   ? 'border-blue-500 bg-blue-500 text-white'   :
+                                                                    'border-slate-300 bg-white text-slate-400'
+                                                        }`}>
                                                             {phase.status === 'ZAVRŠENO' ? '✓' : idx + 1}
                                                         </div>
                                                         <div>
-                                                            <p className={`font-medium text-sm ${locked ? 'text-slate-400' : 'text-slate-800'}`}>
+                                                            <p className={`font-semibold text-sm ${locked ? 'text-slate-400' : 'text-slate-800'}`}>
                                                                 {phase.label}
                                                             </p>
                                                             {phase.progress && (
@@ -442,11 +462,11 @@ export default function CandidateDashboard() {
                                                         {phase.examStatus && (
                                                             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                                                                 phase.examStatus === 'POLOŽENO'   ? 'bg-green-100 text-green-700'  :
-                                                                phase.examStatus === 'NEPOLOŽENO' ? 'bg-red-100 text-red-700'     :
-                                                                'bg-yellow-100 text-yellow-700'
+                                                                    phase.examStatus === 'NEPOLOŽENO' ? 'bg-red-100 text-red-700'     :
+                                                                        'bg-yellow-100 text-yellow-700'
                                                             }`}>
                                                                 {phase.examStatus === 'POLOŽENO'   ? 'Položeno'   :
-                                                                 phase.examStatus === 'NEPOLOŽENO' ? 'Nepoloženo' : 'Zakazano'}
+                                                                    phase.examStatus === 'NEPOLOŽENO' ? 'Nepoloženo' : 'Zakazano'}
                                                             </span>
                                                         )}
                                                     </div>
@@ -460,19 +480,18 @@ export default function CandidateDashboard() {
                     );
                 })()}
 
-                {/* ── FINANCES ── */}
+                {/* ══ FINANCES ══════════════════════════════════════════════ */}
                 {activeSection === 'finances' && (
-                    <div className="space-y-6">
-
+                    <div className="space-y-5">
                         {/* Status badges */}
                         {financeStatus && (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className={`rounded-xl border p-4 flex items-center gap-3 ${
+                                <div className={`rounded-2xl border p-4 flex items-center gap-3 ${
                                     enrollmentPaid ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'
                                 }`}>
                                     {enrollmentPaid
-                                        ? <CheckCircle size={22} className="text-green-500 flex-shrink-0" />
-                                        : <XCircle    size={22} className="text-amber-500 flex-shrink-0" />
+                                        ? <CheckCircle size={20} className="text-green-500 shrink-0" />
+                                        : <XCircle    size={20} className="text-amber-500 shrink-0" />
                                     }
                                     <div>
                                         <p className={`text-sm font-semibold ${enrollmentPaid ? 'text-green-800' : 'text-amber-800'}`}>
@@ -483,31 +502,28 @@ export default function CandidateDashboard() {
                                         </p>
                                     </div>
                                 </div>
-                                {/* Finalni ispit — uslovljeno I finansijama I završenim fazama */}
                                 {(() => {
                                     const fullyReady = examEligible && drivingExamPassed;
                                     const financeOkButNotDone = examEligible && !drivingExamPassed;
                                     return (
-                                        <div className={`rounded-xl border p-4 flex items-center gap-3 ${
+                                        <div className={`rounded-2xl border p-4 flex items-center gap-3 ${
                                             fullyReady ? 'bg-green-50 border-green-200' :
-                                            financeOkButNotDone ? 'bg-blue-50 border-blue-200' :
-                                            'bg-slate-50 border-slate-200'
+                                                financeOkButNotDone ? 'bg-blue-50 border-blue-200' :
+                                                    'bg-slate-50 border-slate-200'
                                         }`}>
                                             {fullyReady
-                                                ? <CheckCircle size={22} className="text-green-500 flex-shrink-0" />
+                                                ? <CheckCircle size={20} className="text-green-500 shrink-0" />
                                                 : financeOkButNotDone
-                                                    ? <CheckCircle size={22} className="text-blue-400 flex-shrink-0" />
-                                                    : <XCircle size={22} className="text-slate-400 flex-shrink-0" />
+                                                    ? <CheckCircle size={20} className="text-blue-400 shrink-0" />
+                                                    : <XCircle size={20} className="text-slate-400 shrink-0" />
                                             }
                                             <div>
                                                 <p className={`text-sm font-semibold ${fullyReady ? 'text-green-800' : financeOkButNotDone ? 'text-blue-800' : 'text-slate-700'}`}>
                                                     Završni ispit
                                                 </p>
                                                 <p className={`text-xs mt-0.5 ${fullyReady ? 'text-green-600' : financeOkButNotDone ? 'text-blue-600' : 'text-slate-500'}`}>
-                                                    {fullyReady
-                                                        ? 'Finansije i obuka završene — pristup dozvoljen'
-                                                        : financeOkButNotDone
-                                                            ? 'Finansije OK — završite sve faze obuke'
+                                                    {fullyReady ? 'Finansije i obuka završene — pristup dozvoljen'
+                                                        : financeOkButNotDone ? 'Finansije OK — završite sve faze obuke'
                                                             : `Preostaje ${remainingDebt.toFixed(2)} KM`}
                                                 </p>
                                             </div>
@@ -517,11 +533,13 @@ export default function CandidateDashboard() {
                             </div>
                         )}
 
-                        {/* Summary kartice */}
-                        <div className="bg-white rounded-xl border border-slate-200 p-6">
-                            <div className="flex items-center gap-2 mb-4">
-                                <DollarSign size={18} className="text-blue-500" />
-                                <h2 className="text-base font-semibold text-slate-800">Pregled finansija</h2>
+                        {/* Pregled finansija */}
+                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6">
+                            <div className="flex items-center gap-2 mb-5">
+                                <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center">
+                                    <DollarSign size={14} className="text-blue-600" />
+                                </div>
+                                <h2 className="font-bold text-slate-800">Pregled finansija</h2>
                             </div>
                             {financeStatus ? (
                                 <>
@@ -531,22 +549,22 @@ export default function CandidateDashboard() {
                                             { label: 'Uplaćeno',            value: `${amountPaid.toFixed(2)} KM`,    color: 'text-green-600' },
                                             { label: 'Preostalo dugovanje', value: `${remainingDebt.toFixed(2)} KM`, color: remainingDebt > 0 ? 'text-red-500' : 'text-green-600' },
                                         ].map(s => (
-                                            <div key={s.label} className="bg-slate-50 rounded-lg p-3 sm:p-4 text-center">
-                                                <p className={`text-xl sm:text-2xl font-bold ${s.color}`}>{s.value}</p>
-                                                <p className="text-xs text-slate-500 mt-1">{s.label}</p>
+                                            <div key={s.label} className="bg-slate-50 rounded-xl p-4 text-center border border-slate-100">
+                                                <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+                                                <p className="text-xs text-slate-400 mt-1">{s.label}</p>
                                             </div>
                                         ))}
                                     </div>
-                                    <div className="space-y-1">
-                                        <div className="flex justify-between text-xs text-slate-500">
-                                            <span>Ukupno plaćeno</span>
-                                            <span className={`font-medium ${paymentPct >= 100 ? 'text-green-600' : 'text-blue-600'}`}>
+                                    <div className="space-y-1.5">
+                                        <div className="flex justify-between text-xs">
+                                            <span className="text-slate-500">Ukupno plaćeno</span>
+                                            <span className={`font-semibold ${paymentPct >= 100 ? 'text-green-600' : 'text-blue-600'}`}>
                                                 {paymentPct}%
                                             </span>
                                         </div>
-                                        <div className="w-full bg-slate-100 rounded-full h-2.5">
+                                        <div className="w-full bg-slate-100 rounded-full h-2">
                                             <div
-                                                className={`h-2.5 rounded-full transition-all ${paymentPct >= 100 ? 'bg-green-500' : 'bg-blue-500'}`}
+                                                className={`h-2 rounded-full transition-all ${paymentPct >= 100 ? 'bg-green-500' : 'bg-blue-500'}`}
                                                 style={{ width: `${Math.min(100, paymentPct)}%` }}
                                             />
                                         </div>
@@ -557,44 +575,40 @@ export default function CandidateDashboard() {
                             )}
                         </div>
 
-                        {/* Obligations — upisnina + 4 rate */}
+                        {/* Obligations */}
                         {obligations.length > 0 && (
-                            <div className="bg-white rounded-xl border border-slate-200 p-6">
-                                <h2 className="text-sm font-semibold text-slate-700 mb-1">Raspored uplata</h2>
+                            <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6">
+                                <h2 className="font-bold text-slate-800 mb-1">Raspored uplata</h2>
                                 <p className="text-xs text-slate-400 mb-5">Uplate se raspoređuju automatski po redoslijedu: upisnina → 1. rata → 2. rata → ...</p>
-                                <div className="space-y-4">
-                                    {obligations.map(ob => {
+                                <div className="space-y-3">
+                                    {obligations.map((ob) => {
                                         const pct = Number(ob.totalAmount) > 0
                                             ? Math.round((Number(ob.paidAmount) / Number(ob.totalAmount)) * 100)
                                             : 0;
                                         return (
-                                            <div key={ob.id} className={`rounded-lg border p-4 ${ob.fullyPaid ? 'border-green-200 bg-green-50' : 'border-slate-200 bg-white'}`}>
-                                                <div className="flex items-center justify-between mb-2">
+                                            <div key={ob.id} className={`rounded-xl border p-4 ${ob.fullyPaid ? 'border-green-200 bg-green-50' : 'border-slate-200 bg-white'}`}>
+                                                <div className="flex items-center justify-between mb-2.5">
                                                     <div className="flex items-center gap-2">
                                                         {ob.fullyPaid
-                                                            ? <CheckCircle size={16} className="text-green-500" />
-                                                            : <Clock size={16} className={ob.paidAmount > 0 ? 'text-blue-400' : 'text-slate-300'} />
+                                                            ? <CheckCircle size={15} className="text-green-500" />
+                                                            : <Clock size={15} className={ob.paidAmount > 0 ? 'text-blue-400' : 'text-slate-300'} />
                                                         }
                                                         <span className="text-sm font-semibold text-slate-800">
                                                             {ob.label}
                                                             {ob.type === 'ENROLLMENT' && (
-                                                                <span className="ml-2 text-xs font-normal text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
+                                                                <span className="ml-2 text-xs font-normal text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-lg">
                                                                     obavezna za teorijsku grupu
                                                                 </span>
                                                             )}
                                                         </span>
                                                     </div>
-                                                    <div className="text-right">
-                                                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                                                            ob.fullyPaid
-                                                                ? 'bg-green-100 text-green-700'
-                                                                : ob.paidAmount > 0
-                                                                    ? 'bg-blue-100 text-blue-700'
-                                                                    : 'bg-slate-100 text-slate-500'
-                                                        }`}>
-                                                            {ob.fullyPaid ? 'Plaćeno' : ob.paidAmount > 0 ? 'Djelimično' : 'Nije plaćeno'}
-                                                        </span>
-                                                    </div>
+                                                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                                                        ob.fullyPaid ? 'bg-green-100 text-green-700'
+                                                            : ob.paidAmount > 0 ? 'bg-blue-100 text-blue-700'
+                                                                : 'bg-slate-100 text-slate-500'
+                                                    }`}>
+                                                        {ob.fullyPaid ? 'Plaćeno' : ob.paidAmount > 0 ? 'Djelimično' : 'Nije plaćeno'}
+                                                    </span>
                                                 </div>
                                                 <div className="flex justify-between text-xs text-slate-500 mb-1.5">
                                                     <span>Uplaćeno: <strong className="text-slate-700">{Number(ob.paidAmount).toFixed(2)} KM</strong></span>
@@ -607,8 +621,8 @@ export default function CandidateDashboard() {
                                                     />
                                                 </div>
                                                 {!ob.fullyPaid && Number(ob.remainingAmount) > 0 && (
-                                                    <p className="text-xs text-slate-400 mt-1">
-                                                        Preostaje: <span className="text-red-500 font-medium">{Number(ob.remainingAmount).toFixed(2)} KM</span>
+                                                    <p className="text-xs text-slate-400 mt-1.5">
+                                                        Preostaje: <span className="text-red-500 font-semibold">{Number(ob.remainingAmount).toFixed(2)} KM</span>
                                                     </p>
                                                 )}
                                             </div>
@@ -618,16 +632,16 @@ export default function CandidateDashboard() {
                             </div>
                         )}
 
-                        {/* History uplata */}
+                        {/* Payment history */}
                         {payments.length > 0 && (
-                            <div className="bg-white rounded-xl border border-slate-200 p-6">
-                                <h2 className="text-sm font-semibold text-slate-700 mb-4">Historija uplata</h2>
+                            <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6">
+                                <h2 className="font-bold text-slate-800 mb-5">Historija uplata</h2>
                                 <div className="space-y-0">
                                     {payments.map((p, i) => (
-                                        <div key={p.paymentId ?? i} className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
+                                        <div key={p.paymentId ?? i} className="flex items-center justify-between py-3.5 border-b border-slate-50 last:border-0">
                                             <div>
-                                                <p className="text-sm font-medium text-slate-700">
-                                                    Uplata #{i + 1} — <span className="text-green-600 font-bold">{Number(p.amount).toFixed(2)} KM</span>
+                                                <p className="text-sm font-semibold text-slate-700">
+                                                    Uplata #{i + 1} — <span className="text-green-600">{Number(p.amount).toFixed(2)} KM</span>
                                                 </p>
                                                 <p className="text-xs text-slate-400 mt-0.5">
                                                     {p.datePaid ? `Plaćeno: ${new Date(p.datePaid).toLocaleDateString('bs-BA')}` : '—'}
@@ -644,20 +658,24 @@ export default function CandidateDashboard() {
                     </div>
                 )}
 
-                {/* ── ANNOUNCEMENTS ── */}
+                {/* ══ ANNOUNCEMENTS ══════════════════════════════════════════ */}
                 {activeSection === 'announcements' && (
-                    <div className="bg-white rounded-xl border border-slate-200 p-6">
-                        <h2 className="text-base font-semibold text-slate-800 mb-1">Obavještenja</h2>
-                        <p className="text-sm text-slate-500 mb-5">Budite u toku s najnovijim vijestima i važnim obavještenjima.</p>
+                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6">
+                        <h2 className="font-bold text-slate-800 mb-1">Obavještenja</h2>
+                        <p className="text-sm text-slate-400 mb-6">Budite u toku s najnovijim vijestima i važnim obavještenjima.</p>
                         {announcements.length === 0 ? (
-                            <div className="flex flex-col items-center py-12 gap-3">
-                                <AlertCircle size={36} className="text-slate-300" />
-                                <p className="text-slate-400 text-sm">Nema obavještenja</p>
-                                <p className="text-slate-400 text-xs">Provjerite kasnije za nove informacije i važna obavještenja</p>
+                            <div className="flex flex-col items-center py-14 gap-3">
+                                <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center">
+                                    <AlertCircle size={24} className="text-slate-300" />
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-slate-400 text-sm font-medium">Nema obavještenja</p>
+                                    <p className="text-slate-300 text-xs mt-1">Provjerite kasnije za nove informacije</p>
+                                </div>
                             </div>
                         ) : (
-                            <div className="divide-y divide-slate-100">
-                                {announcements.map(a => (
+                            <div className="divide-y divide-slate-50">
+                                {announcements.map((a) => (
                                     <div key={a.id} className="py-4 first:pt-0">
                                         <div className="flex items-start justify-between gap-3">
                                             <p className="font-semibold text-slate-800 text-sm">{a.title}</p>
@@ -672,9 +690,8 @@ export default function CandidateDashboard() {
                         )}
                     </div>
                 )}
-            </div>
+            </main>
 
-            {/* Reschedule modal */}
             {rescheduleLesson && (
                 <RescheduleModal
                     lesson={rescheduleLesson}
@@ -686,7 +703,6 @@ export default function CandidateDashboard() {
                 />
             )}
 
-            {/* Feedback modal */}
             {showFeedback && (
                 <FeedbackModal
                     candidate={candidate}
