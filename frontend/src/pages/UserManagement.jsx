@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   Users, Search, UserPlus, Trash2, Power,
@@ -40,12 +40,23 @@ export default function UserManagement() {
   const [showAdd, setShowAdd] = useState(false);
   const [deletingUser, setDeletingUser] = useState(null);
   const [searchFocused, setSearchFocused] = useState(false);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const debounceTimer = useRef(null);
+
+  const handleSearchChange = (e) => {
+    const val = e.target.value;
+    setSearch(val);
+    clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => setDebouncedSearch(val), 400);
+  };
 
   const loadUsers = async () => {
     try {
       setLoading(true);
       setError('');
-      const res = await api.get('/api/users', { params: { page, size, sortBy } });
+      const res = await api.get('/api/users', {
+        params: { page, size, sortBy, role: roleFilter, search: debouncedSearch.trim() || undefined },
+      });
       const data = res.data;
       setUsers(Array.isArray(data.content) ? data.content : []);
       setTotalPages(data.totalPages || 0);
@@ -62,19 +73,15 @@ export default function UserManagement() {
   };
 
   useEffect(() => {
+    setPage(0);
+  }, [debouncedSearch, roleFilter]);
+
+  useEffect(() => {
     loadUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, size, sortBy]);
+  }, [page, size, sortBy, debouncedSearch, roleFilter]);
 
-  const filteredUsers = users.filter((u) => {
-    const matchesRole = roleFilter === 'ALL' || u.role === roleFilter;
-    const q = search.trim().toLowerCase();
-    const matchesSearch =
-        !q ||
-        `${u.firstName} ${u.lastName}`.toLowerCase().includes(q) ||
-        (u.email && u.email.toLowerCase().includes(q));
-    return matchesRole && matchesSearch;
-  });
+  const filteredUsers = users;
 
   const handleDelete = async (u) => {
     try {
@@ -132,20 +139,23 @@ export default function UserManagement() {
 
             {/* Filters row */}
             <div className="flex flex-col md:flex-row gap-3 mb-7">
-              <div className="relative flex-1">
-                <Search
-                    className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors duration-200"
-                    style={{ color: searchFocused ? '#3b82f6' : '#94a3b8' }}
-                />
+              <div
+                  className="flex items-center gap-2 flex-1 min-w-0 bg-white border-2 rounded-xl px-4 py-2.5 transition-all duration-200"
+                  style={{
+                      borderColor: searchFocused ? '#3b82f6' : '#cbd5e1',
+                      boxShadow: searchFocused ? '0 0 0 4px rgba(59,130,246,0.12)' : '0 1px 3px rgba(0,0,0,0.06)',
+                  }}
+              >
+                <Search className="w-5 h-5 flex-shrink-0 transition-colors duration-200"
+                    style={{ color: searchFocused ? '#3b82f6' : '#94a3b8' }} />
                 <input
                     type="search"
                     value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    onChange={handleSearchChange}
                     onFocus={() => setSearchFocused(true)}
                     onBlur={() => setSearchFocused(false)}
                     placeholder="Pretraži po imenu ili emailu…"
-                    className="w-full pl-12 pr-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-sm transition-all duration-200"
-                    style={inputFocusStyle(searchFocused)}
+                    className="flex-1 bg-transparent text-sm outline-none text-slate-700 placeholder-slate-400 min-w-0"
                 />
               </div>
 
@@ -355,7 +365,7 @@ function SelectField({ value, onChange, options }) {
           onChange={onChange}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
-          className="px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-sm bg-white transition-all duration-200"
+          className="flex-1 min-w-0 px-4 py-3 bg-white border-2 border-slate-200 rounded-xl text-sm transition-all duration-200"
           style={inputFocusStyle(focused)}
       >
         {options.map((o) => (

@@ -156,16 +156,23 @@ export default function CandidateManagement() {
                                                         }`}
                                                         value={candidate.assignedInstructor?.user?.userId || ''}
                                                         onChange={e => assignInstructor(candidate.candidateId, e.target.value)}
-                                                        disabled={instructorsUnavailable}
-                                                        title={instructorsUnavailable ? 'Servis instruktora trenutno nije dostupan' : ''}
+                                                      
+                                                        disabled={instructorsUnavailable || !candidate.theoryExamPassed}
+                                                        title={
+                                                            instructorsUnavailable
+                                                                ? 'Servis instruktora trenutno nije dostupan'
+                                                                : !candidate.theoryExamPassed
+                                                                    ? 'Instruktor se može dodijeliti tek nakon položenog teorijskog ispita'
+                                                                    : ''
+                                                        }
                                                     >
-                                                        <option value="">{instructorsUnavailable ? 'Servis nedostupan' : 'Odaberi instruktora'}</option>
-                                                        {instructors
-                                                            .filter(inst => inst.availabilityNote !== 'UNAVAILABLE')
-                                                            .map(inst => (
-                                                                <option key={inst.instructorId} value={inst.user?.userId}>
-                                                                    {inst.user?.firstName} {inst.user?.lastName}
-                                                                </option>
+                                                        <option value="">
+                                                            {instructorsUnavailable
+                                                                ? 'Servis nedostupan'
+                                                                : !candidate.theoryExamPassed
+                                                                    ? 'Teorija nije položena'
+                                                                    : 'Odaberi instruktora'}
+                                                        </option>
                                                             ))}
                                                     </select>
                                                 </div>

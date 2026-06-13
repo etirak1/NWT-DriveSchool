@@ -12,7 +12,7 @@ import { ArrowLeft } from 'lucide-react';
 
 export default function TheoryPlansPage() {
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
     const email = user.email;
     const role  = user.role;
     const queryClient = useQueryClient();
@@ -38,6 +38,8 @@ export default function TheoryPlansPage() {
             const accounts = r.data || [];
             return accounts.filter(a => a.enrollmentEligible).map(a => a.candidateId);
         }),
+        staleTime: 0,
+        refetchOnMount: 'always',
     });
 
     const loading = plansLoading;
@@ -105,7 +107,9 @@ export default function TheoryPlansPage() {
                             </span>
                         </div>
                         <button
-                            onClick={() => { localStorage.removeItem('token'); navigate('/login'); }}
+                            
+                            
+                            onClick={() => { logout(); navigate('/login'); }}
                             className="flex items-center gap-1.5 px-3 py-2 text-blue-200 hover:text-white hover:bg-white/10 rounded-xl text-sm transition-colors"
                         >
                             <LogOut size={15} /> Odjava

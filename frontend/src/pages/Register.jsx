@@ -122,7 +122,7 @@ export default function Register() {
               </div>
 
               {error && (
-                  <div className="bg-red-50 text-red-700 text-sm px-3 py-2 rounded-lg border border-red-100">
+                  <div className="form-alert-error">
                     {error}
                   </div>
               )}

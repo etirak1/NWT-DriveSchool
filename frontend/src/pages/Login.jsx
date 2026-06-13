@@ -16,12 +16,13 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [focusedField, setFocusedField] = useState(null);
+  const [serviceOffline, setServiceOffline] = useState(false);
 
   const reason = searchParams.get('reason');
 
   let displayMessage = '';
   let messageType = 'amber';
-  if (reason === 'service_offline') {
+  if (serviceOffline) {
     displayMessage = 'Servis trenutno nije dostupan. Pokušajte kasnije.';
     messageType = 'red';
   } else if (reason === 'session_expired') {
@@ -33,10 +34,31 @@ export default function Login() {
   }
 
   useEffect(() => {
+    if (reason === 'service_offline') {
+      setServiceOffline(true);
+    }
     if (reason || stateMessage) {
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, [reason, stateMessage]);
+
+  useEffect(() => {
+    if (!serviceOffline) return;
+    const check = async () => {
+      try {
+        await api.post('/api/auth/login', {}, { timeout: 3000 });
+        setServiceOffline(false);
+      } catch (err) {
+        if (err.response) {
+          // Got HTTP response (4xx/5xx) → service is up
+          setServiceOffline(false);
+        }
+        // No response → still offline, do nothing
+      }
+    };
+    const interval = setInterval(check, 5000);
+    return () => clearInterval(interval);
+  }, [serviceOffline]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

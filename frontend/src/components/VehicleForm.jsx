@@ -9,7 +9,7 @@ const empty = {
     brand: '', model: '', registrationNumber: '', registrationDate: '', status: 'ACTIVE', lastTechnicalInspection: '',
 };
 
-const REG_PATTERN = /^[A-Za-z0-9]{3}-[A-Za-z0-9]-[A-Za-z0-9]{3}$/;
+const REG_PATTERN = /^[A-Za-z0-9]+(-[A-Za-z0-9]+)+$/;
 
 const validate = (form) => {
     const errors = {};
@@ -41,6 +41,7 @@ export default function VehicleForm({ initial, onSubmit, onCancel, loading }) {
                 model: initial.model || '',
                 registrationNumber: initial.registrationNumber || '',
                 registrationDate: initial.registrationDate?.slice(0, 10) || '',
+                registrationExpiry: initial.registrationExpiry?.slice(0, 10) || '',
                 status: initial.status || 'ACTIVE',
                 lastTechnicalInspection: initial.lastTechnicalInspection?.slice(0, 10) || '',
             });
@@ -65,6 +66,7 @@ export default function VehicleForm({ initial, onSubmit, onCancel, loading }) {
             registrationNumber: form.registrationNumber.trim(),
             status: form.status,
             registrationDate: form.registrationDate ? `${form.registrationDate}T00:00:00` : null,
+            registrationExpiry: form.registrationExpiry ? `${form.registrationExpiry}T00:00:00` : null,
             lastTechnicalInspection: form.lastTechnicalInspection ? `${form.lastTechnicalInspection}T00:00:00` : null,
         });
     };

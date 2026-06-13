@@ -102,7 +102,7 @@ class LessonControllerTest {
 
     @Test
     void completeLesson_Success() throws Exception {
-        when(lessonService.completeLessonAndIncreaseProgress(1L))
+        when(lessonService.completeLessonAndIncreaseProgress(eq(1L), anyString(), anyString()))
                 .thenReturn("Lesson završen");
 
         mockMvc.perform(post("/api/lessons/1/complete"))
