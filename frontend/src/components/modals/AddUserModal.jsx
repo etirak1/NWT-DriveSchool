@@ -151,8 +151,7 @@ export default function AddUserModal({ onClose, onCreated }) {
                     </div>
 
                     {error && (
-                        <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl border border-red-200 flex items-center gap-3">
-                            <Shield className="w-4 h-4 flex-shrink-0" />
+                        <div className="form-alert-error">
                             {error}
                         </div>
                     )}

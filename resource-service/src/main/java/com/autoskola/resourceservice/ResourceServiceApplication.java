@@ -62,11 +62,11 @@ public class ResourceServiceApplication {
 
 			if (vehicleRepository.count() == 0) {
 				Vehicle vehicle1 = vehicleRepository.save(new Vehicle(
-						null, "Toyota", "Corolla", "E123-ABC", "ACTIVE",
+						null, "Toyota", "Corolla", "E12-A-123", "ACTIVE",
 						LocalDateTime.now().minusMonths(3), LocalDateTime.now().minusYears(1),
 						LocalDateTime.now(), LocalDateTime.now().minusMonths(3).plusYears(1)));
 				Vehicle vehicle2 = vehicleRepository.save(new Vehicle(
-						null, "BMW", "X5", "F456-DEF", "IN_REPAIR",
+						null, "BMW", "X5", "F45-B-456", "IN_REPAIR",
 						LocalDateTime.now().minusMonths(6), LocalDateTime.now().minusYears(2),
 						LocalDateTime.now(), LocalDateTime.now().minusMonths(6).plusYears(1)));
 
@@ -88,7 +88,7 @@ public class ResourceServiceApplication {
 
 	private void seedUser(UserRepository repo, BCryptPasswordEncoder enc,
 	                       Long id, String first, String last, String email, String role) {
-		if (!repo.existsById(id)) {
+		if (!repo.existsById(id) && !repo.existsByEmail(email)) {
 			repo.save(new User(id, first, last, email, enc.encode("123456"), role, "ACTIVE", null));
 		}
 	}
@@ -101,29 +101,41 @@ public class ResourceServiceApplication {
 			InstructorRepository instructorRepository,
 			UserClientService userClientService) {
 		return event -> {
-			try {
-				List<UserDTO> instructors = userClientService.getAllInstructors();
-				int synced = 0;
-				for (UserDTO dto : instructors) {
-					if (!userRepository.existsById(dto.getUserId())) {
-						User u = new User();
-						u.setUserId(dto.getUserId());
-						u.setFirstName(dto.getFirstName());
-						u.setLastName(dto.getLastName());
-						u.setEmail(dto.getEmail());
-						u.setRole(dto.getRole());
-						u.setPasswordHash("N/A_PLACEHOLDER");
-						u.setStatus("ACTIVE");
-						userRepository.save(u);
+			int maxRetries = 5;
+			for (int attempt = 1; attempt <= maxRetries; attempt++) {
+				try {
+					List<UserDTO> instructors = userClientService.getAllInstructors();
+					if (instructors.isEmpty() && attempt < maxRetries) {
+						System.out.println("User-service još nije spreman, pokušaj " + attempt + "/" + maxRetries + "...");
+						Thread.sleep(5000);
+						continue;
 					}
-					if (!instructorRepository.existsByUserId(dto.getUserId())) {
-						instructorRepository.save(new Instructor(null, dto.getUserId(), "AVAILABLE", null, null));
-						synced++;
+					int synced = 0;
+					for (UserDTO dto : instructors) {
+						if (!userRepository.existsById(dto.getUserId())) {
+							User u = new User();
+							u.setUserId(dto.getUserId());
+							u.setFirstName(dto.getFirstName());
+							u.setLastName(dto.getLastName());
+							u.setEmail(dto.getEmail());
+							u.setRole(dto.getRole());
+							u.setPasswordHash("N/A_PLACEHOLDER");
+							u.setStatus("ACTIVE");
+							userRepository.save(u);
+						}
+						if (!instructorRepository.existsByUserId(dto.getUserId())) {
+							instructorRepository.save(new Instructor(null, dto.getUserId(), "AVAILABLE", null, null));
+							synced++;
+						}
+					}
+					if (synced > 0) System.out.println("Sinhronizovano " + synced + " novih instruktora iz user-service.");
+					break;
+				} catch (Exception e) {
+					System.err.println("Sync instruktora nije uspio (pokušaj " + attempt + "/" + maxRetries + "): " + e.getMessage());
+					if (attempt < maxRetries) {
+						try { Thread.sleep(5000); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); break; }
 					}
 				}
-				if (synced > 0) System.out.println("Sinhronizovano " + synced + " novih instruktora iz user-service.");
-			} catch (Exception e) {
-				System.err.println("Sync instruktora nije uspio (user-service možda nije spreman): " + e.getMessage());
 			}
 		};
 	}

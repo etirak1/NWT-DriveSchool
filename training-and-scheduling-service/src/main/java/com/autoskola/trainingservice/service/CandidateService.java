@@ -66,6 +66,14 @@ public class CandidateService {
 
         TrainingRuleDTO ruleDTO = toRuleDTO(candidate.getRule());
 
+        boolean theoryPassed =
+                trainingPhaseRepository.findByCandidateCandidateIdAndPhaseTypeIgnoreCase(
+                                candidate.getCandidateId(), "TEORIJSKI ISPIT")
+                        .stream().anyMatch(p -> "POLOŽENO".equalsIgnoreCase(p.getStatus()))
+                || trainingPhaseRepository.findByCandidateCandidateIdAndPhaseTypeIgnoreCase(
+                                candidate.getCandidateId(), "TEORIJSKI DIO")
+                        .stream().anyMatch(p -> "POLOŽENO".equalsIgnoreCase(p.getStatus()));
+
         CandidateDTO dto = new CandidateDTO();
         dto.setCandidateId(candidate.getCandidateId());
         dto.setEnrollmentDate(candidate.getEnrollmentDate());
@@ -73,6 +81,7 @@ public class CandidateService {
         dto.setUser(userDTO);
         dto.setAssignedInstructor(instructorDetails);
         dto.setRule(ruleDTO);
+        dto.setTheoryExamPassed(theoryPassed);
         return dto;
     }
 

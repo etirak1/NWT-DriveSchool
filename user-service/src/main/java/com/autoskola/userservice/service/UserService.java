@@ -57,6 +57,14 @@ public class UserService {
         return usersPage.map(user -> modelMapper.map(user, UserDTO.class));
     }
 
+    public Page<UserDTO> searchUsersPaged(int page, int size, String sortBy, String role, String search) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy));
+        String roleParam = (role == null || role.isBlank() || role.equalsIgnoreCase("ALL")) ? null : role;
+        String searchParam = (search == null || search.isBlank()) ? null : search;
+        Page<User> usersPage = userRepository.searchUsers(roleParam, searchParam, pageable);
+        return usersPage.map(user -> modelMapper.map(user, UserDTO.class));
+    }
+
     public List<UserDTO> getActiveUsers(String role) {
         return userRepository.findActiveByRole(role).stream()
                 .map(u -> modelMapper.map(u, UserDTO.class))
@@ -81,11 +89,20 @@ public class UserService {
         user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
         User savedUser = userRepository.save(user);
 
-        Announcement note = new Announcement();
-        note.setTitle("Dobrodošlica");
-        note.setContent("Novi korisnik " + savedUser.getFirstName() + " je dodat u sistem.");
-        note.setCreatedBy(savedUser.getUserId());
-        announcementRepository.save(note);
+        Announcement welcome = new Announcement();
+        welcome.setTitle("Dobrodošlica");
+        welcome.setContent("Dobrodošli u NWT Auto školu, " + savedUser.getFirstName() + "! Vaš nalog je uspješno kreiran.");
+        welcome.setCreatedBy(savedUser.getUserId());
+        welcome.setTargetUserId(savedUser.getUserId());
+        announcementRepository.save(welcome);
+
+        Announcement adminNote = new Announcement();
+        adminNote.setTitle("Novi korisnik registrovan");
+        adminNote.setContent("Korisnik " + savedUser.getFirstName() + " " + savedUser.getLastName() + " (" + savedUser.getEmail() + ") je dodat u sistem s ulogom " + savedUser.getRole() + ".");
+        adminNote.setCreatedBy(savedUser.getUserId());
+        adminNote.setTargetUserId(null);
+        adminNote.setAdminOnly(true);
+        announcementRepository.save(adminNote);
 
         UserRegisteredEvent event = new UserRegisteredEvent(
                 savedUser.getUserId(),

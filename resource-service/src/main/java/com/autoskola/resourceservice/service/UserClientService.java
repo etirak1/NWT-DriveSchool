@@ -4,6 +4,7 @@ import com.autoskola.resourceservice.dto.UserDTO;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -15,18 +16,21 @@ public class UserClientService {
 
     private final RestTemplate restTemplate;
 
+    @Value("${user.service.url:http://localhost:8081}")
+    private String userServiceUrl;
+
     public UserClientService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
     public UserDTO getUserById(Long userId) {
-        String url = "http://localhost:8081/users/" + userId;
+        String url = userServiceUrl + "/users/" + userId;
         return restTemplate.getForObject(url, UserDTO.class);
     }
 
     public List<UserDTO> getAllInstructors() {
         try {
-            String url = "http://localhost:8081/internal/users/instructors";
+            String url = userServiceUrl + "/internal/users/instructors";
             ResponseEntity<List<UserDTO>> response = restTemplate.exchange(
                     url, HttpMethod.GET, null,
                     new ParameterizedTypeReference<List<UserDTO>>() {});

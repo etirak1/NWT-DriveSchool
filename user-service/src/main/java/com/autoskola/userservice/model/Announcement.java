@@ -20,6 +20,8 @@ public class Announcement {
     private String title;
     private String content;
     private Long createdBy;
+    private Long targetUserId;
+    private boolean adminOnly = false;
     private LocalDateTime dateCreated;
     private LocalDate expirationDate;
 

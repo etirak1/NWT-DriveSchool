@@ -14,11 +14,12 @@ const empty = {
     model: '',
     registrationNumber: '',
     registrationDate: '',
+    registrationExpiry: '',
     status: 'ACTIVE',
     lastTechnicalInspection: '',
 };
 
-const REG_PATTERN = /^[A-Za-z0-9]{3}-[A-Za-z0-9]-[A-Za-z0-9]{3}$/;
+const REG_PATTERN = /^[A-Za-z0-9]+(-[A-Za-z0-9]+)+$/;
 
 const validate = (form) => {
     const errors = {};
@@ -33,7 +34,7 @@ const validate = (form) => {
     if (!form.registrationNumber.trim())
         errors.registrationNumber = 'Registracijski broj je obavezan.';
     else if (!REG_PATTERN.test(form.registrationNumber.trim()))
-        errors.registrationNumber = 'Format mora biti: XXX-X-XXX (slova i brojevi)';
+        errors.registrationNumber = 'Format mora sadržavati slova/brojeve odvojene crticom (npr. E123-ABC)';
 
     if (!form.registrationDate)
         errors.registrationDate = 'Datum registracije je obavezan.';
@@ -59,6 +60,7 @@ export default function VehicleForm({ initial, onSubmit, onCancel, loading }) {
                 model: initial.model || '',
                 registrationNumber: initial.registrationNumber || '',
                 registrationDate: initial.registrationDate?.slice(0, 10) || '',
+                registrationExpiry: initial.registrationExpiry?.slice(0, 10) || '',
                 status: initial.status || 'ACTIVE',
                 lastTechnicalInspection: initial.lastTechnicalInspection?.slice(0, 10) || '',
             });
@@ -86,6 +88,7 @@ export default function VehicleForm({ initial, onSubmit, onCancel, loading }) {
             registrationNumber: form.registrationNumber.trim(),
             status: form.status,
             registrationDate: form.registrationDate ? `${form.registrationDate}T00:00:00` : null,
+            registrationExpiry: form.registrationExpiry ? `${form.registrationExpiry}T00:00:00` : null,
             lastTechnicalInspection: form.lastTechnicalInspection ? `${form.lastTechnicalInspection}T00:00:00` : null,
         });
     };
@@ -141,6 +144,17 @@ export default function VehicleForm({ initial, onSubmit, onCancel, loading }) {
                         style={fieldStyle('registrationDate')}
                     />
                     {errors.registrationDate && <p className="field-error">{errors.registrationDate}</p>}
+                </div>
+
+                <div className="form-group">
+                    <label>Istek registracije</label>
+                    <input
+                        type="date"
+                        value={form.registrationExpiry}
+                        onChange={set('registrationExpiry')}
+                        style={fieldStyle('registrationExpiry')}
+                    />
+                    {errors.registrationExpiry && <p className="field-error">{errors.registrationExpiry}</p>}
                 </div>
             </div>
 

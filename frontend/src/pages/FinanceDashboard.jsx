@@ -114,7 +114,19 @@ function PaymentModal({ row, onClose, onSuccess }) {
                             max={remaining > 0 ? remaining : undefined}
                             required
                             value={amount}
-                            onChange={e => setAmount(e.target.value)}
+                            onChange={e => { e.target.setCustomValidity(''); setAmount(e.target.value); }}
+                            onInvalid={e => {
+                                const el = e.target;
+                                if (el.validity.rangeOverflow) {
+                                    el.setCustomValidity(`Iznos ne smije biti veći od ${el.max} KM.`);
+                                } else if (el.validity.rangeUnderflow) {
+                                    el.setCustomValidity('Iznos mora biti veći od 0.');
+                                } else if (el.validity.valueMissing) {
+                                    el.setCustomValidity('Unesite iznos uplate.');
+                                } else {
+                                    el.setCustomValidity('Neispravan unos.');
+                                }
+                            }}
                             className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="npr. 300.00"
                             autoFocus
