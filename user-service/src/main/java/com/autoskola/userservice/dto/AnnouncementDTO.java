@@ -10,6 +10,8 @@ public class AnnouncementDTO {
     private String title;
     private String content;
     private Long createdBy;
+    private Long targetUserId;
+    private boolean adminOnly;
     private LocalDateTime dateCreated;
     private LocalDate expirationDate;
 }

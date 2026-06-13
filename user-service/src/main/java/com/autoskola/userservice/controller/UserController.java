@@ -31,8 +31,10 @@ public class UserController {
     public ResponseEntity<Page<UserDTO>> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "userId") String sortBy) {
-        return ResponseEntity.ok(userService.getAllUsersPaged(page, size, sortBy));
+            @RequestParam(defaultValue = "userId") String sortBy,
+            @RequestParam(required = false) String role,
+            @RequestParam(required = false) String search) {
+        return ResponseEntity.ok(userService.searchUsersPaged(page, size, sortBy, role, search));
     }
 
 

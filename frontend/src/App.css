@@ -206,7 +206,9 @@ textarea { resize: vertical; min-height: 80px; }
 .form-group { display: flex; flex-direction: column; gap: 6px; }
 .form-group label { font-size: 13px; font-weight: 600; color: var(--text2); }
 .req { color: var(--red); }
-.field-error { color: #ef4444; font-size: 12px; margin-top: 2px; }
+.field-error { color: #dc2626; font-size: 12px; font-weight: 500; margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+.field-error::before { content: '⚠'; font-size: 11px; }
+.form-alert-error { background: #fef2f2; color: #dc2626; font-size: 13px; padding: 10px 14px; border-radius: 8px; border: 1px solid #fecaca; margin-bottom: 12px; }
 .form-actions {
   display: flex;
   justify-content: flex-end;
@@ -557,9 +559,11 @@ code, .reg-number {
   .app-layout { height: auto; overflow: visible; }
   .main-content { overflow-y: visible; }
   .page { padding: 12px; }
-  .page-header { flex-direction: column; align-items: flex-start; }
+  .page-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .page-header .btn { width: 100%; text-align: center; }
   .page-toolbar { flex-wrap: wrap; }
   .search-input { max-width: 100%; width: 100%; }
+  .error-state { padding: 16px; }
 }
 @media (max-width: 600px) {
   .stat-grid { grid-template-columns: 1fr; }

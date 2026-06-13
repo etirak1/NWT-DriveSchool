@@ -137,10 +137,22 @@ export default function CandidateManagement() {
                                                 className={`text-sm border rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-0 ${inlineErrors[candidate.candidateId] ? 'border-red-400' : 'border-slate-200'}`}
                                                 value={candidate.assignedInstructor?.user?.userId || ''}
                                                 onChange={e => assignInstructor(candidate.candidateId, e.target.value)}
-                                                disabled={instructorsUnavailable}
-                                                title={instructorsUnavailable ? 'Servis instruktora trenutno nije dostupan' : ''}
+                                                disabled={instructorsUnavailable || !candidate.theoryExamPassed}
+                                                title={
+                                                    instructorsUnavailable
+                                                        ? 'Servis instruktora trenutno nije dostupan'
+                                                        : !candidate.theoryExamPassed
+                                                            ? 'Instruktor se može dodijeliti tek nakon položenog teorijskog ispita'
+                                                            : ''
+                                                }
                                             >
-                                                <option value="">{instructorsUnavailable ? 'Servis nedostupan' : 'Odaberi instruktora'}</option>
+                                                <option value="">
+                                                    {instructorsUnavailable
+                                                        ? 'Servis nedostupan'
+                                                        : !candidate.theoryExamPassed
+                                                            ? 'Teorija nije položena'
+                                                            : 'Odaberi instruktora'}
+                                                </option>
                                                 {instructors
                                                     .filter(inst => inst.availabilityNote !== 'UNAVAILABLE')
                                                     .map(inst => (

@@ -33,7 +33,7 @@ export default function Dashboard() {
   const userIsAdmin = role === 'ADMIN';
 
   const queryClient = useQueryClient();
-  const { announcements: raw, isLoading: loading, isError } = useAnnouncements();
+  const { announcements: raw, isLoading: loading, isError } = useAnnouncements(userId, role);
   const announcements = [...raw].sort((a, b) => new Date(b.dateCreated) - new Date(a.dateCreated));
   const error = isError ? 'Greška pri učitavanju obavještenja.' : '';
 
@@ -209,9 +209,10 @@ export default function Dashboard() {
             )}
           </div>
 
-          <p className="text-slate-500 text-sm mb-8">
+          <p className="text-slate-500 text-sm mb-6">
             Budite u toku s najnovijim vijestima i važnim obavještenjima.
           </p>
+          <hr className="border-slate-200 mb-6" />
 
           {loading && (
               <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center shadow-sm">

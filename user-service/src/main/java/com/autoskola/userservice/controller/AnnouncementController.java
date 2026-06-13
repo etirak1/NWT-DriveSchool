@@ -20,7 +20,15 @@ public class AnnouncementController {
 
     @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR', 'CANDIDATE')")
     @GetMapping
-    public List<AnnouncementDTO> getAll() {
+    public List<AnnouncementDTO> getAll(
+            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false) String role) {
+        if ("ADMIN".equals(role)) {
+            return announcementService.getAllAnnouncements();
+        }
+        if (userId != null) {
+            return announcementService.getAnnouncementsForUser(userId);
+        }
         return announcementService.getAllAnnouncements();
     }
 

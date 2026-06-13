@@ -21,7 +21,7 @@ export function EmptyState({ icon = '📭', title, message }) {
 
 function UnpluggedIllustration() {
     return (
-        <svg width="260" height="120" viewBox="0 0 680 320" role="img" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block', margin: '0 auto' }}>
+        <svg width="100%" height="120" viewBox="0 0 680 320" role="img" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block', margin: '0 auto', maxWidth: '300px' }}>
             <title>Servis nije dostupan</title>
             <style>{`
                 .plug-body { fill: #5a6478; }

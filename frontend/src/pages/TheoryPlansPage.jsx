@@ -37,6 +37,8 @@ export default function TheoryPlansPage() {
             const accounts = r.data || [];
             return accounts.filter(a => a.enrollmentEligible).map(a => a.candidateId);
         }),
+        staleTime: 0,
+        refetchOnMount: 'always',
     });
 
     const loading = plansLoading;

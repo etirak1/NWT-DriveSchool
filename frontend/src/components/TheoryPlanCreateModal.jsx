@@ -240,7 +240,7 @@ export default function TheoryPlanCreateModal({ candidates, onClose, onCreated, 
                     </div>
 
                     {error && (
-                        <div className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg border border-red-100">
+                        <div className="form-alert-error">
                             {error}
                         </div>
                     )}
