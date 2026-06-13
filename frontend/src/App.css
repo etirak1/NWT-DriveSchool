@@ -112,6 +112,7 @@
 .main-content {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   background: var(--bg);
 }
 
@@ -223,7 +224,7 @@ textarea { resize: vertical; min-height: 80px; }
   background: var(--bg2);
   box-shadow: var(--shadow);
 }
-.data-table { width: 100%; border-collapse: collapse; }
+.data-table { width: 100%; min-width: 600px; border-collapse: collapse; }
 .data-table th {
   background: var(--bg3);
   color: var(--text2);

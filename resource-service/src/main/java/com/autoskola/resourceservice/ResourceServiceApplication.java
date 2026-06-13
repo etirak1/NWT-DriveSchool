@@ -62,11 +62,11 @@ public class ResourceServiceApplication {
 
 			if (vehicleRepository.count() == 0) {
 				Vehicle vehicle1 = vehicleRepository.save(new Vehicle(
-						null, "Toyota", "Corolla", "E123-ABC", "ACTIVE",
+						null, "Toyota", "Corolla", "E12-A-123", "ACTIVE",
 						LocalDateTime.now().minusMonths(3), LocalDateTime.now().minusYears(1),
 						LocalDateTime.now(), LocalDateTime.now().minusMonths(3).plusYears(1)));
 				Vehicle vehicle2 = vehicleRepository.save(new Vehicle(
-						null, "BMW", "X5", "F456-DEF", "IN_REPAIR",
+						null, "BMW", "X5", "F45-B-456", "IN_REPAIR",
 						LocalDateTime.now().minusMonths(6), LocalDateTime.now().minusYears(2),
 						LocalDateTime.now(), LocalDateTime.now().minusMonths(6).plusYears(1)));
 
