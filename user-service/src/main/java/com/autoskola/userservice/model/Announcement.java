@@ -23,6 +23,9 @@ public class Announcement {
     private LocalDateTime dateCreated;
     private LocalDate expirationDate;
 
+
+    private Long targetUserId;
+
     @PrePersist
     protected void onCreate() {
         this.dateCreated = LocalDateTime.now();

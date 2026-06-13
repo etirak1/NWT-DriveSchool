@@ -83,8 +83,9 @@ public class UserService {
 
         Announcement note = new Announcement();
         note.setTitle("Dobrodošlica");
-        note.setContent("Novi korisnik " + savedUser.getFirstName() + " je dodat u sistem.");
+        note.setContent("Dobrodošli, " + savedUser.getFirstName() + "! Vaš nalog je uspješno kreiran. Možete pratiti napredak obuke, finansije i obavještenja putem ove platforme.");
         note.setCreatedBy(savedUser.getUserId());
+        note.setTargetUserId(savedUser.getUserId());
         announcementRepository.save(note);
 
         UserRegisteredEvent event = new UserRegisteredEvent(
@@ -118,11 +119,8 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Korisnik nije pronadjen"));
 
-        // Provjeravamo da li je korisnik instruktor
         if ("INSTRUKTOR".equals(user.getRole())) { // Prilagodi polje role tvojoj bazi
 
-            // SINHRONI POZIV: Čekamo odgovor od training-service
-            // Ovo je tačka 1.a iz zadatka - Validacija podataka kao međukorak
             Boolean imaCasove = trainingClient.hasActiveSessions(id);
 
             if (imaCasove) {
@@ -130,7 +128,6 @@ public class UserService {
             }
         }
 
-        // Ako nema časova ili nije instruktor, brišemo ga
         userRepository.deleteById(id);
         rabbitTemplate.convertAndSend("skola_exchange", "user.deleted", id);
 

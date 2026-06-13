@@ -36,7 +36,7 @@ const EXAM_STATUS_LABEL = {
     'ZAKAZANO':   { cls: 'text-yellow-700 bg-yellow-50', label: 'Zakazano' },
 };
 
-export default function TrainingTimeline({ candidate, onOpenTheory, refreshToken = 0 }) {
+export default function TrainingTimeline({ candidate, onOpenTheory, refreshToken = 0, onPhaseSaved }) {
     const [timeline, setTimeline] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -52,7 +52,7 @@ export default function TrainingTimeline({ candidate, onOpenTheory, refreshToken
         try {
             const res = await api.get(`/api/phases/candidate/${candidateId}/timeline`);
             setTimeline(res.data);
-        } catch {
+        } catch (e) {
             setError(getErrorMessage(e));
         } finally {
             setLoading(false);
@@ -214,7 +214,7 @@ export default function TrainingTimeline({ candidate, onOpenTheory, refreshToken
                     label={examModal.label}
                     current={examModal.current}
                     onClose={() => setExamModal(null)}
-                    onSaved={() => { setExamModal(null); loadTimeline(); }}
+                    onSaved={(msg) => { setExamModal(null); loadTimeline(); if (onPhaseSaved) onPhaseSaved(msg); }}
                 />
             )}
         </div>
@@ -240,6 +240,7 @@ function ExamModal({ candidateId, phaseType, label, current, onClose, onSaved })
         }
 
         setSaving(true);
+        setError('');
         try {
             await api.patch(`/api/phases/candidate/${candidateId}/exam`, {
                 phaseType,
@@ -247,7 +248,7 @@ function ExamModal({ candidateId, phaseType, label, current, onClose, onSaved })
                 examDate: examDate || null,
                 notes: notes || null,
             });
-            onSaved();
+            onSaved('Rezultat uspješno sačuvan!');
         } catch (e) {
             const data = e.response?.data;
             let msg = 'Greška pri čuvanju.';

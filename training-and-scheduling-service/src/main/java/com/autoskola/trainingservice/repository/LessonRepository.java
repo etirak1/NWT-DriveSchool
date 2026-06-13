@@ -57,6 +57,10 @@ public interface LessonRepository extends JpaRepository<Lesson, Long> {
     List<Lesson> findByCandidateCandidateIdAndLessonTypeIgnoreCase(Long candidateId, String lessonType);
 
     @Modifying
+    @Query("UPDATE Lesson l SET l.status = 'ODRAĐENO', l.topic = :topic, l.notes = :notes WHERE l.lessonId = :id")
+    void completeLesson(@Param("id") Long id, @Param("topic") String topic, @Param("notes") String notes);
+
+    @Modifying
     @Transactional
     @Query("UPDATE Lesson l SET l.status = 'ODRAĐENO' WHERE l.candidate.candidateId = :candidateId AND UPPER(l.lessonType) = 'VOŽNJA'")
     int markAllDrivingLessonsCompleted(@Param("candidateId") Long candidateId);

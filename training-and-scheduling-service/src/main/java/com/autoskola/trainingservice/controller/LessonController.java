@@ -49,12 +49,16 @@ public class LessonController {
 
     @PostMapping("/{id}/complete")
     @PreAuthorize("hasAnyRole('ADMIN', 'INSTRUCTOR')")
-    public ResponseEntity<String> completeLesson(
+    public ResponseEntity<?> completeLesson(
             @PathVariable Long id,
             @RequestParam(required = false) String topicCovered,
             @RequestParam(required = false) String teacherNotes) {
-        String result = lessonService.completeLessonAndIncreaseProgress(id, topicCovered, teacherNotes);
-        return ResponseEntity.ok(result);
+        try {
+            String result = lessonService.completeLessonAndIncreaseProgress(id, topicCovered, teacherNotes);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", e.getMessage()));
+        }
     }
 
     @GetMapping("/paged")

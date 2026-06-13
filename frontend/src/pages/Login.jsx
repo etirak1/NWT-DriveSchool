@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link, useLocation, useSearchParams } from 'react-router-dom';
+import { useNavigate, Link, useLocation, useSearchParams, Navigate } from 'react-router-dom';
 import { LogIn, Mail, Lock } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const stateMessage = location.state?.message;
@@ -36,6 +36,9 @@ export default function Login() {
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
+
+  // Mora biti nakon svih hook-ova (React Rules of Hooks)
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
 
   const handleSubmit = async (e) => {
     e.preventDefault();

@@ -255,7 +255,7 @@ export default function InstructorDashboard() {
                             )}
                         </div>
                         <button
-                            onClick={() => { localStorage.removeItem('token'); navigate('/login'); }}
+                            onClick={() => { logout(); navigate('/login'); }}
                             className="flex items-center gap-1.5 px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
                         >
                             <LogOut size={16} /> Odjava

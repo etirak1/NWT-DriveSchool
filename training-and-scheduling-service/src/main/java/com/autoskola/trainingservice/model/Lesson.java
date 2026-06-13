@@ -27,7 +27,6 @@ public class Lesson {
     private Long vehicleId;
 
     @NotNull(message = "Datum i vrijeme časa su obavezni")
-    @Future(message = "Čas se mora zakazati za budući termin")
     private LocalDateTime dateTime;
 
     @Min(value = 30, message = "Trajanje časa ne može biti kraće od 30 minuta")

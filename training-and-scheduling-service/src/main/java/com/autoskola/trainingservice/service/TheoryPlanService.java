@@ -203,9 +203,44 @@ public class TheoryPlanService {
 
     @Transactional
     public TheorySession updateSession(Long sessionId, String status, String note,
-                                       List<Long> presentCandidateIds) {
+                                       List<Long> presentCandidateIds, LocalDate newDate) {
         TheorySession session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new RuntimeException("Termin nije pronađen"));
+
+        // Ako se otkazuje i naveden je novi datum, premjesti termin
+        if ("OTKAZANO".equals(status) && newDate != null) {
+            // Novi datum mora biti nakon sljedećeg planiranog termina u grupi
+            List<TheorySession> futureSessions = sessionRepository
+                    .findByPlanIdOrderBySessionNumber(session.getPlan().getId())
+                    .stream()
+                    .filter(s -> s.getSessionNumber() > session.getSessionNumber()
+                              && !s.getId().equals(sessionId)
+                              && !"OTKAZANO".equals(s.getStatus()))
+                    .sorted(Comparator.comparingInt(TheorySession::getSessionNumber))
+                    .toList();
+
+            if (!futureSessions.isEmpty()) {
+                LocalDate nextDate = futureSessions.get(0).getDate();
+                if (!newDate.isBefore(nextDate)) {
+                    throw new RuntimeException(
+                        "Nadoknada mora biti najmanje dan ranije od sljedećeg termina (" + nextDate + ").");
+                }
+            }
+            session.setDate(newDate);
+        }
+
+        // Termin se može označiti održanim samo ako su svi prethodni odржani ili otkazani
+        if ("ODRZANO".equals(status)) {
+            boolean prethodniNisuZavrseni = sessionRepository
+                    .findByPlanIdOrderBySessionNumber(session.getPlan().getId())
+                    .stream()
+                    .anyMatch(s -> s.getSessionNumber() < session.getSessionNumber()
+                               && !"ODRZANO".equals(s.getStatus()));
+            if (prethodniNisuZavrseni) {
+                throw new RuntimeException(
+                    "Nije moguće označiti termin održanim — prethodni termini još nisu odrzani ili otkazani.");
+            }
+        }
 
         session.setStatus(status);
         if (note != null) session.setNote(note);

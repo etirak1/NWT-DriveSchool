@@ -118,9 +118,9 @@ export default function CandidateDashboard() {
                     setPayments(pmtRes.data || []);
                 } catch (e) { /* ignore */ }
 
-                // Announcements
+                // Announcements — šaljemo userId da dobijemo samo javna + naša privatna obavještenja
                 try {
-                    const annRes = await api.get('/api/announcements');
+                    const annRes = await api.get(`/api/announcements?userId=${userId}`);
                     setAnnouncements(annRes.data);
                 } catch (e) { /* announcements optional */ }
 
@@ -806,33 +806,53 @@ export default function CandidateDashboard() {
                 )}
 
                 {/* ── ANNOUNCEMENTS ── */}
-                {activeSection === 'announcements' && (
-                    <div className="bg-white rounded-xl border border-slate-200 p-6">
-                        <h2 className="text-base font-semibold text-slate-800 mb-1">Obavještenja</h2>
-                        <p className="text-sm text-slate-500 mb-5">Budite u toku s najnovijim vijestima i važnim obavještenjima.</p>
-                        {announcements.length === 0 ? (
-                            <div className="flex flex-col items-center py-12 gap-3">
-                                <AlertCircle size={36} className="text-slate-300" />
-                                <p className="text-slate-400 text-sm">Nema obavještenja</p>
-                                <p className="text-slate-400 text-xs">Provjerite kasnije za nove informacije i važna obavještenja</p>
+                {activeSection === 'announcements' && (() => {
+                    const visibleAnnouncements = announcements;
+
+                    return (
+                        <div className="space-y-4">
+                            {/* Header banner */}
+                            <div className="rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 p-5 flex items-center gap-4 text-white">
+                                <div className="bg-white/20 rounded-lg p-2.5 shrink-0">
+                                    <Info size={22} className="text-white" />
+                                </div>
+                                <div>
+                                    <h2 className="text-base font-bold">Obavještenja</h2>
+                                    <p className="text-sm text-blue-100 mt-0.5">
+                                        {visibleAnnouncements.length > 0
+                                            ? `${visibleAnnouncements.length} aktivno obavještenje`
+                                            : 'Trenutno nema novih obavještenja'}
+                                    </p>
+                                </div>
                             </div>
-                        ) : (
-                            <div className="divide-y divide-slate-100">
-                                {announcements.map(a => (
-                                    <div key={a.id} className="py-4 first:pt-0">
-                                        <div className="flex items-start justify-between gap-3">
-                                            <p className="font-semibold text-slate-800 text-sm">{a.title}</p>
-                                            <span className="text-xs text-slate-400 whitespace-nowrap">
-                                                {a.dateCreated ? new Date(a.dateCreated).toLocaleDateString('en-GB') : ''}
-                                            </span>
-                                        </div>
-                                        <p className="text-sm text-slate-600 mt-1">{a.content}</p>
+
+                            {/* List */}
+                            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                                {visibleAnnouncements.length === 0 ? (
+                                    <div className="flex flex-col items-center py-12 gap-3">
+                                        <AlertCircle size={36} className="text-slate-300" />
+                                        <p className="text-slate-400 text-sm">Nema obavještenja</p>
+                                        <p className="text-slate-400 text-xs">Provjerite kasnije za nove informacije</p>
                                     </div>
-                                ))}
+                                ) : (
+                                    <div className="divide-y divide-slate-100">
+                                        {visibleAnnouncements.map(a => (
+                                            <div key={a.id} className="px-5 py-4 hover:bg-slate-50 transition-colors">
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <p className="font-semibold text-slate-800 text-sm">{a.title}</p>
+                                                    <span className="text-xs text-slate-400 whitespace-nowrap shrink-0">
+                                                        {a.dateCreated ? new Date(a.dateCreated).toLocaleDateString('en-GB') : ''}
+                                                    </span>
+                                                </div>
+                                                <p className="text-sm text-slate-600 mt-1">{a.content}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
-                        )}
-                    </div>
-                )}
+                        </div>
+                    );
+                })()}
             </div>
 
             {/* Reschedule modal */}

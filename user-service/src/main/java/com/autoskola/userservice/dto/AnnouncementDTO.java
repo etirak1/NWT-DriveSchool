@@ -12,4 +12,5 @@ public class AnnouncementDTO {
     private Long createdBy;
     private LocalDateTime dateCreated;
     private LocalDate expirationDate;
+    private Long targetUserId;
 }

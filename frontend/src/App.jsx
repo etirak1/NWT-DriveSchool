@@ -34,6 +34,14 @@ function RequireAdmin({ children }) {
     return children;
 }
 
+// Blokira pristup određenoj ruti korisnicima koji imaju specifičnu rolu
+function ForbidRole({ forbid, children }) {
+    const { isAuthenticated, user } = useAuth();
+    if (!isAuthenticated) return <Navigate to="/login" replace />;
+    if (forbid.includes(user?.role)) return <Navigate to="/dashboard" replace />;
+    return children;
+}
+
 function SmartDashboard() {
     const { user } = useAuth();
     if (user?.role === 'CANDIDATE') return <CandidateDashboard />;
@@ -90,7 +98,7 @@ export default function App() {
             <Route path="/lessons/book" element={<RequireAuth><BookLesson /></RequireAuth>} />
             <Route path="/book-lesson" element={<RequireAuth><BookLesson /></RequireAuth>} />
 
-            <Route path="/resources" element={<RequireAuth><Layout /></RequireAuth>}>
+            <Route path="/resources" element={<ForbidRole forbid={['CANDIDATE']}><Layout /></ForbidRole>}>
                 <Route index element={<ResourceManagement />} />
                 <Route path="vehicles" element={<Vehicles />} />
                 <Route path="repairs" element={<Repairs />} />

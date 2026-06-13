@@ -25,6 +25,12 @@ public class AnnouncementService {
                 .collect(Collectors.toList());
     }
 
+    public List<AnnouncementDTO> getAnnouncementsForUser(Long userId) {
+        return announcementRepository.findVisibleForUser(userId).stream()
+                .map(ann -> modelMapper.map(ann, AnnouncementDTO.class))
+                .collect(Collectors.toList());
+    }
+
     public AnnouncementDTO createAnnouncement(Announcement announcement) {
         Announcement saved = announcementRepository.save(announcement);
         return modelMapper.map(saved, AnnouncementDTO.class);

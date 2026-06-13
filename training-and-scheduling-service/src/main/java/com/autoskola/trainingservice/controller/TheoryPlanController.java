@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -61,8 +62,13 @@ public class TheoryPlanController {
                 ? rawIds.stream().map(Long::valueOf).toList()
                 : null;
 
+        String newDateStr = (String) body.get("newDate");
+        LocalDate newDate = (newDateStr != null && !newDateStr.isBlank())
+                ? LocalDate.parse(newDateStr)
+                : null;
+
         return ResponseEntity.ok(
-                theoryPlanService.updateSession(sessionId, status, note, presentIds)
+                theoryPlanService.updateSession(sessionId, status, note, presentIds, newDate)
         );
     }
 

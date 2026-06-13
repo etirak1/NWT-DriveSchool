@@ -39,9 +39,12 @@ api.interceptors.response.use(
         }
 
         if (status === 401) {
+            // Samo prikaži "sesija istekla" ako je zahtjev imao token koji je server odbio.
+            // Ako nije bio token (korisnik se odjavio), tiho idi na /login bez poruke.
+            const hadToken = !!error.config?.headers?.Authorization;
             localStorage.removeItem('token');
             window.dispatchEvent(new Event('auth:logout'));
-            window.location.href = '/login?reason=session_expired';
+            window.location.href = hadToken ? '/login?reason=session_expired' : '/login';
             return new Promise(() => {});
         }
 

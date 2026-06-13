@@ -73,6 +73,10 @@ public class LessonService {
     }
 
     public LessonDTO saveLesson(Lesson lesson) {
+        if (lesson.getDateTime() == null || !lesson.getDateTime().isAfter(LocalDateTime.now())) {
+            throw new RuntimeException("Čas se mora zakazati za budući termin.");
+        }
+
         Candidate candidate = candidateRepository.findByUserId(lesson.getCandidate().getUserId())
                 .orElseThrow(() -> new RuntimeException(
                         "Kandidat sa userId=" + lesson.getCandidate().getUserId() + " ne postoji."));
@@ -194,10 +198,13 @@ public class LessonService {
             throw new RuntimeException("Samo zakazani časovi se mogu označiti kao završeni.");
         }
 
+        String newTopic = (topicCovered != null && !topicCovered.isBlank()) ? topicCovered : lesson.getTopic();
+        String newNotes = (teacherNotes != null && !teacherNotes.isBlank()) ? teacherNotes : lesson.getNotes();
+        lessonRepository.completeLesson(lessonId, newTopic, newNotes);
+        // Refresh entity state after direct query update
         lesson.setStatus("ODRAĐENO");
-        if (topicCovered != null && !topicCovered.isBlank()) lesson.setTopic(topicCovered);
-        if (teacherNotes != null && !teacherNotes.isBlank()) lesson.setNotes(teacherNotes);
-        lessonRepository.save(lesson);
+        lesson.setTopic(newTopic);
+        lesson.setNotes(newNotes);
 
         if ("VOŽNJA".equalsIgnoreCase(lesson.getLessonType())) {
             Candidate candidate = lesson.getCandidate();

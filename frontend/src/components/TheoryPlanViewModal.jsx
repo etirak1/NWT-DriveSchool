@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, BookOpen, CheckCircle, XCircle, Clock, Calendar, Users, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
+import { X, BookOpen, CheckCircle, XCircle, Clock, Calendar, Users, ChevronDown, ChevronUp, AlertTriangle, CalendarX } from 'lucide-react';
 import { api } from '../api/client';
 
 const STATUS_COLORS = {
@@ -32,6 +32,22 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
     const [savingSession, setSavingSession] = useState(null);
     const [error, setError] = useState('');
     const [candidateNameMap, setCandidateNameMap] = useState({});
+    const [cancelState, setCancelState] = useState({ sessionId: null, rescheduleDate: '' });
+    const [cancelError, setCancelError] = useState('');
+
+    // Bez timezone bugova — radi isključivo s string datumima
+    const subtractOneDay = (dateStr) => {
+        if (!dateStr) return null;
+        const [y, m, d] = dateStr.split('-').map(Number);
+        const prev = new Date(y, m - 1, d - 1);
+        return `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}-${String(prev.getDate()).padStart(2, '0')}`;
+    };
+
+    const getTomorrow = () => {
+        const t = new Date();
+        t.setDate(t.getDate() + 1);
+        return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+    };
 
     const candidates = plan?.candidates || [];
 
@@ -94,25 +110,61 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
         });
     };
 
-    const updateSession = async (sessionId, status, note) => {
+    const updateSession = async (sessionId, status, note, newDate) => {
         setSavingSession(sessionId);
         setError('');
         try {
-            const res = await api.patch(`/api/theory-plans/sessions/${sessionId}`, {
+            const body = {
                 status,
                 note: note || null,
                 presentCandidateIds: status === 'ODRZANO'
                     ? (attendanceMap[sessionId] || [])
                     : null,
-            });
+            };
+            if (newDate) body.newDate = newDate;
+            const res = await api.patch(`/api/theory-plans/sessions/${sessionId}`, body);
             setSessions(prev => prev.map(s => s.id === sessionId ? res.data : s));
             setExpandedSession(null);
+            setCancelState({ sessionId: null, rescheduleDate: '' });
+            setCancelError('');
             if (activeTab === 'attendance') loadSummary();
         } catch (e) {
-            setError(e.response?.data?.message || 'Greska pri azuriranju termina.');
+            const msg = e.response?.data?.message || e.response?.data || 'Greska pri azuriranju termina.';
+            setError(typeof msg === 'string' ? msg : 'Greška.');
         } finally {
             setSavingSession(null);
         }
+    };
+
+    const getNextPlannedDate = (sessionId) => {
+        const current = sessions.find(s => s.id === sessionId);
+        if (!current) return null;
+        const next = sessions
+            .filter(s => s.sessionNumber > current.sessionNumber && (!s.status || s.status === 'PLANIRANO'))
+            .sort((a, b) => a.sessionNumber - b.sessionNumber)[0];
+        return next?.date || null;
+    };
+
+    const handleConfirmCancel = (sessionId) => {
+        const d = cancelState.rescheduleDate;
+        const tomorrow = getTomorrow();
+        const nextDate = getNextPlannedDate(sessionId);
+        const maxDate = subtractOneDay(nextDate);
+
+        if (!d) {
+            setCancelError('Morate odabrati datum za nadoknadu.');
+            return;
+        }
+        if (d < tomorrow) {
+            setCancelError('Datum nadoknade mora biti u budućnosti.');
+            return;
+        }
+        if (maxDate && d > maxDate) {
+            setCancelError(`Datum mora biti najkasnije ${maxDate} (dan prije termina ${nextDate}).`);
+            return;
+        }
+        setCancelError('');
+        updateSession(sessionId, 'OTKAZANO', null, d);
     };
 
     const isHeld = (s) => s.status === 'ODRZANO';
@@ -123,6 +175,13 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
 
     const getCandidateName = (candidateId) => {
         return candidateNameMap[candidateId] || `Kandidat #${candidateId}`;
+    };
+
+    // Termin može biti označen odrzanim samo ako su SVI prethodni termini ODRZANO
+    const canMarkHeld = (session) => {
+        return !sessions.some(
+            s => s.sessionNumber < session.sessionNumber && s.status !== 'ODRZANO'
+        );
     };
 
     return (
@@ -224,7 +283,7 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
                                         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border shrink-0 ${getStatusColor(session.status)}`}>
                                             {getStatusLabel(session.status)}
                                         </span>
-                                        {!held && (
+                                        {!isHeld(session) && (
                                             <button
                                                 onClick={() => setExpandedSession(isExpanded ? null : session.id)}
                                                 className="text-slate-400 hover:text-slate-700 shrink-0">
@@ -267,27 +326,107 @@ export default function TheoryPlanViewModal({ plan, onClose }) {
                                                 </div>
                                             )}
 
-                                            <div className="flex gap-2 mt-2">
-                                                <button
-                                                    onClick={() => updateSession(session.id, 'ODRZANO', null)}
-                                                    disabled={isSaving}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white rounded-lg">
-                                                    <CheckCircle size={13} />
-                                                    {isSaving ? 'Cuvam...' : 'Oznaci odrzanim'}
-                                                </button>
-                                                <button
-                                                    onClick={() => updateSession(session.id, 'OTKAZANO', null)}
-                                                    disabled={isSaving}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg">
-                                                    <XCircle size={13} />
-                                                    Otkazi
-                                                </button>
-                                                <button
-                                                    onClick={() => setExpandedSession(null)}
-                                                    className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">
-                                                    Zatvori
-                                                </button>
-                                            </div>
+                                            {/* Za otkazane termine: samo opcija da se oznaci odrzanim (nadoknada) */}
+                                            {session.status === 'OTKAZANO' ? (
+                                                <div className="mt-2 flex gap-2 items-center">
+                                                    <div className="relative group">
+                                                        <button
+                                                            onClick={() => updateSession(session.id, 'ODRZANO', null)}
+                                                            disabled={isSaving || !canMarkHeld(session)}
+                                                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-green-600 hover:bg-green-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white rounded-lg">
+                                                            <CheckCircle size={13} />
+                                                            {isSaving ? 'Čuvam...' : 'Nadoknada odrzana'}
+                                                        </button>
+                                                        {!canMarkHeld(session) && (
+                                                            <div className="absolute bottom-full left-0 mb-1 hidden group-hover:block z-10 w-52 bg-slate-800 text-white text-xs rounded-lg px-2.5 py-1.5 shadow-lg">
+                                                                Prethodni termini još nisu odrzani.
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <button
+                                                        onClick={() => setExpandedSession(null)}
+                                                        className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">
+                                                        Zatvori
+                                                    </button>
+                                                </div>
+                                            ) : cancelState.sessionId === session.id ? (() => {
+                                                const nextDate = getNextPlannedDate(session.id);
+                                                const maxDate = subtractOneDay(nextDate);
+                                                const tomorrow = getTomorrow();
+                                                return (
+                                                <div className="mt-3 p-3 rounded-lg bg-amber-50 border border-amber-200">
+                                                    <p className="text-xs font-semibold text-amber-800 mb-1 flex items-center gap-1">
+                                                        <CalendarX size={13} /> Otkazivanje termina
+                                                    </p>
+                                                    <p className="text-xs text-amber-700 mb-2">
+                                                        Odaberite datum nadoknade.
+                                                        {maxDate
+                                                            ? <span> Najkasnije: <strong>{maxDate}</strong> (dan prije termina {nextDate}).</span>
+                                                            : <span> Nema sljedećeg termina — datum nije ograničen.</span>
+                                                        }
+                                                    </p>
+                                                    <input
+                                                        type="date"
+                                                        value={cancelState.rescheduleDate}
+                                                        min={tomorrow}
+                                                        max={maxDate || undefined}
+                                                        onChange={e => {
+                                                            setCancelError('');
+                                                            setCancelState(prev => ({ ...prev, rescheduleDate: e.target.value }));
+                                                        }}
+                                                        className={`text-xs border rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 w-full mb-1 ${cancelError ? 'border-red-400 focus:ring-red-400' : 'border-amber-300 focus:ring-amber-400'}`}
+                                                    />
+                                                    {cancelError && (
+                                                        <p className="text-xs text-red-600 mb-2 flex items-center gap-1">
+                                                            <AlertTriangle size={11} /> {cancelError}
+                                                        </p>
+                                                    )}
+                                                    <div className="flex gap-2 mt-2">
+                                                        <button
+                                                            onClick={() => handleConfirmCancel(session.id)}
+                                                            disabled={isSaving}
+                                                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white rounded-lg">
+                                                            <XCircle size={13} />
+                                                            {isSaving ? 'Čuvam...' : 'Potvrdi otkazivanje'}
+                                                        </button>
+                                                        <button
+                                                            onClick={() => { setCancelState({ sessionId: null, rescheduleDate: '' }); setCancelError(''); }}
+                                                            className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg border border-slate-200">
+                                                            Odustani
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                );
+                                            })() : (
+                                                <div className="flex gap-2 mt-2">
+                                                    <div className="relative group">
+                                                        <button
+                                                            onClick={() => updateSession(session.id, 'ODRZANO', null)}
+                                                            disabled={isSaving || !canMarkHeld(session)}
+                                                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-green-600 hover:bg-green-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white rounded-lg">
+                                                            <CheckCircle size={13} />
+                                                            {isSaving ? 'Cuvam...' : 'Oznaci odrzanim'}
+                                                        </button>
+                                                        {!canMarkHeld(session) && (
+                                                            <div className="absolute bottom-full left-0 mb-1 hidden group-hover:block z-10 w-52 bg-slate-800 text-white text-xs rounded-lg px-2.5 py-1.5 shadow-lg">
+                                                                Prethodni termini još nisu odrzani ili otkazani.
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <button
+                                                        onClick={() => setCancelState({ sessionId: session.id, rescheduleDate: '' })}
+                                                        disabled={isSaving}
+                                                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg">
+                                                        <XCircle size={13} />
+                                                        Otkazi
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setExpandedSession(null)}
+                                                        className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">
+                                                        Zatvori
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
