@@ -15,7 +15,7 @@ export default function InstructorsPage() {
     const [assigning, setAssigning] = useState(false);
 
     const { data: { instructors: data = [], vehicles = [] } = {}, isLoading: loading, isError, refetch } = useQuery({
-        queryKey: ['instructors'],
+        queryKey: ['instructors-combined'],
         queryFn: async () => {
             const [resUsers, resInstructors, resVehicles] = await Promise.all([
                 userApi.getActiveInstructors(),
@@ -53,11 +53,7 @@ export default function InstructorsPage() {
         try {
             await instructorApi.updateAvailability(instructor.instructorId, newNote);
             addToast(`Status promenjen za ${instructor.firstName}`, 'success');
-            setData(prev => prev.map(item =>
-                item.instructorId === instructor.instructorId
-                    ? { ...item, availabilityNote: newNote }
-                    : item
-            ));
+            queryClient.invalidateQueries({ queryKey: ['instructors-combined'] });
         } catch (e) {
             addToast(getErrorMessage(e), 'error');
         } finally {
@@ -79,7 +75,7 @@ export default function InstructorsPage() {
             );
 
             setAssignTarget(null);
-            queryClient.invalidateQueries({ queryKey: ['instructors'] });
+            queryClient.invalidateQueries({ queryKey: ['instructors-combined'] });
 
         } catch (e) {
 
