@@ -12,6 +12,7 @@ import RoleBadge from '../components/RoleBadge';
 import StatusBadge from '../components/StatusBadge';
 import AddUserModal from '../components/modals/AddUserModal';
 import ConfirmDeleteModal from '../components/modals/ConfirmDeleteModal';
+import Header from '../components/Header';
 
 const ROLES = ['ALL', 'ADMIN', 'INSTRUCTOR', 'CANDIDATE'];
 
@@ -118,67 +119,7 @@ export default function UserManagement() {
 
   return (
       <div className="min-h-screen bg-slate-50">
-        {/* Header */}
-        <header
-            className="relative"
-            style={{ background: 'linear-gradient(135deg, #1a3a8f 0%, #1e5adb 50%, #3b82f6 100%)' }}
-        >
-          <div
-              className="absolute top-0 right-0 w-96 h-full rounded-full blur-3xl pointer-events-none"
-              style={{ background: 'rgba(147,197,253,0.1)', transform: 'translate(30%, -20%)' }}
-          />
-          <div className="relative max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-            {/* Brand + back */}
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3">
-                <div
-                    className="w-11 h-11 rounded-xl flex items-center justify-center"
-                    style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)' }}
-                >
-                  <GraduationCap className="text-white" size={22} />
-                </div>
-                <div className="hidden sm:block">
-                  <h1 className="text-lg font-bold text-white leading-none">DriveSchool</h1>
-                  <p className="text-xs text-blue-200 mt-0.5">Upravljanje korisnicima</p>
-                </div>
-              </div>
-              <Link
-                  to="/dashboard"
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-blue-100 hover:text-white transition-all duration-200"
-                  style={glassBtn}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
-              >
-                <ArrowLeft size={15} />
-                <span className="hidden sm:inline">Nazad na početnu</span>
-              </Link>
-            </div>
-
-            {/* Right */}
-            <div className="flex items-center gap-3">
-              <div className="hidden sm:flex flex-col items-end">
-                <p className="text-sm font-semibold text-white leading-none">{user.email}</p>
-                <span
-                    className="inline-block text-xs px-2 py-0.5 rounded-full font-semibold mt-1"
-                    style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)' }}
-                >
-                {user.role}
-              </span>
-              </div>
-              <button
-                  onClick={() => { localStorage.removeItem('token'); navigate('/login'); }}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-blue-100 hover:text-white transition-all duration-200"
-                  style={glassBtn}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
-              >
-                <LogOut size={16} />
-                <span className="hidden sm:inline">Odjava</span>
-              </button>
-            </div>
-          </div>
-        </header>
-
+        <Header active="Korisnici" />
         {/* Main */}
         <main className="max-w-6xl mx-auto px-4 py-10">
           <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 sm:p-8">
@@ -433,3 +374,5 @@ function SelectField({ value, onChange, options }) {
       </select>
   );
 }
+
+

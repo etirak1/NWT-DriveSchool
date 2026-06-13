@@ -7,7 +7,7 @@ const DAYS = [
     { value: 'MONDAY',    label: 'Ponedjeljak' },
     { value: 'TUESDAY',   label: 'Utorak' },
     { value: 'WEDNESDAY', label: 'Srijeda' },
-    { value: 'THURSDAY',  label: 'Cetvrtak' },
+    { value: 'THURSDAY',  label: 'Četvrtak' },
     { value: 'FRIDAY',    label: 'Petak' },
     { value: 'SATURDAY',  label: 'Subota' },
 ];
@@ -71,46 +71,49 @@ export default function TheoryPlanCreateModal({ candidates, onClose, onCreated, 
     const numSessions = Math.ceil(Number(form.totalLessons) / Number(form.lessonsPerSession));
     const lastSessionLessons = Number(form.totalLessons) % Number(form.lessonsPerSession) || Number(form.lessonsPerSession);
 
-    return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col">
+    const inputCls = "w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-slate-50 focus:bg-white";
+    const labelCls = "block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5";
 
-                <div className="flex items-center justify-between p-5 border-b border-slate-200 shrink-0">
-                    <div className="flex items-center gap-3">
-                        <div className="bg-indigo-500 w-9 h-9 rounded-lg flex items-center justify-center">
-                            <BookOpen className="text-white" size={18} />
+    return (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col border border-slate-100 overflow-hidden">
+
+                <div className="bg-gradient-to-r from-blue-800 to-blue-500 px-6 py-5 flex-shrink-0">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white/20">
+                                <BookOpen className="text-white" size={18} />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-white text-base">Kreiraj plan teorijske nastave</h3>
+                                <p className="text-blue-200 text-xs mt-0.5">Automatsko generisanje termina</p>
+                            </div>
                         </div>
-                        <div>
-                            <h3 className="font-bold text-slate-900">Kreiraj plan teorijske nastave</h3>
-                            <p className="text-xs text-slate-500">Automatsko generisanje termina</p>
-                        </div>
+                        <button onClick={onClose} className="text-blue-200 hover:text-white transition-colors">
+                            <X size={22} />
+                        </button>
                     </div>
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-700">
-                        <X size={22} />
-                    </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="overflow-y-auto p-5 space-y-4">
+                <form onSubmit={handleSubmit} className="overflow-y-auto p-6 space-y-5">
 
                     <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-1">
-                            Naziv grupe
-                        </label>
+                        <label className={labelCls}>Naziv grupe</label>
                         <input
                             required
                             value={form.groupName}
                             onChange={set('groupName')}
                             placeholder="npr. Grupa A - Juni 2026"
-                            className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500"
+                            className={inputCls}
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-1">
-                            <Users size={14} className="inline mr-1" />
+                        <label className={labelCls}>
+                            <Users size={12} className="inline mr-1" />
                             Kandidati
                         </label>
-                        <div className="border border-slate-200 rounded-lg max-h-36 overflow-y-auto p-2 space-y-1">
+                        <div className="border border-slate-200 rounded-xl max-h-36 overflow-y-auto p-2 space-y-0.5 bg-slate-50">
                             {candidates.length === 0 && (
                                 <p className="text-xs text-slate-400 p-2">Nema dostupnih kandidata.</p>
                             )}
@@ -120,26 +123,25 @@ export default function TheoryPlanCreateModal({ candidates, onClose, onCreated, 
                                     : `Kandidat #${c.candidateId}`;
                                 const checked = form.candidateIds.includes(c.candidateId);
                                 const assigned = assignedCandidateIds.includes(c.candidateId);
-                                // enrollmentEligibleIds=null znaci da info nije ucitan (ne blokiramo)
                                 const notEnrolled = enrollmentEligibleIds !== null &&
                                     !enrollmentEligibleIds.includes(c.candidateId);
                                 const disabled = assigned || notEnrolled;
                                 return (
                                     <label key={c.candidateId}
-                                        className={`flex items-center gap-2 px-2 py-1.5 rounded-lg ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-50 cursor-pointer'}`}>
+                                           className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white cursor-pointer transition-colors'}`}>
                                         <input
                                             type="checkbox"
                                             checked={checked}
                                             disabled={disabled}
                                             onChange={() => !disabled && toggleCandidate(c.candidateId)}
-                                            className="accent-indigo-500"
+                                            className="accent-blue-600 w-4 h-4"
                                         />
                                         <span className="text-sm text-slate-700">{name}</span>
                                         {assigned && (
-                                            <span className="ml-auto text-xs text-amber-600 font-medium">već u grupi</span>
+                                            <span className="ml-auto text-xs text-amber-600 font-medium bg-amber-50 px-2 py-0.5 rounded-full">već u grupi</span>
                                         )}
                                         {notEnrolled && !assigned && (
-                                            <span className="ml-auto text-xs text-red-500 font-medium">bez upisnine</span>
+                                            <span className="ml-auto text-xs text-red-500 font-medium bg-red-50 px-2 py-0.5 rounded-full">bez upisnine</span>
                                         )}
                                     </label>
                                 );
@@ -149,8 +151,8 @@ export default function TheoryPlanCreateModal({ candidates, onClose, onCreated, 
 
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">
-                                <Calendar size={14} className="inline mr-1" />
+                            <label className={labelCls}>
+                                <Calendar size={12} className="inline mr-1" />
                                 Datum pocetka
                             </label>
                             <input
@@ -158,12 +160,12 @@ export default function TheoryPlanCreateModal({ candidates, onClose, onCreated, 
                                 type="date"
                                 value={form.startDate}
                                 onChange={set('startDate')}
-                                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500"
+                                className={inputCls}
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">
-                                <Clock size={14} className="inline mr-1" />
+                            <label className={labelCls}>
+                                <Clock size={12} className="inline mr-1" />
                                 Vrijeme pocetka
                             </label>
                             <input
@@ -171,25 +173,25 @@ export default function TheoryPlanCreateModal({ candidates, onClose, onCreated, 
                                 type="time"
                                 value={form.startTime}
                                 onChange={set('startTime')}
-                                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500"
+                                className={inputCls}
                             />
                         </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">Dan 1</label>
+                            <label className={labelCls}>Dan 1</label>
                             <select value={form.day1OfWeek} onChange={set('day1OfWeek')}
-                                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
+                                    className={inputCls}>
                                 {DAYS.map(d => (
                                     <option key={d.value} value={d.value}>{d.label}</option>
                                 ))}
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">Dan 2</label>
+                            <label className={labelCls}>Dan 2</label>
                             <select value={form.day2OfWeek} onChange={set('day2OfWeek')}
-                                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
+                                    className={inputCls}>
                                 {DAYS.map(d => (
                                     <option key={d.value} value={d.value}>{d.label}</option>
                                 ))}
@@ -199,59 +201,53 @@ export default function TheoryPlanCreateModal({ candidates, onClose, onCreated, 
 
                     <div className="grid grid-cols-3 gap-3">
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">
-                                Trajanje (min)
-                            </label>
+                            <label className={labelCls}>Trajanje (min)</label>
                             <input
                                 type="number" min={30} max={120}
                                 value={form.durationMinutes}
                                 onChange={set('durationMinutes')}
-                                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                                className={inputCls}
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">
-                                Ukupno casova
-                            </label>
+                            <label className={labelCls}>Ukupno casova</label>
                             <input
                                 type="number" min={1} max={100}
                                 value={form.totalLessons}
                                 onChange={set('totalLessons')}
-                                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                                className={inputCls}
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">
-                                Casova po terminu
-                            </label>
+                            <label className={labelCls}>Casova po terminu</label>
                             <input
                                 type="number" min={1} max={10}
                                 value={form.lessonsPerSession}
                                 onChange={set('lessonsPerSession')}
-                                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                                className={inputCls}
                             />
                         </div>
                     </div>
 
-                    <div className="bg-indigo-50 border border-indigo-100 rounded-lg px-4 py-3 text-xs text-indigo-700">
+                    <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-xs text-blue-700">
                         Sistem ce automatski generisati <strong>{numSessions} termina</strong> —
                         prvih {numSessions - 1} termina po {form.lessonsPerSession} casa,
                         zadnji termin {lastSessionLessons} casova.
                     </div>
 
                     {error && (
-                        <div className="form-alert-error">
-                            {error}
+                        <div className="text-sm text-red-600 bg-red-50 px-4 py-3 rounded-xl border border-red-100 flex items-center gap-2">
+                            <X size={14} className="shrink-0" /> {error}
                         </div>
                     )}
 
-                    <div className="flex gap-2 pt-2">
+                    <div className="flex gap-3 pt-1">
                         <button type="button" onClick={onClose}
-                            className="flex-1 px-4 py-2.5 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                                className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
                             Odustani
                         </button>
                         <button type="submit" disabled={saving}
-                            className="flex-1 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white rounded-lg text-sm font-semibold">
+                                className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm">
                             {saving ? 'Generisem...' : 'Generiši plan'}
                         </button>
                     </div>

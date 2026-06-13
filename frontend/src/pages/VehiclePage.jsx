@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Car } from 'lucide-react';
+import { Car, Plus, Search } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { vehicleApi, repairApi } from '../services/api';
 import VehicleTable from '../components/VehicleTable';
@@ -10,7 +10,6 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import { Spinner, ErrorState } from '../components/States';
 import { useToast } from '../context/ToastContext';
 import { getErrorMessage } from '../utils/helpers';
-
 
 export default function VehiclesPage() {
     const { addToast } = useToast();
@@ -78,44 +77,57 @@ export default function VehiclesPage() {
     const openAdd = () => { setEditTarget(null); setShowForm(true); };
 
     return (
-        <div className="page">
-            <div className="page-header">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                    <div className="page-icon">
-                        <Car size={22} />
+        <div className="space-y-5">
+            {/* Page header */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <div className="w-11 h-11 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
+                            <Car size={20} className="text-blue-600" />
+                        </div>
+                        <div>
+                            <h1 className="text-xl font-bold text-slate-900">Vozila</h1>
+                            <p className="text-sm text-slate-500 mt-0.5">Upravljanje voznim parkom autoškole</p>
+                        </div>
                     </div>
-                    <div>
-                        <h1 className="page-title">Vozila</h1>
-                        <p className="page-sub">Upravljanje voznim parkom autoškole</p>
-                    </div>
+                    <button
+                        className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm shadow-blue-200 disabled:opacity-50"
+                        onClick={openAdd}
+                        disabled={!!error}
+                    >
+                        <Plus size={15} /> Dodaj vozilo
+                    </button>
                 </div>
-                <button className="btn btn-primary" onClick={openAdd} disabled={!!error}>
-                    + Dodaj vozilo
-                </button>
             </div>
 
-            {loading && <Spinner />}
-            {error && <ErrorState message={error} onRetry={refetch} />}
+            {/* Content */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                {loading && <Spinner />}
+                {error && <ErrorState message={error} onRetry={refetch} />}
 
-            {!loading && !error && (
-                <>
-                    <div className="page-toolbar">
-                        <input
-                            className="search-input"
-                            placeholder="Pretraži vozila..."
-                            value={search}
-                            onChange={e => setSearch(e.target.value)}
+                {!loading && !error && (
+                    <>
+                        <div className="flex items-center justify-between mb-5 gap-3">
+                            <div className="relative flex-1 max-w-xs">
+                                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                <input
+                                    className="w-full pl-9 pr-3 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 focus:bg-white transition-colors"
+                                    placeholder="Pretraži vozila..."
+                                    value={search}
+                                    onChange={e => setSearch(e.target.value)}
+                                />
+                            </div>
+                            <span className="text-xs font-semibold text-slate-400 whitespace-nowrap">{filtered.length} vozila</span>
+                        </div>
+                        <VehicleTable
+                            vehicles={filtered}
+                            onEdit={openEdit}
+                            onDelete={setDeleteTarget}
+                            onView={setViewTarget}
                         />
-                        <span className="toolbar-count">{filtered.length} vozila</span>
-                    </div>
-                    <VehicleTable
-                        vehicles={filtered}
-                        onEdit={openEdit}
-                        onDelete={setDeleteTarget}
-                        onView={setViewTarget}
-                    />
-                </>
-            )}
+                    </>
+                )}
+            </div>
 
             <Modal
                 isOpen={showForm}
@@ -131,11 +143,7 @@ export default function VehiclesPage() {
                 />
             </Modal>
 
-            <VehicleDetail
-                vehicle={viewTarget}
-                repairs={repairs}
-                onClose={() => setViewTarget(null)}
-            />
+            <VehicleDetail vehicle={viewTarget} repairs={repairs} onClose={() => setViewTarget(null)} />
 
             <ConfirmDialog
                 isOpen={!!deleteTarget}

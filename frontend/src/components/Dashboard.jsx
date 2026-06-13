@@ -1,209 +1,136 @@
 import React from 'react';
-import {
-    isExpiringSoon,
-    isExpired,
-    daysUntil,
-    formatDate
-} from '../utils/helpers';
-
 import { Link } from 'react-router-dom';
-
+import { Car, Wrench, ClipboardList, Users, ArrowRight, AlertTriangle } from 'lucide-react';
+import { isExpiringSoon, isExpired, daysUntil, formatDate } from '../utils/helpers';
 import { Alert, Badge } from './Notifications';
 
+const STAT_VARIANT = {
+    '':           { card: 'border-slate-200',  iconBg: 'bg-blue-50 border-blue-100',    iconText: 'text-blue-600',  valueText: 'text-slate-900' },
+    'card-warning': { card: 'border-amber-200', iconBg: 'bg-amber-50 border-amber-100',  iconText: 'text-amber-600', valueText: 'text-amber-700' },
+    'card-danger':  { card: 'border-red-200',   iconBg: 'bg-red-50 border-red-100',      iconText: 'text-red-600',   valueText: 'text-red-700'   },
+};
+
+const STAT_ICONS = {
+    '🚗': <Car size={20} />,
+    '🔧': <Wrench size={20} />,
+    '📋': <ClipboardList size={20} />,
+    '👨‍🏫': <Users size={20} />,
+};
+
 function StatCard({ icon, label, value, sub, variant = '' }) {
+    const cfg = STAT_VARIANT[variant] || STAT_VARIANT[''];
+    const lucideIcon = STAT_ICONS[icon];
+
     return (
-        <div className={`stat-card ${variant}`}>
-            <div className="stat-icon">{icon}</div>
-
-            <div className="stat-body">
-                <div className="stat-value">{value}</div>
-
-                <div className="stat-label">{label}</div>
-
-                {sub && (
-                    <div className="stat-sub">
-                        {sub}
-                    </div>
-                )}
+        <div className={`bg-white rounded-2xl border shadow-sm p-5 flex items-center gap-4 ${cfg.card}`}>
+            <div className={`w-12 h-12 rounded-xl border flex items-center justify-center shrink-0 ${cfg.iconBg} ${cfg.iconText}`}>
+                {lucideIcon || <span className="text-xl leading-none">{icon}</span>}
+            </div>
+            <div className="min-w-0">
+                <div className={`text-2xl font-bold leading-none ${cfg.valueText}`}>{value}</div>
+                <div className="text-xs font-semibold text-slate-500 mt-1.5 uppercase tracking-wide">{label}</div>
+                {sub && <div className="text-xs text-slate-400 mt-0.5">{sub}</div>}
             </div>
         </div>
     );
 }
 
-export default function Dashboard({
-                                      vehicles = [],
-                                      repairs = [],
-                                      instructors = []
-                                  }) {
+export default function Dashboard({ vehicles = [], repairs = [], instructors = [] }) {
+    const safeVehicles = Array.isArray(vehicles) ? vehicles : [];
+    const safeInstructors = Array.isArray(instructors) ? instructors : [];
 
-    // Vozila
-    const activeVehicles = vehicles.filter(
-        v => v.status === 'ACTIVE'
-    ).length;
-
-    const onService = vehicles.filter(
-        v => v.status === 'IN_SERVICE'
-    ).length;
-
-    // Registracije
-    const expiring = vehicles.filter(
-        v => isExpiringSoon(v.registrationExpiry)
-    );
-
-    const expired = vehicles.filter(
-        v => isExpired(v.registrationExpiry)
-    );
-
-    // Instruktori
-    const unavailableInstructors = instructors.filter(
-        instructor => instructor.availabilityNote === 'UNAVAILABLE'
-    ).length;
+    const activeVehicles = safeVehicles.filter(v => v.status === 'ACTIVE').length;
+    const onService = safeVehicles.filter(v => v.status === 'IN_SERVICE').length;
+    const expiring = safeVehicles.filter(v => isExpiringSoon(v.registrationExpiry));
+    const expired = safeVehicles.filter(v => isExpired(v.registrationExpiry));
+    const unavailableInstructors = safeInstructors.filter(i => i.availabilityNote === 'UNAVAILABLE').length;
 
     return (
-        <div className="dashboard">
+        <div className="space-y-5">
 
-            {/* ISTEKLA REGISTRACIJA */}
-            {expired.length > 0 && (
-                <Alert type="danger">
-                    ⛔ <strong>
-                    {expired.length} vozilo/a
-                </strong> ima isteklu registraciju!
+            {/* Alerts */}
+            {(expired.length > 0 || expiring.length > 0 || onService > 0) && (
+                <div className="space-y-2">
+                    {expired.length > 0 && (
+                        <Alert type="danger">
+                            <strong>{expired.length} vozilo/a</strong> ima isteklu registraciju!
+                            {expired.map(v => (
+                                <span key={v.vehicleId} className="inline-flex items-center gap-1 text-xs bg-red-100 border border-red-200 text-red-800 px-2 py-0.5 rounded-full font-medium">
+                                    {v.brand} {v.model} ({v.registrationNumber})
+                                </span>
+                            ))}
+                        </Alert>
+                    )}
 
-                    {expired.map(vehicle => (
-                        <span
-                            key={vehicle.vehicleId}
-                            className="alert-item"
-                        >
-                            {vehicle.brand} {vehicle.model}
-                            ({vehicle.registrationNumber})
-                        </span>
+                    {expiring.length > 0 && (
+                        <Alert type="warning">
+                            <strong>{expiring.length} vozilo/a</strong> ima registraciju koja ističe u narednih 15 dana:
+                            {expiring.map(v => (
+                                <span key={v.vehicleId} className="inline-flex items-center gap-1 text-xs bg-amber-100 border border-amber-200 text-amber-800 px-2 py-0.5 rounded-full font-medium">
+                                    {v.brand} {v.model} — još {daysUntil(v.registrationExpiry)} dan/a
+                                </span>
+                            ))}
+                        </Alert>
+                    )}
+
+                    {vehicles.filter(v => v.status === 'IN_SERVICE').map(v => (
+                        <Alert key={v.vehicleId} type="info">
+                            <strong>{v.brand} {v.model}</strong> je trenutno na servisu i nedostupno.
+                        </Alert>
                     ))}
-                </Alert>
+                </div>
             )}
 
-            {/* USKORO ISTIČE */}
-            {expiring.length > 0 && (
-                <Alert type="warning">
-                    ⚠️ <strong>
-                    {expiring.length} vozilo/a
-                </strong> ima registraciju koja ističe
-                    u narednih 15 dana:
-
-                    {expiring.map(vehicle => (
-                        <span
-                            key={vehicle.vehicleId}
-                            className="alert-item"
-                        >
-                            {vehicle.brand} {vehicle.model}
-                            — još {daysUntil(vehicle.registrationExpiry)} dan/a
-                        </span>
-                    ))}
-                </Alert>
-            )}
-
-            {/* SERVIS */}
-            {vehicles
-                .filter(v => v.status === 'IN_SERVICE')
-                .map(vehicle => (
-                    <Alert
-                        key={vehicle.vehicleId}
-                        type="info"
-                    >
-                        🔧 <strong>
-                        {vehicle.brand} {vehicle.model}
-                    </strong> je trenutno na servisu
-                        i nedostupno.
-                    </Alert>
-                ))}
-
-            {/* STATISTIKE */}
-            <div className="stat-grid">
-
+            {/* Stat grid */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard
                     icon="🚗"
                     label="Aktivna vozila"
                     value={activeVehicles}
-                    sub={`od ukupno ${vehicles.length}`}
+                    sub={`od ukupno ${safeVehicles.length}`}
                 />
-
                 <StatCard
                     icon="🔧"
                     label="Na servisu"
                     value={onService}
-                    variant={
-                        onService > 0
-                            ? 'card-warning'
-                            : ''
-                    }
+                    variant={onService > 0 ? 'card-warning' : ''}
                 />
-
                 <StatCard
                     icon="📋"
                     label="Ističe registracija"
                     value={expiring.length + expired.length}
-                    variant={
-                        expired.length > 0
-                            ? 'card-danger'
-                            : expiring.length > 0
-                                ? 'card-warning'
-                                : ''
-                    }
+                    variant={expired.length > 0 ? 'card-danger' : expiring.length > 0 ? 'card-warning' : ''}
                 />
-
                 <StatCard
                     icon="👨‍🏫"
                     label="Nedostupni instruktori"
-                    value={`${unavailableInstructors}/${instructors.length}`}
+                    value={`${unavailableInstructors}/${safeInstructors.length}`}
                     variant={unavailableInstructors > 0 ? 'card-warning' : ''}
                 />
             </div>
 
-            {/* LISTE */}
-            <div className="dashboard-lists">
-
+            {/* Lists */}
+            <div className="grid sm:grid-cols-2 gap-5">
                 {(expiring.length > 0 || expired.length > 0) && (
-                    <div className="dash-section">
-
-                        <h3 className="dash-section-title">
-                            🚨 Registracije — hitno
-                        </h3>
-
-                        <div className="mini-list">
-
-                            {[...expired, ...expiring].map(vehicle => (
-                                <div
-                                    key={vehicle.vehicleId}
-                                    className="mini-list-item"
-                                >
-
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-2">
+                            <AlertTriangle size={15} className="text-amber-500" />
+                            <h3 className="text-sm font-bold text-slate-800">Registracije — hitno</h3>
+                            <span className="ml-auto text-xs font-semibold bg-red-50 text-red-600 border border-red-100 px-2 py-0.5 rounded-full">
+                                {expired.length + expiring.length}
+                            </span>
+                        </div>
+                        <div className="divide-y divide-slate-100">
+                            {[...expired, ...expiring].map(v => (
+                                <div key={v.vehicleId} className="flex items-center justify-between px-5 py-3.5 hover:bg-slate-50/60 transition-colors">
                                     <div>
-                                        <strong>
-                                            {vehicle.brand} {vehicle.model}
-                                        </strong>
-
-                                        <div className="mini-sub">
-                                            {vehicle.registrationNumber}
-                                        </div>
+                                        <p className="text-sm font-semibold text-slate-800">{v.brand} {v.model}</p>
+                                        <p className="text-xs text-slate-400 mt-0.5">{v.registrationNumber}</p>
                                     </div>
-
-                                    <div className="mini-right">
-
-                                        <div className="mini-date">
-                                            {formatDate(
-                                                vehicle.registrationExpiry
-                                            )}
-                                        </div>
-
-                                        <Badge
-                                            variant={
-                                                isExpired(vehicle.registrationExpiry)
-                                                    ? 'danger'
-                                                    : 'warning'
-                                            }
-                                        >
-                                            {isExpired(vehicle.registrationExpiry)
-                                                ? 'Istekla'
-                                                : `${daysUntil(vehicle.registrationExpiry)}d`}
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        <span className="text-xs text-slate-400">{formatDate(v.registrationExpiry)}</span>
+                                        <Badge variant={isExpired(v.registrationExpiry) ? 'danger' : 'warning'}>
+                                            {isExpired(v.registrationExpiry) ? 'Istekla' : `${daysUntil(v.registrationExpiry)}d`}
                                         </Badge>
                                     </div>
                                 </div>
@@ -212,15 +139,17 @@ export default function Dashboard({
                     </div>
                 )}
 
-                <Link
-                    to="/resources/instructors"
-                    style={{ textDecoration: 'none', color: 'inherit' }}
-                >
-                    <StatCard
-                        icon="👨‍🏫"
-                        value="➡️"
-                        label="Pregled svih instruktora"
-                    />
+                <Link to="/resources/instructors" className="block no-underline">
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex items-center gap-4 hover:border-blue-300 hover:shadow-md transition-all group cursor-pointer h-full">
+                        <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
+                            <Users size={20} className="text-blue-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-base font-bold text-slate-900">Pregled svih instruktora</p>
+                            <p className="text-xs text-slate-400 mt-0.5">Upravljanje dostupnošću i vozilima</p>
+                        </div>
+                        <ArrowRight size={18} className="text-slate-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all shrink-0" />
+                    </div>
                 </Link>
             </div>
         </div>
