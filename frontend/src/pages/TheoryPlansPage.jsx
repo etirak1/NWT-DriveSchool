@@ -11,7 +11,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 export default function TheoryPlansPage() {
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
     const email = user.email;
     const role  = user.role;
     const queryClient = useQueryClient();
@@ -73,7 +73,7 @@ export default function TheoryPlansPage() {
                             <span className="inline-block text-xs px-2 py-0.5 rounded-full font-semibold bg-purple-100 text-purple-700">{role}</span>
                         </div>
                         <button
-                            onClick={() => { localStorage.removeItem('token'); navigate('/login'); }}
+                            onClick={() => { logout(); navigate('/login'); }}
                             className="flex items-center gap-1.5 px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
                         >
                             <LogOut size={16} /> Odjava

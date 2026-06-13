@@ -29,7 +29,7 @@ public class GlobalExceptionHandler {
         if (msg.contains("nije pronađen") || msg.contains("not found")) {
             return new ResponseEntity<>(new ErrorResponse("NOT_FOUND", msg), HttpStatus.NOT_FOUND);
         }
-        return new ResponseEntity<>(new ErrorResponse("INTERNAL_ERROR", msg), HttpStatus.INTERNAL_SERVER_ERROR);
+        return new ResponseEntity<>(new ErrorResponse("BAD_REQUEST", msg), HttpStatus.BAD_REQUEST);
     }
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
     public ResponseEntity<Map<String, String>> handleAccessDenied(Exception ex) {

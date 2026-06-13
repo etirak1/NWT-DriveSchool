@@ -45,7 +45,7 @@ class TrainingRuleControllerTest {
     @Test
     void whenPostInvalidRule_thenReturns400() throws Exception {
         TrainingRuleDTO invalidDto =
-                new TrainingRuleDTO(null, 2, 35, 45, new BigDecimal("-100.00"));
+                new TrainingRuleDTO(null, 2, 35, 45, new BigDecimal("-100.00"), 3);
 
         mockMvc.perform(post("/api/rules")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -56,7 +56,7 @@ class TrainingRuleControllerTest {
     @Test
     void whenPostValidRule_thenReturns200() throws Exception {
         TrainingRuleDTO validDto =
-                new TrainingRuleDTO(null, 30, 35, 45, new BigDecimal("1200.00"));
+                new TrainingRuleDTO(null, 30, 35, 45, new BigDecimal("1200.00"), 2);
 
         TrainingRule mockRule = new TrainingRule();
         when(modelMapper.map(any(TrainingRuleDTO.class), eq(TrainingRule.class))).thenReturn(mockRule);

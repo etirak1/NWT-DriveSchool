@@ -119,6 +119,7 @@ services:
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_RABBITMQ_PORT: 5672
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      FINANCE_SERVICE_URL: http://finance-service:8084
     depends_on:
       mysql:
         condition: service_healthy
