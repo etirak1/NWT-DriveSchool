@@ -181,7 +181,7 @@ docker-compose up -d
 
 | Rola | Email | Lozinka |
 |---|---|---|
-| Admin |etirak1@autoskola.ba | 123456 |
+| Admin |etirak1@etf.unsa.ba| 123456 |
 | Instruktor | tljubovic@etf.unsa.ba | 123456 |
 
 > Ako test nalozi ne postoje, dodati ih kroz admin panel nakon prvog pokretanja.
