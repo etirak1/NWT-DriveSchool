@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Users, Search } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { userApi, instructorApi, vehicleApi } from '../services/api';
+import { userApi, instructorApi, vehicleApi } from '../api/client';
 import { Spinner, ErrorState } from '../components/States';
 import { useToast } from '../context/ToastContext';
 import { getErrorMessage } from '../utils/helpers';

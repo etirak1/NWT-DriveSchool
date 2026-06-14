@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { getErrorMessage } from '../utils/helpers';
-import { SCHEDULE_TIMEOUT_MS } from '../constants';
+import { SCHEDULE_TIMEOUT_MS, LESSON_DURATION_MIN, LESSON_DURATION_MS, WORK_HOUR_START, WORK_HOUR_END } from '../constants';
 import { Calendar, Clock, Car, ArrowLeft, CheckCircle, User } from 'lucide-react';
 
 export default function BookLesson() {
@@ -24,7 +24,7 @@ export default function BookLesson() {
     const [eligibility, setEligibility] = useState(null);
 
     const TIME_SLOTS = [];
-    for (let minutes = 8 * 60; minutes <= 16 * 60; minutes += 45) {
+    for (let minutes = WORK_HOUR_START * 60; minutes <= WORK_HOUR_END * 60; minutes += LESSON_DURATION_MIN) {
         const h = Math.floor(minutes / 60);
         const m = minutes % 60;
         TIME_SLOTS.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
@@ -67,14 +67,14 @@ export default function BookLesson() {
                 const busy = new Set();
                 res.data.forEach(lesson => {
                     const lessonStart = new Date(lesson.dateTime);
-                    const duration = lesson.duration || 45;
+                    const duration = lesson.duration || LESSON_DURATION_MIN;
                     const lessonEnd = new Date(lessonStart.getTime() + duration * 60 * 1000);
 
                     TIME_SLOTS.forEach(slot => {
                         const [h, m] = slot.split(':').map(Number);
                         const slotStart = new Date(lessonStart);
                         slotStart.setHours(h, m, 0, 0);
-                        const slotEnd = new Date(slotStart.getTime() + 45 * 60 * 1000);
+                        const slotEnd = new Date(slotStart.getTime() + LESSON_DURATION_MS);
 
                         if (slotStart < lessonEnd && slotEnd > lessonStart) {
                             busy.add(slot);
@@ -111,7 +111,7 @@ export default function BookLesson() {
             const payload = {
                 candidate: { userId: userId },
                 dateTime,
-                duration: 45,
+                duration: LESSON_DURATION_MIN,
                 status: 'ZAKAZANO',
                 lessonType: 'VOŽNJA',
             };
