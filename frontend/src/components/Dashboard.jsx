@@ -22,14 +22,17 @@ function StatCard({ icon, label, value, sub, variant = '' }) {
     const lucideIcon = STAT_ICONS[icon];
 
     return (
-        <div className={`bg-white rounded-2xl border shadow-sm p-5 flex items-center gap-4 ${cfg.card}`}>
-            <div className={`w-12 h-12 rounded-xl border flex items-center justify-center shrink-0 ${cfg.iconBg} ${cfg.iconText}`}>
-                {lucideIcon || <span className="text-xl leading-none">{icon}</span>}
+        <div className={`bg-white rounded-xl sm:rounded-2xl border shadow-sm p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 ${cfg.card}`}>
+            <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl border flex items-center justify-center shrink-0 ${cfg.iconBg} ${cfg.iconText}`}>
+                {lucideIcon
+                    ? <span className="[&>svg]:w-4 [&>svg]:h-4 sm:[&>svg]:w-5 sm:[&>svg]:h-5">{lucideIcon}</span>
+                    : <span className="text-sm sm:text-base leading-none">{icon}</span>
+                }
             </div>
-            <div className="min-w-0">
-                <div className={`text-2xl font-bold leading-none ${cfg.valueText}`}>{value}</div>
-                <div className="text-xs font-semibold text-slate-500 mt-1.5 uppercase tracking-wide">{label}</div>
-                {sub && <div className="text-xs text-slate-400 mt-0.5">{sub}</div>}
+            <div className="min-w-0 w-full">
+                <div className={`text-xl sm:text-2xl font-bold leading-none ${cfg.valueText}`}>{value}</div>
+                <div className="text-[10px] sm:text-xs font-semibold text-slate-500 mt-1 uppercase tracking-wide leading-tight">{label}</div>
+                {sub && <div className="text-[10px] sm:text-xs text-slate-400 mt-0.5">{sub}</div>}
             </div>
         </div>
     );
@@ -54,22 +57,26 @@ export default function Dashboard({ vehicles = [], repairs = [], instructors = [
                     {expired.length > 0 && (
                         <Alert type="danger">
                             <strong>{expired.length} vozilo/a</strong> ima isteklu registraciju!
-                            {expired.map(v => (
-                                <span key={v.vehicleId} className="inline-flex items-center gap-1 text-xs bg-red-100 border border-red-200 text-red-800 px-2 py-0.5 rounded-full font-medium">
-                                    {v.brand} {v.model} ({v.registrationNumber})
-                                </span>
-                            ))}
+                            <div className="flex flex-wrap gap-1 mt-1">
+                                {expired.map(v => (
+                                    <span key={v.vehicleId} className="inline-flex items-center gap-1 text-xs bg-red-100 border border-red-200 text-red-800 px-2 py-0.5 rounded-full font-medium">
+                                        {v.brand} {v.model} ({v.registrationNumber})
+                                    </span>
+                                ))}
+                            </div>
                         </Alert>
                     )}
 
                     {expiring.length > 0 && (
                         <Alert type="warning">
                             <strong>{expiring.length} vozilo/a</strong> ima registraciju koja ističe u narednih 15 dana:
-                            {expiring.map(v => (
-                                <span key={v.vehicleId} className="inline-flex items-center gap-1 text-xs bg-amber-100 border border-amber-200 text-amber-800 px-2 py-0.5 rounded-full font-medium">
-                                    {v.brand} {v.model} — još {daysUntil(v.registrationExpiry)} dan/a
-                                </span>
-                            ))}
+                            <div className="flex flex-wrap gap-1 mt-1">
+                                {expiring.map(v => (
+                                    <span key={v.vehicleId} className="inline-flex items-center gap-1 text-xs bg-amber-100 border border-amber-200 text-amber-800 px-2 py-0.5 rounded-full font-medium">
+                                        {v.brand} {v.model} — još {daysUntil(v.registrationExpiry)} dan/a
+                                    </span>
+                                ))}
+                            </div>
                         </Alert>
                     )}
 
@@ -82,7 +89,7 @@ export default function Dashboard({ vehicles = [], repairs = [], instructors = [
             )}
 
             {/* Stat grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
                 <StatCard
                     icon="🚗"
                     label="Aktivna vozila"
@@ -110,7 +117,7 @@ export default function Dashboard({ vehicles = [], repairs = [], instructors = [
             </div>
 
             {/* Lists */}
-            <div className="grid sm:grid-cols-2 gap-5">
+            <div className="grid sm:grid-cols-2 gap-3 sm:gap-5">
                 {(expiring.length > 0 || expired.length > 0) && (
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                         <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-2">

@@ -139,7 +139,7 @@ export default function CandidateManagement() {
                                                 </p>
                                                 <p className="text-xs text-slate-400 mt-0.5">
                                                     {candidate.assignedInstructor
-                                                        ? `Instruktor: ${candidate.assignedInstructor.user?.firstName} ${candidate.assignedInstructor.user?.lastName}`
+                                                        ? `Instruktor: ${candidate.assignedInstructor.user?.firstName || candidate.assignedInstructor.firstName || ''} ${candidate.assignedInstructor.user?.lastName || candidate.assignedInstructor.lastName || ''}`
                                                         : 'Bez dodijeljenog instruktora'}
                                                 </p>
                                             </div>
@@ -154,7 +154,7 @@ export default function CandidateManagement() {
                                                         className={`text-sm border rounded-xl px-3 py-2 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 focus:bg-white min-w-0 transition-colors ${
                                                             inlineErrors[candidate.candidateId] ? 'border-red-300 bg-red-50' : 'border-slate-200'
                                                         }`}
-                                                        value={candidate.assignedInstructor?.user?.userId || ''}
+                                                        value={candidate.assignedInstructor?.userId || candidate.assignedInstructor?.user?.userId || ''}
                                                         onChange={e => assignInstructor(candidate.candidateId, e.target.value)}
                                                       
                                                         disabled={instructorsUnavailable || !candidate.theoryExamPassed}
@@ -173,7 +173,11 @@ export default function CandidateManagement() {
                                                                     ? 'Teorija nije položena'
                                                                     : 'Odaberi instruktora'}
                                                         </option>
-                                                            ))
+                                                        {!instructorsUnavailable && instructors.map(ins => (
+                                                            <option key={ins.instructorId} value={ins.user?.userId || ins.userId}>
+                                                                {ins.user?.firstName || ins.firstName} {ins.user?.lastName || ins.lastName}
+                                                            </option>
+                                                        ))}
                                                     </select>
                                                 </div>
                                                 {inlineErrors[candidate.candidateId] && (

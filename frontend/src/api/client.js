@@ -56,6 +56,12 @@ api.interceptors.response.use(
             return new Promise(() => {});
         }
 
+        if (status >= 500) {
+            window.dispatchEvent(new CustomEvent('api:server-error', {
+                detail: { status, message: 'Serverska greška, pokušajte ponovo.' }
+            }));
+        }
+
         return Promise.reject(error);
     }
 );

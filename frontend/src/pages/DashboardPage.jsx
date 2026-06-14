@@ -32,7 +32,7 @@ export default function DashboardPage() {
     if (ev) return <ErrorState message="Greška pri učitavanju" onRetry={refetchV} />;
 
     return (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-3 sm:p-6">
             <div className="flex items-center gap-3 mb-1">
                 <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center">
                     <LayoutDashboard size={20} className="text-blue-600" />

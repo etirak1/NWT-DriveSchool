@@ -86,7 +86,7 @@ export default function InstructorsPage() {
     return (
         <div className="space-y-5">
             {/* Page header */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
                 <div className="flex items-center gap-4">
                     <div className="w-11 h-11 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
                         <Users size={20} className="text-blue-600" />
@@ -99,7 +99,7 @@ export default function InstructorsPage() {
             </div>
 
             {/* Content */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3 sm:p-6">
                 {loading && <Spinner />}
                 {error && <ErrorState message={error} onRetry={refetch} />}
 
@@ -118,7 +118,7 @@ export default function InstructorsPage() {
                             <span className="text-xs font-semibold text-slate-400 whitespace-nowrap">{filtered.length} instruktora</span>
                         </div>
 
-                        <div className="rounded-xl overflow-hidden border border-slate-200">
+                        <div className="rounded-xl overflow-x-auto border border-slate-200">
                             <table className="w-full text-sm">
                                 <thead>
                                 <tr className="bg-slate-50 border-b border-slate-200">

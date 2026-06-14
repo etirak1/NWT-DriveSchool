@@ -114,11 +114,6 @@ export default function Login() {
         <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #1a3a8f 0%, #1e5adb 40%, #3b82f6 100%)' }}>
           {/* Background Image with Overlay */}
           <div className="absolute inset-0">
-            <img
-                src="https://images.pexels.com/photos/23983/pexels-photo.jpg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
-                alt="Driving"
-                className="w-full h-full object-cover opacity-15"
-            />
             <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(26,58,143,0.85) 0%, rgba(30,90,219,0.75) 50%, rgba(59,130,246,0.8) 100%)' }} />
           </div>
 

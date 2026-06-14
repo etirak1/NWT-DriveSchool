@@ -662,7 +662,7 @@ export default function CandidateDashboard() {
                 {activeSection === 'announcements' && (
                     <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6">
                         <h2 className="font-bold text-slate-800 mb-1">Obavještenja</h2>
-                        <p className="text-sm text-slate-400 mb-6">Budite u toku s najnovijim vijestima i važnim obavještenjima.</p>
+                        <p className="text-sm text-slate-400 italic mb-6">Budite u toku s najnovijim vijestima i važnim obavještenjima.</p>
                         {announcements.length === 0 ? (
                             <div className="flex flex-col items-center py-14 gap-3">
                                 <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center">
@@ -674,18 +674,30 @@ export default function CandidateDashboard() {
                                 </div>
                             </div>
                         ) : (
-                            <div className="divide-y divide-slate-50">
-                                {announcements.map((a) => (
-                                    <div key={a.id} className="py-4 first:pt-0">
-                                        <div className="flex items-start justify-between gap-3">
-                                            <p className="font-semibold text-slate-800 text-sm">{a.title}</p>
-                                            <span className="text-xs text-slate-400 whitespace-nowrap">
-                                                {a.dateCreated ? new Date(a.dateCreated).toLocaleDateString('en-GB') : ''}
-                                            </span>
+                            <div className="divide-y divide-slate-100">
+                                {announcements.map((a) => {
+                                    const isWelcome = !!a.targetUserId;
+                                    const badgeCls = isWelcome
+                                        ? 'bg-green-50 text-green-700 border-green-200'
+                                        : 'bg-blue-50 text-blue-700 border-blue-200';
+                                    const badgeLabel = isWelcome ? 'Dobrodošlica' : 'Obavještenje';
+                                    return (
+                                        <div key={a.id} className="py-4 first:pt-0">
+                                            <div className="flex items-start justify-between gap-3 mb-1">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <p className="font-semibold text-slate-800 text-sm">{a.title}</p>
+                                                    <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${badgeCls}`}>
+                                                        {badgeLabel}
+                                                    </span>
+                                                </div>
+                                                <span className="text-xs text-slate-400 whitespace-nowrap shrink-0">
+                                                    {a.dateCreated ? new Date(a.dateCreated).toLocaleDateString('en-GB') : ''}
+                                                </span>
+                                            </div>
+                                            <p className="text-sm text-slate-600">{a.content}</p>
                                         </div>
-                                        <p className="text-sm text-slate-600 mt-1">{a.content}</p>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                     </div>

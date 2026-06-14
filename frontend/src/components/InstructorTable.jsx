@@ -8,7 +8,7 @@ export default function InstructorTable({ instructors, onEdit, onToggleAvailabil
     );
 
     return (
-        <div className="rounded-xl overflow-hidden border border-slate-200">
+        <div className="rounded-xl overflow-x-auto border border-slate-200">
             <table className="w-full text-sm">
                 <thead>
                 <tr className="bg-slate-50 border-b border-slate-200">

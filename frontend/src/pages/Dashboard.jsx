@@ -26,7 +26,7 @@ export default function Dashboard() {
   const [showModal, setShowModal] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const userId = user.userId;
   const email = user.email;
   const role = user.role;
@@ -38,7 +38,7 @@ export default function Dashboard() {
   const error = isError ? 'Greška pri učitavanju obavještenja.' : '';
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    logout();
     navigate('/login');
   };
 
@@ -209,7 +209,7 @@ export default function Dashboard() {
             )}
           </div>
 
-          <p className="text-slate-500 text-sm mb-6">
+          <p className="text-slate-400 text-sm italic mb-6">
             Budite u toku s najnovijim vijestima i važnim obavještenjima.
           </p>
           <hr className="border-slate-200 mb-6" />
@@ -282,12 +282,22 @@ function AnnouncementCard({ announcement }) {
       })
       : '';
 
+  // Determine announcement type
+  const isWelcome = !!announcement.targetUserId;
+  const isAdminNote = announcement.adminOnly;
+
+  const typeConfig = isWelcome
+      ? { label: 'Dobrodošlica', iconBg: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)', iconColor: '#16a34a', badgeCls: 'bg-green-50 text-green-700 border-green-200', hoverBorder: '#16a34a', hoverShadow: 'rgba(22,163,74,0.12)' }
+      : isAdminNote
+      ? { label: 'Sistemska poruka', iconBg: 'linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)', iconColor: '#ea580c', badgeCls: 'bg-orange-50 text-orange-700 border-orange-200', hoverBorder: '#ea580c', hoverShadow: 'rgba(234,88,12,0.12)' }
+      : { label: 'Obavještenje', iconBg: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)', iconColor: '#3b82f6', badgeCls: 'bg-blue-50 text-blue-700 border-blue-200', hoverBorder: '#3b82f6', hoverShadow: 'rgba(59,130,246,0.12)' };
+
   return (
       <div
           className="group bg-white rounded-2xl border-2 border-slate-100 p-6 transition-all duration-300 cursor-default"
           onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = '#3b82f6';
-            e.currentTarget.style.boxShadow = '0 8px 30px rgba(59,130,246,0.12)';
+            e.currentTarget.style.borderColor = typeConfig.hoverBorder;
+            e.currentTarget.style.boxShadow = `0 8px 30px ${typeConfig.hoverShadow}`;
             e.currentTarget.style.transform = 'translateY(-2px)';
           }}
           onMouseLeave={(e) => {
@@ -299,25 +309,25 @@ function AnnouncementCard({ announcement }) {
         <div className="flex items-start gap-4">
           <div
               className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 group-hover:scale-110"
-              style={{ background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)' }}
+              style={{ background: typeConfig.iconBg }}
           >
-            <Megaphone className="text-blue-500" size={18} />
+            <Megaphone style={{ color: typeConfig.iconColor }} size={18} />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-slate-900 text-base">{announcement.title}</h3>
+            <div className="flex items-center gap-2 flex-wrap mb-1">
+              <h3 className="font-bold text-slate-900 text-base">{announcement.title}</h3>
+              <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${typeConfig.badgeCls}`}>
+                {typeConfig.label}
+              </span>
+            </div>
             {announcement.content && (
-                <p className="text-slate-600 mt-2 whitespace-pre-wrap text-sm leading-relaxed">{announcement.content}</p>
+                <p className="text-slate-600 mt-1.5 whitespace-pre-wrap text-sm leading-relaxed">{announcement.content}</p>
             )}
             <div className="flex items-center gap-4 mt-4 text-xs text-slate-400">
-            <span className="flex items-center gap-1.5">
-              <CalendarIcon size={12} className="text-blue-400" />
-              {dt}
-            </span>
-              {announcement.createdBy && (
-                  <span className="flex items-center gap-1.5">
-                <ArrowRight size={12} className="text-blue-300" />
+              <span className="flex items-center gap-1.5">
+                <CalendarIcon size={12} className="text-blue-400" />
+                {dt}
               </span>
-              )}
             </div>
           </div>
         </div>

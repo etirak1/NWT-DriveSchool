@@ -1,18 +1,15 @@
-import { useEffect, useState, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState } from 'react';
 import {
   Users, Search, UserPlus, Trash2, Power,
-  ChevronLeft, ChevronRight, ArrowLeft, LogOut,
+  ChevronLeft, ChevronRight,
   GraduationCap, Shield,
 } from 'lucide-react';
-import { api } from '../api/client';
-import { useAuth } from '../context/AuthContext';
-import { parseApiError } from '../utils/errorHandler';
 import RoleBadge from '../components/RoleBadge';
 import StatusBadge from '../components/StatusBadge';
 import AddUserModal from '../components/modals/AddUserModal';
 import ConfirmDeleteModal from '../components/modals/ConfirmDeleteModal';
 import Header from '../components/Header';
+import { useUserManagement } from '../hooks/useUserManagement';
 
 const ROLES = ['ALL', 'ADMIN', 'INSTRUCTOR', 'CANDIDATE'];
 
@@ -24,92 +21,18 @@ const inputFocusStyle = (focused) => ({
 });
 
 export default function UserManagement() {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-
-  const [users, setUsers] = useState([]);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
-  const [page, setPage] = useState(0);
-  const [size] = useState(10);
-  const [sortBy, setSortBy] = useState('userId');
-  const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState('ALL');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [showAdd, setShowAdd] = useState(false);
-  const [deletingUser, setDeletingUser] = useState(null);
-  const [searchFocused, setSearchFocused] = useState(false);
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const debounceTimer = useRef(null);
-
-  const handleSearchChange = (e) => {
-    const val = e.target.value;
-    setSearch(val);
-    clearTimeout(debounceTimer.current);
-    debounceTimer.current = setTimeout(() => setDebouncedSearch(val), 400);
-  };
-
-  const loadUsers = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      const res = await api.get('/api/users', {
-        params: { page, size, sortBy, role: roleFilter, search: debouncedSearch.trim() || undefined },
-      });
-      const data = res.data;
-      setUsers(Array.isArray(data.content) ? data.content : []);
-      setTotalPages(data.totalPages || 0);
-      setTotalElements(data.totalElements || 0);
-    } catch (err) {
-      const msg =
-          err?.response?.status === 403
-              ? 'Nemate dozvolu za pregled korisnika.'
-              : parseApiError(err, { fallback: 'Greška pri učitavanju korisnika.' });
-      setError(msg);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    setPage(0);
-  }, [debouncedSearch, roleFilter]);
-
-  useEffect(() => {
-    loadUsers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, size, sortBy, debouncedSearch, roleFilter]);
+  const {
+    users, totalPages, totalElements,
+    page, setPage, sortBy, setSortBy,
+    search, roleFilter, setRoleFilter,
+    loading, error,
+    showAdd, setShowAdd,
+    deletingUser, setDeletingUser,
+    searchFocused, setSearchFocused,
+    handleSearchChange, handleDelete, handleToggleStatus, loadUsers,
+  } = useUserManagement();
 
   const filteredUsers = users;
-
-  const handleDelete = async (u) => {
-    try {
-      await api.delete(`/api/users/${u.userId}`);
-      setDeletingUser(null);
-      loadUsers();
-    } catch (err) {
-      alert(parseApiError(err, {
-        fallback: 'Greška pri brisanju.',
-        conflictMessage: 'Korisnik se ne može obrisati jer ima aktivne termine.',
-      }));
-      setDeletingUser(null);
-    }
-  };
-
-  const handleToggleStatus = async (u) => {
-    const newStatus = u.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-    try {
-      await api.patch(
-          `/api/users/${u.userId}`,
-          [{ op: 'replace', path: '/status', value: newStatus }],
-          { headers: { 'Content-Type': 'application/json-patch+json' } }
-      );
-      loadUsers();
-    } catch (err) {
-      alert(parseApiError(err, { fallback: 'Greška pri ažuriranju statusa.' }));
-    }
-  };
 
   const glassBtn = {
     background: 'rgba(255,255,255,0.1)',
