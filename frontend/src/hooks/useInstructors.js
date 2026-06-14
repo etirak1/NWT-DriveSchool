@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { userApi, instructorApi } from '../services/api';
+import { userApi, instructorApi } from '../api/client';
 
 /**
  * Shared hook for fetching instructors.

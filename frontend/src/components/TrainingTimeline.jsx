@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
 import { getErrorMessage } from '../utils/helpers';
 import {
@@ -46,6 +46,7 @@ export default function TrainingTimeline({ candidate, onOpenTheory, refreshToken
     const [examModal, setExamModal] = useState(null);
     const [expandedKey, setExpandedKey] = useState(null);
     const [attendanceOpen, setAttendanceOpen] = useState(false);
+    const queryClient = useQueryClient();
 
     const candidateId = candidate?.candidateId;
 
@@ -254,7 +255,14 @@ export default function TrainingTimeline({ candidate, onOpenTheory, refreshToken
                     label={examModal.label}
                     current={examModal.current}
                     onClose={() => setExamModal(null)}
-                    onSaved={() => { setExamModal(null); loadTimeline(); }}
+                    onSaved={() => {
+                        setExamModal(null);
+                        loadTimeline();
+                        queryClient.invalidateQueries({ queryKey: ['candidate-phases', candidateId] });
+                        queryClient.invalidateQueries({ queryKey: ['timeline', candidateId] });
+                        queryClient.invalidateQueries({ queryKey: ['drivingCount', candidateId] });
+                        queryClient.invalidateQueries({ queryKey: ['phases', candidateId] });
+                    }}
                 />
             )}
         </div>
