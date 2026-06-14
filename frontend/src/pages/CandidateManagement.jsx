@@ -173,7 +173,7 @@ export default function CandidateManagement() {
                                                                     ? 'Teorija nije položena'
                                                                     : 'Odaberi instruktora'}
                                                         </option>
-                                                            ))}
+                                                            ))
                                                     </select>
                                                 </div>
                                                 {inlineErrors[candidate.candidateId] && (
