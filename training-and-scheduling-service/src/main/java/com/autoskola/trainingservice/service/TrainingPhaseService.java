@@ -141,7 +141,8 @@ public class TrainingPhaseService {
         PhaseStatusDTO dto = new PhaseStatusDTO();
         dto.setKey(key);
         dto.setLabel(label);
-        if (!unlocked) {
+        // If admin already saved an exam record, always show it regardless of unlock condition
+        if (!unlocked && phaseOpt.isEmpty()) {
             dto.setStatus("ZAKLJUČANO");
             return dto;
         }

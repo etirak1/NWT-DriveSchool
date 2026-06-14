@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Users, Search } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { userApi, instructorApi, vehicleApi } from '../services/api';
+import { instructorApi, vehicleApi } from '../services/api';
+import { useInstructors } from '../hooks/useInstructors';
 import { Spinner, ErrorState } from '../components/States';
 import { useToast } from '../context/ToastContext';
 import { getErrorMessage } from '../utils/helpers';
@@ -16,32 +17,20 @@ export default function InstructorsPage() {
     const [assignTarget, setAssignTarget] = useState(null);
     const [assigning, setAssigning] = useState(false);
 
-    const { data: { instructors: data = [], vehicles = [] } = {}, isLoading: loading, isError, refetch } = useQuery({
-        queryKey: ['instructors-combined'],
-        queryFn: async () => {
-            const [resUsers, resInstructors, resVehicles] = await Promise.all([
-                userApi.getActiveInstructors(),
-                instructorApi.getAll(),
-                vehicleApi.getAll()
-            ]);
-            const usersList = resUsers.data.content || resUsers.data || [];
-            const resourceList = resInstructors.data.content || resInstructors.data || [];
-            const vehiclesList = resVehicles.data?.data || resVehicles.data || [];
-            const combined = resourceList.map((instructor) => {
-                const userIdFromResource = instructor.user?.userId || instructor.userId;
-                const userMatch = usersList.find(u => String(u.userId) === String(userIdFromResource));
-                return {
-                    ...instructor,
-                    firstName: userMatch?.firstName || instructor.user?.firstName || 'Nije pronađeno ime',
-                    lastName: userMatch?.lastName || instructor.user?.lastName || 'Nije pronađeno prezime',
-                    email: userMatch?.email || instructor.user?.email || 'Nema emaila',
-                };
-            });
-            return { instructors: combined, vehicles: vehiclesList };
-        },
+    const { data: instructorData = [], isLoading: instructorsLoading, isError, refetch: refetchInstructors } = useInstructors();
+
+    const { data: vehiclesData = [], isLoading: vehiclesLoading, isError: vehiclesError, refetch: refetchVehicles } = useQuery({
+        queryKey: ['vehicles'],
+        retry: 1,
+        queryFn: () => vehicleApi.getAll().then(r => r.data?.data || r.data || []),
     });
 
-    const error = isError ? 'Greška pri učitavanju instruktora.' : null;
+    const data = instructorData;
+    const vehicles = vehiclesData;
+    const loading = instructorsLoading || vehiclesLoading;
+    const refetch = () => { refetchInstructors(); refetchVehicles(); };
+
+    const error = (isError || vehiclesError) ? 'Greška pri učitavanju instruktora.' : null;
 
     const filtered = data.filter(i =>
         `${i.firstName} ${i.lastName} ${i.email}`.toLowerCase().includes(search.toLowerCase())

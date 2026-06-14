@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { useInstructors } from '../hooks/useInstructors';
 import TheoryLessonsModal from '../components/TheoryLessonsModal';
 import TrainingTimeline from '../components/TrainingTimeline';
 import { getErrorMessage } from '../utils/helpers';
@@ -20,6 +21,135 @@ import {
     DollarSign
 } from 'lucide-react';
 
+function useTheoryExamPassed(candidateId) {
+    const { data } = useQuery({
+        queryKey: ['candidate-phases', candidateId],
+        queryFn: () => api.get(`/api/phases/candidate/${candidateId}/timeline`).then(r => r.data),
+        enabled: !!candidateId,
+        staleTime: 30_000,
+    });
+    return data?.find(p => p.key === 'TEORIJSKI_ISPIT')?.examStatus?.toUpperCase() === 'POLOŽENO';
+}
+
+function CandidateRow({
+    candidate, instructors, instructorsUnavailable,
+    expandedCandidate, toggleExpand,
+    pendingInstructor, setPendingInstructor,
+    inlineErrors, inlineSuccess,
+    assignInstructor, setTheoryModalCandidate, timelineRefreshCount,
+}) {
+    const theoryExamPassed = useTheoryExamPassed(candidate.candidateId);
+    const isExpanded = expandedCandidate === candidate.candidateId;
+    const canAssign = !instructorsUnavailable && theoryExamPassed;
+
+    return (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-shadow hover:shadow-md">
+            <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                {/* Avatar + name */}
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shrink-0 shadow-sm shadow-blue-200">
+                        <span className="text-white font-bold text-sm tracking-wide">
+                            {(candidate.user?.firstName?.[0] || '').toUpperCase()}
+                            {(candidate.user?.lastName?.[0] || '').toUpperCase()}
+                        </span>
+                    </div>
+                    <div>
+                        <p className="font-semibold text-slate-800">
+                            {candidate.user?.firstName} {candidate.user?.lastName}
+                        </p>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                            {candidate.assignedInstructor
+                                ? `Instruktor: ${candidate.assignedInstructor.user?.firstName || candidate.assignedInstructor.firstName || ''} ${candidate.assignedInstructor.user?.lastName || candidate.assignedInstructor.lastName || ''}`
+                                : 'Bez dodijeljenog instruktora'}
+                        </p>
+                    </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex flex-wrap items-start gap-3 sm:gap-3">
+                    <div className="flex flex-col gap-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                            <UserCheck size={15} className="text-slate-400 shrink-0" />
+                            <select
+                                className={`text-sm border rounded-xl px-3 py-2 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 focus:bg-white min-w-0 transition-colors ${
+                                    inlineErrors[candidate.candidateId] ? 'border-red-300 bg-red-50' : 'border-slate-200'
+                                } ${!canAssign ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                value={
+                                    pendingInstructor[candidate.candidateId] !== undefined
+                                        ? pendingInstructor[candidate.candidateId]
+                                        : String(candidate.assignedInstructor?.user?.userId || '')
+                                }
+                                onChange={e => {
+                                    setPendingInstructor(prev => ({ ...prev, [candidate.candidateId]: e.target.value }));
+                                    assignInstructor(candidate.candidateId, e.target.value);
+                                }}
+                                disabled={!canAssign}
+                                title={
+                                    instructorsUnavailable
+                                        ? 'Servis instruktora trenutno nije dostupan'
+                                        : !theoryExamPassed
+                                            ? 'Instruktor se može dodijeliti tek nakon položenog teorijskog ispita'
+                                            : ''
+                                }
+                            >
+                                <option value="">
+                                    {instructorsUnavailable
+                                        ? 'Servis nedostupan'
+                                        : !theoryExamPassed
+                                            ? 'Teorija nije položena'
+                                            : 'Odaberi instruktora'}
+                                </option>
+                                {canAssign && instructors
+                                    .filter(ins => ins.availabilityNote === 'AVAILABLE')
+                                    .map(ins => (
+                                        <option key={ins.instructorId} value={ins.user?.userId || ins.userId}>
+                                            {ins.firstName} {ins.lastName}
+                                        </option>
+                                    ))}
+                            </select>
+                        </div>
+                        {inlineErrors[candidate.candidateId] && (
+                            <p className="text-xs text-red-600 leading-snug pl-1">
+                                {inlineErrors[candidate.candidateId]}
+                            </p>
+                        )}
+                        {inlineSuccess[candidate.candidateId] && (
+                            <p className="text-xs text-green-600 leading-snug pl-1">
+                                {inlineSuccess[candidate.candidateId]}
+                            </p>
+                        )}
+                    </div>
+
+                    <button
+                        onClick={() => toggleExpand(candidate.candidateId)}
+                        className={`flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-xl transition-colors border ${
+                            isExpanded
+                                ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-200'
+                                : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200'
+                        }`}
+                    >
+                        <BookOpen size={14} />
+                        Tok obuke
+                        {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                    </button>
+                </div>
+            </div>
+
+            {isExpanded && (
+                <div className="border-t border-slate-100 p-5 bg-slate-50/60">
+                    <h4 className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-4">Tok obuke</h4>
+                    <TrainingTimeline
+                        candidate={candidate}
+                        onOpenTheory={(c) => setTheoryModalCandidate(c)}
+                        refreshToken={timelineRefreshCount}
+                        isAdmin={true}
+                    />
+                </div>
+            )}
+        </div>
+    );
+}
+
 export default function CandidateManagement() {
     const navigate = useNavigate();
     const { user } = useAuth();
@@ -34,17 +164,33 @@ export default function CandidateManagement() {
     const [timelineRefreshCount, setTimelineRefreshCount] = useState(0);
     const [inlineErrors, setInlineErrors] = useState({});
     const [inlineSuccess, setInlineSuccess] = useState({});
+    const [pendingInstructor, setPendingInstructor] = useState({});
 
     const { data: candidates = [], isLoading: loading, isError: loadError, refetch: refetchCandidates } = useQuery({
         queryKey: ['candidates'],
         queryFn: () => api.get('/api/candidates').then(r => r.data),
     });
 
-    const { data: instructors = [], isError: instructorsError } = useQuery({
-        queryKey: ['instructors-list'],
-        queryFn: () => api.get('/api/instructors').then(r => r.data),
-    });
+    const { data: instructors = [], isError: instructorsError } = useInstructors();
     const instructorsUnavailable = instructorsError;
+
+    // Clear pendingInstructor once server data catches up to the selected value
+    useEffect(() => {
+        setPendingInstructor(prev => {
+            const updated = { ...prev };
+            let changed = false;
+            candidates.forEach(c => {
+                const pending = updated[c.candidateId];
+                if (pending === undefined) return;
+                const serverId = String(c.assignedInstructor?.user?.userId || '');
+                if (serverId === String(pending)) {
+                    delete updated[c.candidateId];
+                    changed = true;
+                }
+            });
+            return changed ? updated : prev;
+        });
+    }, [candidates]);
 
     const toggleExpand = (candidateId) => {
         setExpandedCandidate(prev => prev === candidateId ? null : candidateId);
@@ -60,6 +206,8 @@ export default function CandidateManagement() {
             setTimeout(() => setInlineSuccess(prev => ({ ...prev, [candidateId]: null })), 3000);
         } catch (err) {
             const msg = err.response?.data?.message || 'Greška pri dodjeljivanju instruktora.';
+            // Reset to server value so dropdown doesn't stay on failed selection
+            setPendingInstructor(prev => { const n = { ...prev }; delete n[candidateId]; return n; });
             setInlineErrors(prev => ({ ...prev, [candidateId]: msg }));
             setTimeout(() => setInlineErrors(prev => ({ ...prev, [candidateId]: null })), 6000);
         }
@@ -123,104 +271,21 @@ export default function CandidateManagement() {
 
                         <div className="space-y-3">
                             {candidates.map(candidate => (
-                                <div key={candidate.candidateId} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-shadow hover:shadow-md">
-                                    <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                        {/* Avatar + name */}
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shrink-0 shadow-sm shadow-blue-200">
-                                                <span className="text-white font-bold text-sm tracking-wide">
-                                                    {(candidate.user?.firstName?.[0] || '').toUpperCase()}
-                                                    {(candidate.user?.lastName?.[0] || '').toUpperCase()}
-                                                </span>
-                                            </div>
-                                            <div>
-                                                <p className="font-semibold text-slate-800">
-                                                    {candidate.user?.firstName} {candidate.user?.lastName}
-                                                </p>
-                                                <p className="text-xs text-slate-400 mt-0.5">
-                                                    {candidate.assignedInstructor
-                                                        ? `Instruktor: ${candidate.assignedInstructor.user?.firstName || candidate.assignedInstructor.firstName || ''} ${candidate.assignedInstructor.user?.lastName || candidate.assignedInstructor.lastName || ''}`
-                                                        : 'Bez dodijeljenog instruktora'}
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        {/* Actions */}
-                                        <div className="flex flex-wrap items-start gap-3 sm:gap-3">
-                                            <div className="flex flex-col gap-1 min-w-0">
-                                                <div className="flex items-center gap-2">
-                                                    <UserCheck size={15} className="text-slate-400 shrink-0" />
-                                                    <select
-                                                        className={`text-sm border rounded-xl px-3 py-2 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 focus:bg-white min-w-0 transition-colors ${
-                                                            inlineErrors[candidate.candidateId] ? 'border-red-300 bg-red-50' : 'border-slate-200'
-                                                        }`}
-                                                        value={candidate.assignedInstructor?.userId || candidate.assignedInstructor?.user?.userId || ''}
-                                                        onChange={e => assignInstructor(candidate.candidateId, e.target.value)}
-                                                      
-                                                        disabled={instructorsUnavailable || !candidate.theoryExamPassed}
-                                                        title={
-                                                            instructorsUnavailable
-                                                                ? 'Servis instruktora trenutno nije dostupan'
-                                                                : !candidate.theoryExamPassed
-                                                                    ? 'Instruktor se može dodijeliti tek nakon položenog teorijskog ispita'
-                                                                    : ''
-                                                        }
-                                                    >
-                                                        <option value="">
-                                                            {instructorsUnavailable
-                                                                ? 'Servis nedostupan'
-                                                                : !candidate.theoryExamPassed
-                                                                    ? 'Teorija nije položena'
-                                                                    : 'Odaberi instruktora'}
-                                                        </option>
-                                                        {!instructorsUnavailable && instructors.map(ins => (
-                                                            <option key={ins.instructorId} value={ins.user?.userId || ins.userId}>
-                                                                {ins.user?.firstName || ins.firstName} {ins.user?.lastName || ins.lastName}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                </div>
-                                                {inlineErrors[candidate.candidateId] && (
-                                                    <p className="text-xs text-red-600 leading-snug pl-1">
-                                                        {inlineErrors[candidate.candidateId]}
-                                                    </p>
-                                                )}
-                                                {inlineSuccess[candidate.candidateId] && (
-                                                    <p className="text-xs text-green-600 leading-snug pl-1">
-                                                        {inlineSuccess[candidate.candidateId]}
-                                                    </p>
-                                                )}
-                                            </div>
-
-                                            <button
-                                                onClick={() => toggleExpand(candidate.candidateId)}
-                                                className={`flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-xl transition-colors border ${
-                                                    expandedCandidate === candidate.candidateId
-                                                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-200'
-                                                        : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200'
-                                                }`}
-                                            >
-                                                <BookOpen size={14} />
-                                                Tok obuke
-                                                {expandedCandidate === candidate.candidateId
-                                                    ? <ChevronUp size={14} />
-                                                    : <ChevronDown size={14} />
-                                                }
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    {expandedCandidate === candidate.candidateId && (
-                                        <div className="border-t border-slate-100 p-5 bg-slate-50/60">
-                                            <h4 className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-4">Tok obuke</h4>
-                                            <TrainingTimeline
-                                                candidate={candidate}
-                                                onOpenTheory={(c) => setTheoryModalCandidate(c)}
-                                                refreshToken={timelineRefreshCount}
-                                            />
-                                        </div>
-                                    )}
-                                </div>
+                                <CandidateRow
+                                    key={candidate.candidateId}
+                                    candidate={candidate}
+                                    instructors={instructors}
+                                    instructorsUnavailable={instructorsUnavailable}
+                                    expandedCandidate={expandedCandidate}
+                                    toggleExpand={toggleExpand}
+                                    pendingInstructor={pendingInstructor}
+                                    setPendingInstructor={setPendingInstructor}
+                                    inlineErrors={inlineErrors}
+                                    inlineSuccess={inlineSuccess}
+                                    assignInstructor={assignInstructor}
+                                    setTheoryModalCandidate={setTheoryModalCandidate}
+                                    timelineRefreshCount={timelineRefreshCount}
+                                />
                             ))}
 
                             {candidates.length === 0 && (

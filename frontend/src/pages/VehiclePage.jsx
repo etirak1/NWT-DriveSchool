@@ -30,6 +30,7 @@ export default function VehiclesPage() {
     const [viewTarget, setViewTarget] = useState(null);
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [saving, setSaving] = useState(false);
+    const [saveError, setSaveError] = useState(null);
     const [deleting, setDeleting] = useState(false);
     const [search, setSearch] = useState('');
 
@@ -39,6 +40,7 @@ export default function VehiclesPage() {
 
     const handleSubmit = async (data) => {
         setSaving(true);
+        setSaveError(null);
         try {
             if (editTarget) {
                 await vehicleApi.update(editTarget.vehicleId, data);
@@ -51,7 +53,7 @@ export default function VehiclesPage() {
             setEditTarget(null);
             queryClient.invalidateQueries({ queryKey: ['vehicles'] });
         } catch (e) {
-            addToast(getErrorMessage(e), 'error');
+            setSaveError(getErrorMessage(e));
         } finally {
             setSaving(false);
         }
@@ -131,15 +133,16 @@ export default function VehiclesPage() {
 
             <Modal
                 isOpen={showForm}
-                onClose={() => { setShowForm(false); setEditTarget(null); }}
+                onClose={() => { setShowForm(false); setEditTarget(null); setSaveError(null); }}
                 title={editTarget ? 'Uredi vozilo' : 'Dodaj vozilo'}
                 size="lg"
             >
                 <VehicleForm
                     initial={editTarget}
                     onSubmit={handleSubmit}
-                    onCancel={() => { setShowForm(false); setEditTarget(null); }}
+                    onCancel={() => { setShowForm(false); setEditTarget(null); setSaveError(null); }}
                     loading={saving}
+                    submitError={saveError}
                 />
             </Modal>
 

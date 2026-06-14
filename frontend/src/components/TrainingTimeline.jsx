@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { api } from '../api/client';
 import { getErrorMessage } from '../utils/helpers';
 import {
@@ -38,7 +39,7 @@ const PHASE_ICON_BG = {
     ZAVRSENO:        'bg-amber-100 text-amber-600',
 };
 
-export default function TrainingTimeline({ candidate, onOpenTheory, refreshToken = 0 }) {
+export default function TrainingTimeline({ candidate, onOpenTheory, refreshToken = 0, isAdmin = false }) {
     const [timeline, setTimeline] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -47,6 +48,14 @@ export default function TrainingTimeline({ candidate, onOpenTheory, refreshToken
     const [attendanceOpen, setAttendanceOpen] = useState(false);
 
     const candidateId = candidate?.candidateId;
+
+    // Fetch attendance eligibility for admin — needed to gate theory exam scheduling
+    const { data: theoryEligibility } = useQuery({
+        queryKey: ['theoryEligibility-timeline', candidateId],
+        queryFn: () => api.get(`/api/theory-plans/candidate/${candidateId}/theory-eligibility`).then(r => r.data),
+        enabled: !!candidateId && isAdmin,
+        staleTime: 30_000,
+    });
 
     const loadTimeline = async () => {
         setLoading(true);
@@ -64,6 +73,30 @@ export default function TrainingTimeline({ candidate, onOpenTheory, refreshToken
     useEffect(() => { if (candidateId) loadTimeline(); }, [candidateId, refreshToken]);
 
     const getAction = (phase) => {
+        // Admin: handle TEORIJSKI_ISPIT regardless of lock status
+        if (isAdmin && phase.key === 'TEORIJSKI_ISPIT') {
+            // Block if backend explicitly says candidate is not eligible (attendance < 60%)
+            if (theoryEligibility?.eligible === false) {
+                const attended = theoryEligibility.attendedLessons ?? theoryEligibility.attendedCount ?? null;
+                const total    = theoryEligibility.totalLessons    ?? theoryEligibility.requiredCount ?? null;
+                const pct      = theoryEligibility.attendancePct   ?? (attended != null && total ? Math.round(attended / total * 100) : null);
+                return (
+                    <span className="text-xs text-red-700 bg-red-50 border border-red-200 px-2.5 py-1.5 rounded-lg font-medium leading-snug">
+                        Prisustvo {pct != null ? `${pct}%` : 'ispod 60%'} — ispit nije moguć
+                    </span>
+                );
+            }
+
+            return (
+                <button
+                    onClick={() => setExamModal({ key: phase.key, phaseType: 'TEORIJSKI ISPIT', label: 'Teorijski ispit', current: phase })}
+                    className="text-xs px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold border border-indigo-600 transition-colors shadow-sm"
+                >
+                    {phase.examStatus ? 'Ažuriraj rezultat' : 'Zakaži ispit'}
+                </button>
+            );
+        }
+
         if (phase.status === 'ZAKLJUČANO') return null;
 
         switch (phase.key) {
@@ -135,21 +168,24 @@ export default function TrainingTimeline({ candidate, onOpenTheory, refreshToken
                     <tbody>
                     {timeline.map((phase) => {
                         const locked = phase.status === 'ZAKLJUČANO';
-                        const iconBg = locked ? 'bg-slate-100 text-slate-300' : (PHASE_ICON_BG[phase.key] || 'bg-slate-100 text-slate-500');
+                        // Admin can always interact with TEORIJSKI_ISPIT — don't dim that row
+                        const adminActive = isAdmin && phase.key === 'TEORIJSKI_ISPIT';
+                        const dimRow = locked && !adminActive;
+                        const iconBg = dimRow ? 'bg-slate-100 text-slate-300' : (PHASE_ICON_BG[phase.key] || 'bg-slate-100 text-slate-500');
                         const statusCfg = STATUS_CONFIG[phase.status] || STATUS_CONFIG['NIJE ZAPOČETO'];
 
                         return (
                             <>
                                 <tr
                                     key={phase.key}
-                                    className={`border-b border-slate-100 last:border-0 transition-colors ${locked ? 'opacity-50' : 'hover:bg-slate-50/60'}`}
+                                    className={`border-b border-slate-100 last:border-0 transition-colors ${dimRow ? 'opacity-50' : 'hover:bg-slate-50/60'}`}
                                 >
                                     <td className="px-4 py-3.5">
                                         <div className="flex items-center gap-2.5">
                                                 <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${iconBg}`}>
                                                     {PHASE_ICONS[phase.key]}
                                                 </span>
-                                            <span className={`font-medium ${locked ? 'text-slate-400' : 'text-slate-700'}`}>
+                                            <span className={`font-medium ${dimRow ? 'text-slate-400' : 'text-slate-700'}`}>
                                                     {phase.label}
                                                 </span>
                                         </div>

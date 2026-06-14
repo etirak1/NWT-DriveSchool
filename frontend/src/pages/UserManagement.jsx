@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Users, Search, UserPlus, Trash2, Power,
   ChevronLeft, ChevronRight,
@@ -21,6 +22,7 @@ const inputFocusStyle = (focused) => ({
 });
 
 export default function UserManagement() {
+  const queryClient = useQueryClient();
   const {
     users, totalPages, totalElements,
     page, setPage, sortBy, setSortBy,
@@ -265,7 +267,16 @@ export default function UserManagement() {
         {showAdd && (
             <AddUserModal
                 onClose={() => setShowAdd(false)}
-                onCreated={() => { setShowAdd(false); loadUsers(); }}
+                onCreated={(role) => {
+                    setShowAdd(false);
+                    loadUsers();
+                    if (role === 'INSTRUCTOR') {
+                        queryClient.invalidateQueries({ queryKey: ['instructors-combined'] });
+                    }
+                    if (role === 'CANDIDATE') {
+                        queryClient.invalidateQueries({ queryKey: ['candidates'] });
+                    }
+                }}
             />
         )}
 

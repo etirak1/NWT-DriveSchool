@@ -118,8 +118,19 @@ public class UserService {
 
 
     public UserDTO createUser(User user) {
-        user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));  // <-- novo
+        user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
         User savedUser = userRepository.save(user);
+
+        // Admin-only notification — must NOT be visible to candidates/instructors
+        Announcement adminNote = new Announcement();
+        adminNote.setTitle("Novi korisnik dodan");
+        adminNote.setContent("Korisnik " + savedUser.getFirstName() + " " + savedUser.getLastName()
+                + " (" + savedUser.getEmail() + ") je dodat u sistem s ulogom " + savedUser.getRole() + ".");
+        adminNote.setCreatedBy(null);
+        adminNote.setTargetUserId(null);
+        adminNote.setAdminOnly(true);
+        announcementRepository.save(adminNote);
+
         UserRegisteredEvent event = new UserRegisteredEvent(
                 savedUser.getUserId(),
                 savedUser.getFirstName(),

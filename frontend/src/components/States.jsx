@@ -95,15 +95,15 @@ export function ErrorState({ message, onRetry }) {
         msg.includes('econnrefused');
 
     return (
-        <div className="error-state">
+        <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
             {isUnavailable ? (
                 <UnpluggedIllustration />
             ) : (
-                <div className="error-icon-wrap">
-                    <span className="error-icon-big">⚠️</span>
+                <div className="w-16 h-16 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center mb-5 shadow-sm">
+                    <span className="text-2xl leading-none">⚠️</span>
                 </div>
             )}
-            <h3 className="error-title" style={{ marginTop: isUnavailable ? '12px' : undefined }}>
+            <h3 className="text-lg font-semibold text-slate-800 mb-1.5" style={{ marginTop: isUnavailable ? '12px' : undefined }}>
                 {isUnavailable ? 'Servis nije dostupan' : 'Došlo je do greške'}
             </h3>
             <p className="text-sm text-slate-500 max-w-sm leading-relaxed mb-5">

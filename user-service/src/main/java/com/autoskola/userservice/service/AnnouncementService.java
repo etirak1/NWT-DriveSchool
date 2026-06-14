@@ -27,7 +27,7 @@ public class AnnouncementService {
 
     public List<AnnouncementDTO> getAnnouncementsForUser(Long userId) {
         return announcementRepository
-                .findByAdminOnlyFalseAndTargetUserIdIsNullOrTargetUserId(userId)
+                .findVisibleForUser(userId)
                 .stream()
                 .map(ann -> modelMapper.map(ann, AnnouncementDTO.class))
                 .collect(Collectors.toList());

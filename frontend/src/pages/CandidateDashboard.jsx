@@ -135,21 +135,55 @@ export default function CandidateDashboard() {
                             </div>
                         )}
 
-                        {/* Nije ispunjen uslov prisustva */}
-                        {theoryEligibility?.hasGroup && theoryEligibility?.groupFinished && !theoryEligibility?.eligible && !theoryPassed && (
-                            <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-3">
-                                <AlertTriangle size={18} className="text-red-500 shrink-0 mt-0.5" />
-                                <div>
-                                    <p className="font-semibold text-red-800 text-sm">Niste ispunili uslov za teorijski ispit</p>
-                                    <p className="text-red-700 text-sm mt-0.5">
-                                        Teorijska nastava za Vašu grupu je završena. Prisustvovali ste{' '}
-                                        <span className="font-bold">{theoryEligibility.attendedLessons} od {theoryEligibility.totalLessons}</span>{' '}
-                                        časova ({theoryEligibility.attendancePct}%), što je ispod minimalnog praga od 60%.
-                                        Za više informacija kontaktirajte administratora.
-                                    </p>
-                                </div>
-                            </div>
-                        )}
+                        {/* Prisustvo ispod 60% — koristimo timeline da znamo je li teorija završena */}
+                        {(() => {
+                            if (theoryPassed || theoryEligibility?.eligible !== false) return null;
+                            const attended = theoryEligibility.attendedLessons ?? theoryEligibility.attendedCount ?? null;
+                            const total    = theoryEligibility.totalLessons    ?? theoryEligibility.requiredCount ?? null;
+                            const pct      = theoryEligibility.attendancePct   ?? (attended != null && total ? Math.round(attended / total * 100) : null);
+                            const teorijaDone = timeline.find(p => p.key === 'TEORIJA')?.status === 'ZAVRŠENO';
+                            const groupDone   = theoryEligibility.groupFinished ?? teorijaDone;
+
+                            if (groupDone) {
+                                // Theory classes ended — candidate permanently blocked from exam
+                                return (
+                                    <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-3">
+                                        <AlertTriangle size={18} className="text-red-500 shrink-0 mt-0.5" />
+                                        <div>
+                                            <p className="font-semibold text-red-800 text-sm">Teorijska nastava je završena — niste ispunili uslov za ispit</p>
+                                            <p className="text-red-700 text-sm mt-0.5">
+                                                {attended != null && total != null
+                                                    ? <>Prisustvovali ste <span className="font-bold">{attended} od {total}</span> časova{pct != null ? ` (${pct}%)` : ''}, što je ispod minimalnog praga od 60%. </>
+                                                    : <>Vaše prisustvo je ispod minimalnog praga od 60%. </>
+                                                }
+                                                Kontaktirajte administratora za više informacija.
+                                            </p>
+                                        </div>
+                                    </div>
+                                );
+                            }
+
+                            // Theory still in progress — warn to come more often
+                            if (attended > 0 || total > 0) {
+                                return (
+                                    <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
+                                        <AlertTriangle size={18} className="text-amber-500 shrink-0 mt-0.5" />
+                                        <div>
+                                            <p className="font-semibold text-amber-800 text-sm">Nedovoljno prisustvo na teorijskim časovima</p>
+                                            <p className="text-amber-700 text-sm mt-0.5">
+                                                {attended != null && total != null
+                                                    ? <>Do sada ste prisustvovali <span className="font-bold">{attended} od {total}</span> časova{pct != null ? ` (${pct}%)` : ''}. </>
+                                                    : null
+                                                }
+                                                Za polaganje teorijskog ispita potrebno je minimum 60% prisustva. Potrudite se da redovnije dolazite na nastavu.
+                                            </p>
+                                        </div>
+                                    </div>
+                                );
+                            }
+
+                            return null;
+                        })()}
 
                         {/* Dugovanje */}
                         {financeStatus && remainingDebt > 0 && (

@@ -28,6 +28,7 @@ export default function RepairsPage() {
     const [editTarget, setEditTarget] = useState(null);
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [saving, setSaving] = useState(false);
+    const [saveError, setSaveError] = useState(null);
     const [deleting, setDeleting] = useState(false);
     const [filterVehicle, setFilterVehicle] = useState('');
 
@@ -37,6 +38,7 @@ export default function RepairsPage() {
 
     const handleSubmit = async (data) => {
         setSaving(true);
+        setSaveError(null);
         try {
             if (editTarget) {
                 await repairApi.update(editTarget.repairId, data);
@@ -49,7 +51,7 @@ export default function RepairsPage() {
             setEditTarget(null);
             queryClient.invalidateQueries({ queryKey: ['repairs'] });
         } catch (e) {
-            addToast(getErrorMessage(e), 'error');
+            setSaveError(getErrorMessage(e));
         } finally {
             setSaving(false);
         }
@@ -126,15 +128,16 @@ export default function RepairsPage() {
 
             <Modal
                 isOpen={showForm}
-                onClose={() => { setShowForm(false); setEditTarget(null); }}
+                onClose={() => { setShowForm(false); setEditTarget(null); setSaveError(null); }}
                 title={editTarget ? 'Uredi popravku' : 'Dodaj popravku'}
             >
                 <RepairForm
                     initial={editTarget}
                     vehicles={vehicles || []}
                     onSubmit={handleSubmit}
-                    onCancel={() => { setShowForm(false); setEditTarget(null); }}
+                    onCancel={() => { setShowForm(false); setEditTarget(null); setSaveError(null); }}
                     loading={saving}
+                    submitError={saveError}
                 />
             </Modal>
 
