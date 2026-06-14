@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Car, Plus, Search } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { vehicleApi, repairApi } from '../services/api';
+import { vehicleApi, repairApi } from '../api/client';
 import VehicleTable from '../components/VehicleTable';
 import VehicleForm from '../components/VehicleForm';
 import VehicleDetail from '../components/VehicleDetail';

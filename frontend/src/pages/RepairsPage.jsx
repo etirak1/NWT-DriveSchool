@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Wrench, Plus } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { repairApi, vehicleApi } from '../services/api';
+import { repairApi, vehicleApi } from '../api/client';
 import RepairTable from '../components/RepairTable';
 import RepairForm from '../components/RepairForm';
 import Modal from '../components/Modal';
