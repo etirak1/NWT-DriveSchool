@@ -30,6 +30,7 @@ export default function VehiclesPage() {
     const [viewTarget, setViewTarget] = useState(null);
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [saving, setSaving] = useState(false);
+    const [saveError, setSaveError] = useState(null);
     const [deleting, setDeleting] = useState(false);
     const [search, setSearch] = useState('');
 
@@ -39,6 +40,7 @@ export default function VehiclesPage() {
 
     const handleSubmit = async (data) => {
         setSaving(true);
+        setSaveError(null);
         try {
             if (editTarget) {
                 await vehicleApi.update(editTarget.vehicleId, data);
@@ -51,7 +53,7 @@ export default function VehiclesPage() {
             setEditTarget(null);
             queryClient.invalidateQueries({ queryKey: ['vehicles'] });
         } catch (e) {
-            addToast(getErrorMessage(e), 'error');
+            setSaveError(getErrorMessage(e));
         } finally {
             setSaving(false);
         }
@@ -79,8 +81,8 @@ export default function VehiclesPage() {
     return (
         <div className="space-y-5">
             {/* Page header */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-                <div className="flex items-center justify-between gap-4">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div className="flex items-center gap-4">
                         <div className="w-11 h-11 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
                             <Car size={20} className="text-blue-600" />
@@ -91,7 +93,7 @@ export default function VehiclesPage() {
                         </div>
                     </div>
                     <button
-                        className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm shadow-blue-200 disabled:opacity-50"
+                        className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm shadow-blue-200 disabled:opacity-50 self-start sm:self-auto"
                         onClick={openAdd}
                         disabled={!!error}
                     >
@@ -101,7 +103,7 @@ export default function VehiclesPage() {
             </div>
 
             {/* Content */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3 sm:p-6">
                 {loading && <Spinner />}
                 {error && <ErrorState message={error} onRetry={refetch} />}
 
@@ -131,15 +133,16 @@ export default function VehiclesPage() {
 
             <Modal
                 isOpen={showForm}
-                onClose={() => { setShowForm(false); setEditTarget(null); }}
+                onClose={() => { setShowForm(false); setEditTarget(null); setSaveError(null); }}
                 title={editTarget ? 'Uredi vozilo' : 'Dodaj vozilo'}
                 size="lg"
             >
                 <VehicleForm
                     initial={editTarget}
                     onSubmit={handleSubmit}
-                    onCancel={() => { setShowForm(false); setEditTarget(null); }}
+                    onCancel={() => { setShowForm(false); setEditTarget(null); setSaveError(null); }}
                     loading={saving}
+                    submitError={saveError}
                 />
             </Modal>
 

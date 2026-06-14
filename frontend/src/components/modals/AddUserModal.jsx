@@ -43,7 +43,7 @@ export default function AddUserModal({ onClose, onCreated }) {
                 role: form.role,
                 status: 'ACTIVE',
             });
-            onCreated();
+            onCreated(form.role);
         } catch (err) {
             setError(parseApiError(err, { fallback: 'Greška pri kreiranju.' }));
         } finally {

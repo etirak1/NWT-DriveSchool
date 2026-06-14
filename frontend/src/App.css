@@ -426,7 +426,7 @@ code, .reg-number {
 .empty-icon { font-size: 40px; }
 .empty-title { font-size: 16px; font-weight: 600; color: #0f172a; }
 .empty-message { color: var(--text2); font-size: 13px; }
-.error-state { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 60px 40px; text-align: center; max-width: 420px; margin: 0 auto; }
+.error-state { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 60px 40px; text-align: center; width: 100%; max-width: 480px; margin: 0 auto; }
 .error-icon-wrap { width: 72px; height: 72px; border-radius: 50%; background: #fff3f3; border: 2px solid #fecaca; display: flex; align-items: center; justify-content: center; }
 .error-icon-big { font-size: 36px; line-height: 1; }
 .error-title { font-size: 18px; font-weight: 700; color: var(--text1); margin: 0; }

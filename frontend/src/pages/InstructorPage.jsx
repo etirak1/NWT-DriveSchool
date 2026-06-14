@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Users, Search } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { userApi, instructorApi, vehicleApi } from '../api/client';
+import { instructorApi, vehicleApi } from '../services/api';
+import { useInstructors } from '../hooks/useInstructors';
 import { Spinner, ErrorState } from '../components/States';
 import { useToast } from '../context/ToastContext';
 import { getErrorMessage } from '../utils/helpers';
@@ -16,32 +17,20 @@ export default function InstructorsPage() {
     const [assignTarget, setAssignTarget] = useState(null);
     const [assigning, setAssigning] = useState(false);
 
-    const { data: { instructors: data = [], vehicles = [] } = {}, isLoading: loading, isError, refetch } = useQuery({
-        queryKey: ['instructors-combined'],
-        queryFn: async () => {
-            const [resUsers, resInstructors, resVehicles] = await Promise.all([
-                userApi.getActiveInstructors(),
-                instructorApi.getAll(),
-                vehicleApi.getAll()
-            ]);
-            const usersList = resUsers.data.content || resUsers.data || [];
-            const resourceList = resInstructors.data.content || resInstructors.data || [];
-            const vehiclesList = resVehicles.data?.data || resVehicles.data || [];
-            const combined = resourceList.map((instructor) => {
-                const userIdFromResource = instructor.user?.userId || instructor.userId;
-                const userMatch = usersList.find(u => String(u.userId) === String(userIdFromResource));
-                return {
-                    ...instructor,
-                    firstName: userMatch?.firstName || instructor.user?.firstName || 'Nije pronađeno ime',
-                    lastName: userMatch?.lastName || instructor.user?.lastName || 'Nije pronađeno prezime',
-                    email: userMatch?.email || instructor.user?.email || 'Nema emaila',
-                };
-            });
-            return { instructors: combined, vehicles: vehiclesList };
-        },
+    const { data: instructorData = [], isLoading: instructorsLoading, isError, refetch: refetchInstructors } = useInstructors();
+
+    const { data: vehiclesData = [], isLoading: vehiclesLoading, isError: vehiclesError, refetch: refetchVehicles } = useQuery({
+        queryKey: ['vehicles'],
+        retry: 1,
+        queryFn: () => vehicleApi.getAll().then(r => r.data?.data || r.data || []),
     });
 
-    const error = isError ? 'Greška pri učitavanju instruktora.' : null;
+    const data = instructorData;
+    const vehicles = vehiclesData;
+    const loading = instructorsLoading || vehiclesLoading;
+    const refetch = () => { refetchInstructors(); refetchVehicles(); };
+
+    const error = (isError || vehiclesError) ? 'Greška pri učitavanju instruktora.' : null;
 
     const filtered = data.filter(i =>
         `${i.firstName} ${i.lastName} ${i.email}`.toLowerCase().includes(search.toLowerCase())
@@ -86,7 +75,7 @@ export default function InstructorsPage() {
     return (
         <div className="space-y-5">
             {/* Page header */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
                 <div className="flex items-center gap-4">
                     <div className="w-11 h-11 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
                         <Users size={20} className="text-blue-600" />
@@ -99,7 +88,7 @@ export default function InstructorsPage() {
             </div>
 
             {/* Content */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3 sm:p-6">
                 {loading && <Spinner />}
                 {error && <ErrorState message={error} onRetry={refetch} />}
 
@@ -118,7 +107,7 @@ export default function InstructorsPage() {
                             <span className="text-xs font-semibold text-slate-400 whitespace-nowrap">{filtered.length} instruktora</span>
                         </div>
 
-                        <div className="rounded-xl overflow-hidden border border-slate-200">
+                        <div className="rounded-xl overflow-x-auto border border-slate-200">
                             <table className="w-full text-sm">
                                 <thead>
                                 <tr className="bg-slate-50 border-b border-slate-200">

@@ -30,7 +30,7 @@ const inputCls = (err) =>
         err ? 'border-red-300 bg-red-50' : 'border-slate-200'
     }`;
 
-export default function VehicleForm({ initial, onSubmit, onCancel, loading }) {
+export default function VehicleForm({ initial, onSubmit, onCancel, loading, submitError }) {
     const [form, setForm] = useState(empty);
     const [errors, setErrors] = useState({});
 
@@ -73,6 +73,16 @@ export default function VehicleForm({ initial, onSubmit, onCancel, loading }) {
 
     return (
         <form className="p-6 space-y-4" onSubmit={handleSubmit} noValidate>
+            {submitError && (
+                <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
+                    <svg className="shrink-0 mt-0.5" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="8" cy="8" r="7.5" stroke="currentColor"/>
+                        <path d="M8 4.5V8.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                        <circle cx="8" cy="11" r="0.75" fill="currentColor"/>
+                    </svg>
+                    <span>{submitError}</span>
+                </div>
+            )}
             <div className="grid grid-cols-2 gap-4">
                 <div>
                     <label className="text-xs font-semibold uppercase tracking-widest text-slate-400 block mb-1.5">

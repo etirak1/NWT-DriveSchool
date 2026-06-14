@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { getErrorMessage } from '../utils/helpers';
+import { parseApiError } from '../utils/errorHandler';
+import { SCHEDULE_TIMEOUT_MS } from '../constants';
 import { SCHEDULE_TIMEOUT_MS, LESSON_DURATION_MIN, LESSON_DURATION_MS, WORK_HOUR_START, WORK_HOUR_END } from '../constants';
 import { Calendar, Clock, Car, ArrowLeft, CheckCircle, User } from 'lucide-react';
 
@@ -119,12 +121,7 @@ export default function BookLesson() {
             setSuccess(true);
             setTimeout(() => navigate('/dashboard'), SCHEDULE_TIMEOUT_MS);
         } catch (err) {
-            const body = err?.response?.data;
-            let msg = 'Greška pri zakazivanju časa.';
-            if (typeof body === 'string') msg = body;
-            else if (body?.message) msg = body.message;
-            else if (body && typeof body === 'object') msg = Object.values(body).join(' ');
-            setError(msg);
+            setError(parseApiError(err, { fallback: 'Greška pri zakazivanju časa.' }));
         } finally {
             setSubmitting(false);
         }

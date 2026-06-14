@@ -27,7 +27,7 @@ export function useCandidateDashboard() {
 
     const { financeStatus, payments } = useFinance(candidate?.candidateId);
     const { pageData, pendingLessons, fetchLessons, respondToLesson } = useLessons();
-    const { announcements } = useAnnouncements();
+    const { announcements } = useAnnouncements(userId, role);
 
     const handleLogout = () => {
         logout();

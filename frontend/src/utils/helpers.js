@@ -56,6 +56,17 @@ export const instructorStatusColor = (available) =>
 export const getErrorMessage = (error) => {
     if (!error) return 'Došlo je do neočekivane greške.';
 
+    const status = error.response?.status;
+
+    // Status codes where we always show a friendly local message
+    // (overrides any raw server message like "Service Unavailable")
+    const priorityMessages = {
+        503: 'Servis trenutno nije dostupan. Pokušajte malo kasnije.',
+        500: 'Serverska greška. Pokušajte ponovo.',
+        403: 'Nemate dozvolu za ovu akciju.',
+    };
+    if (status && priorityMessages[status]) return priorityMessages[status];
+
     const serverMsg =
         error.response?.data?.message ||
         error.response?.data?.error ||
@@ -65,14 +76,10 @@ export const getErrorMessage = (error) => {
 
     const statusMessages = {
         400: 'Uneseni podaci nisu ispravni. Provjerite unos.',
-        403: 'Nemate dozvolu za ovu akciju.',
         404: 'Traženi resurs nije pronađen.',
         409: 'Resurs već postoji.',
-        503: 'Servis trenutno nije dostupan. Pokušajte ponovo.',
-        500: 'Serverska greška. Pokušajte ponovo.',
     };
 
-    const status = error.response?.status;
     if (status && statusMessages[status]) return statusMessages[status];
     if (!error.response) return 'Nije moguće uspostaviti vezu sa serverom.';
 

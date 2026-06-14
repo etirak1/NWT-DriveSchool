@@ -4,10 +4,24 @@ const empty = { vehicleId: '', repairDate: '', description: '', cost: '', status
 const STATUSES = ['PLANNED', 'PENDING', 'IN_PROGRESS', 'COMPLETED'];
 const STATUS_LABELS = { PLANNED: 'Planirano', PENDING: 'Na čekanju', IN_PROGRESS: 'U toku', COMPLETED: 'Završeno' };
 
-const inputCls = 'w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 focus:bg-white transition-colors';
+const inputCls = (err) =>
+    `w-full border rounded-xl px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 focus:bg-white transition-colors ${
+        err ? 'border-red-300 bg-red-50' : 'border-slate-200'
+    }`;
 
-export default function RepairForm({ initial, vehicles, onSubmit, onCancel, loading }) {
+const validate = (form) => {
+    const errors = {};
+    if (!form.vehicleId) errors.vehicleId = 'Vozilo je obavezno.';
+    if (!form.repairDate) errors.repairDate = 'Datum popravke je obavezan.';
+    if (!form.description.trim()) errors.description = 'Opis problema je obavezan.';
+    if (!form.cost) errors.cost = 'Cijena je obavezna.';
+    else if (Number(form.cost) < 5) errors.cost = 'Cijena mora biti najmanje 5 KM.';
+    return errors;
+};
+
+export default function RepairForm({ initial, vehicles, onSubmit, onCancel, loading, submitError }) {
     const [form, setForm] = useState(empty);
+    const [errors, setErrors] = useState({});
 
     useEffect(() => {
         if (initial) {
@@ -21,12 +35,18 @@ export default function RepairForm({ initial, vehicles, onSubmit, onCancel, load
         } else {
             setForm(empty);
         }
+        setErrors({});
     }, [initial]);
 
-    const set = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }));
+    const set = (field) => (e) => {
+        setForm(f => ({ ...f, [field]: e.target.value }));
+        setErrors(e => ({ ...e, [field]: undefined }));
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        const errs = validate(form);
+        if (Object.keys(errs).length > 0) { setErrors(errs); return; }
         onSubmit({
             vehicle: { vehicleId: Number(form.vehicleId) },
             repairDate: form.repairDate ? `${form.repairDate}T00:00:00` : null,
@@ -37,18 +57,25 @@ export default function RepairForm({ initial, vehicles, onSubmit, onCancel, load
     };
 
     return (
-        <form className="p-6 space-y-4" onSubmit={handleSubmit}>
+        <form className="p-6 space-y-4" onSubmit={handleSubmit} noValidate>
+            {submitError && (
+                <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
+                    <svg className="shrink-0 mt-0.5" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="8" cy="8" r="7.5" stroke="currentColor"/>
+                        <path d="M8 4.5V8.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                        <circle cx="8" cy="11" r="0.75" fill="currentColor"/>
+                    </svg>
+                    <span>{submitError}</span>
+                </div>
+            )}
             <div>
                 <label className="text-xs font-semibold uppercase tracking-widest text-slate-400 block mb-1.5">
                     Vozilo <span className="text-red-500">*</span>
                 </label>
                 <select
-                    required
-                    className={inputCls}
+                    className={inputCls(errors.vehicleId)}
                     value={form.vehicleId}
                     onChange={set('vehicleId')}
-                    onInvalid={(e) => e.target.setCustomValidity('Odaberite vozilo')}
-                    onInput={(e) => e.target.setCustomValidity('')}
                 >
                     <option value="">-- Odaberi vozilo --</option>
                     {vehicles?.map(v => (
@@ -57,6 +84,7 @@ export default function RepairForm({ initial, vehicles, onSubmit, onCancel, load
                         </option>
                     ))}
                 </select>
+                {errors.vehicleId && <p className="text-xs text-red-600 mt-1">{errors.vehicleId}</p>}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -65,18 +93,16 @@ export default function RepairForm({ initial, vehicles, onSubmit, onCancel, load
                         Datum popravke <span className="text-red-500">*</span>
                     </label>
                     <input
-                        required
                         type="date"
-                        className={inputCls}
+                        className={inputCls(errors.repairDate)}
                         value={form.repairDate}
                         onChange={set('repairDate')}
-                        onInvalid={(e) => e.target.setCustomValidity('Odaberite datum popravke')}
-                        onInput={(e) => e.target.setCustomValidity('')}
                     />
+                    {errors.repairDate && <p className="text-xs text-red-600 mt-1">{errors.repairDate}</p>}
                 </div>
                 <div>
                     <label className="text-xs font-semibold uppercase tracking-widest text-slate-400 block mb-1.5">Status</label>
-                    <select className={inputCls} value={form.status} onChange={set('status')}>
+                    <select className={inputCls(false)} value={form.status} onChange={set('status')}>
                         {STATUSES.map(s => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
                     </select>
                 </div>
@@ -87,15 +113,13 @@ export default function RepairForm({ initial, vehicles, onSubmit, onCancel, load
                     Opis problema <span className="text-red-500">*</span>
                 </label>
                 <textarea
-                    required
                     rows={3}
-                    className={`${inputCls} resize-none`}
+                    className={`${inputCls(errors.description)} resize-none`}
                     value={form.description}
                     onChange={set('description')}
                     placeholder="Opišite problem ili vrstu popravke..."
-                    onInvalid={(e) => e.target.setCustomValidity('Unesite opis problema')}
-                    onInput={(e) => e.target.setCustomValidity('')}
                 />
+                {errors.description && <p className="text-xs text-red-600 mt-1">{errors.description}</p>}
             </div>
 
             <div>
@@ -103,20 +127,15 @@ export default function RepairForm({ initial, vehicles, onSubmit, onCancel, load
                     Cijena (KM) <span className="text-red-500">*</span>
                 </label>
                 <input
-                    required
                     type="number"
                     step="0.01"
                     min="5"
-                    className={inputCls}
+                    className={inputCls(errors.cost)}
                     value={form.cost}
                     onChange={set('cost')}
                     placeholder="0.00"
-                    onInvalid={(e) => {
-                        if (e.target.validity.valueMissing) e.target.setCustomValidity('Unesite cijenu');
-                        else if (e.target.validity.rangeUnderflow) e.target.setCustomValidity('Cijena mora biti najmanje 5 KM');
-                    }}
-                    onInput={(e) => e.target.setCustomValidity('')}
                 />
+                {errors.cost && <p className="text-xs text-red-600 mt-1">{errors.cost}</p>}
             </div>
 
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">

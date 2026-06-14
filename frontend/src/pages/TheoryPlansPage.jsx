@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { getErrorMessage } from '../utils/helpers';
-import { BookOpen, Plus, Users, Calendar, Clock, LogOut, ChevronRight, Trash2, GraduationCap, DollarSign, UserCheck } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { BookOpen, Plus, Calendar, Clock, ChevronRight, Trash2, Users } from 'lucide-react';
+import Header from '../components/Header';
 import TheoryPlanCreateModal from '../components/TheoryPlanCreateModal';
 import TheoryPlanViewModal from '../components/TheoryPlanViewModal';
 import { financeApi } from '../services/financeApi';
@@ -12,9 +12,6 @@ import { ArrowLeft } from 'lucide-react';
 
 export default function TheoryPlansPage() {
     const navigate = useNavigate();
-    const { user, logout } = useAuth();
-    const email = user.email;
-    const role  = user.role;
     const queryClient = useQueryClient();
 
     const [error, setError] = useState('');
@@ -60,63 +57,9 @@ export default function TheoryPlansPage() {
         THURSDAY: 'Cetvrtak', FRIDAY: 'Petak', SATURDAY: 'Subota', SUNDAY: 'Nedjelja',
     };
 
-    const navItems = [
-        { label: 'Korisnici', icon: Users, to: '/users' },
-        { label: 'Resursi', icon: BookOpen, to: '/resources'},
-        { label: 'Kandidati', icon: UserCheck, to: '/candidates' },
-        { label: 'Finansije', icon: DollarSign, to: '/finance' },
-    ];
-
     return (
         <div className="min-h-screen bg-slate-100">
-            {/* ── Header ── */}
-            <header className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-600 shadow-lg">
-                <div className="max-w-7xl mx-auto px-6 py-3 flex items-center gap-6">
-                    <Link to="/dashboard" className="flex items-center gap-3 shrink-0 group">
-                        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white/20 group-hover:bg-white/30 transition-colors">
-                            <GraduationCap size={22} className="text-white" />
-                        </div>
-                        <div>
-                            <p className="text-white font-bold text-base leading-tight">DriveSchool</p>
-                            <p className="text-blue-200 text-xs leading-tight">Plan teorijske nastave</p>
-                        </div>
-                    </Link>
-
-                    <nav className="flex items-center gap-1.5 flex-1">
-                        {navItems.map(item => (
-                            <Link
-                                key={item.label}
-                                to={item.to}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                                    item.active
-                                        ? 'bg-white/20 text-white backdrop-blur-sm border border-white/25 shadow-sm'
-                                        : 'text-blue-200 hover:text-white hover:bg-white/10'
-                                }`}
-                            >
-                                <item.icon size={14} />
-                                {item.label}
-                            </Link>
-                        ))}
-                    </nav>
-
-                    <div className="flex items-center gap-3 shrink-0">
-                        <div className="text-right hidden sm:block">
-                            <p className="text-white text-sm font-medium leading-tight">{email}</p>
-                            <span className="inline-block text-xs px-2 py-0.5 rounded-full font-semibold bg-white/20 text-white border border-white/25 mt-0.5">
-                                {role}
-                            </span>
-                        </div>
-                        <button
-                            
-                            
-                            onClick={() => { logout(); navigate('/login'); }}
-                            className="flex items-center gap-1.5 px-3 py-2 text-blue-200 hover:text-white hover:bg-white/10 rounded-xl text-sm transition-colors"
-                        >
-                            <LogOut size={15} /> Odjava
-                        </button>
-                    </div>
-                </div>
-            </header>
+            <Header active="Plan nastave" />
 
             <div className="max-w-7xl mx-auto px-6 py-8">
                 <Link

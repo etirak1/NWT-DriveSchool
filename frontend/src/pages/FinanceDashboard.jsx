@@ -440,7 +440,7 @@ export default function FinanceDashboard() {
         <div className="min-h-screen bg-slate-100">
             <Header active="Finansije" />
 
-            <div className="max-w-7xl mx-auto px-6 py-8">
+            <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-8">
                 {/* ── Page title ── */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
                     <div className="flex items-center gap-4">
@@ -481,17 +481,17 @@ export default function FinanceDashboard() {
 
                 {/* Sažetak */}
                 {!loadError && (
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
                         {[
                             { label: 'Ukupno zaduženo', value: fmt(totalAmount), icon: '📋', color: 'text-slate-900' },
                             { label: 'Naplaćeno',        value: fmt(totalPaid),   icon: '✅', color: 'text-emerald-700' },
                             { label: 'Preostali dug',    value: fmt(totalDebt),   icon: '⏳', color: 'text-red-600'    },
                             { label: 'Kandidata',        value: rows.length,      icon: '👥', color: 'text-blue-700'   },
                         ].map(s => (
-                            <div key={s.label} className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-                                <div className="text-xl mb-2">{s.icon}</div>
-                                <div className={`text-xl font-bold ${s.color}`}>{s.value}</div>
-                                <div className="text-xs text-slate-400 mt-1 font-medium">{s.label}</div>
+                            <div key={s.label} className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                                <div className="text-base sm:text-xl mb-1 sm:mb-2">{s.icon}</div>
+                                <div className={`text-sm sm:text-xl font-bold break-all ${s.color}`}>{s.value}</div>
+                                <div className="text-[10px] sm:text-xs text-slate-400 mt-0.5 sm:mt-1 font-medium leading-tight">{s.label}</div>
                             </div>
                         ))}
                     </div>
@@ -500,7 +500,7 @@ export default function FinanceDashboard() {
                 {/* Tabela */}
                 {!loadError && (
                     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                        <div className="px-6 py-5 border-b border-slate-100 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+                        <div className="px-3 sm:px-6 py-4 sm:py-5 border-b border-slate-100 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
                             <div>
                                 <h3 className="font-bold text-slate-900">Svi kandidati</h3>
                                 <p className="text-xs text-slate-400 mt-0.5">{rows.length} ukupno</p>

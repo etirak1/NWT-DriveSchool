@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { api } from './api/client';
 import { useAuth } from './context/AuthContext';
 
@@ -62,7 +62,7 @@ function UserServiceHealthCheck() {
                 if (!err.response || err.response.status === 500 ||
                     err.response.status === 502 || err.response.status === 503 ||
                     err.code === 'ECONNABORTED') {
-                    localStorage.removeItem('token');
+                    window.dispatchEvent(new Event('auth:logout'));
                     navigate('/login', {
                         state: { message: 'Servis trenutno nije dostupan. Pokušajte kasnije.' }
                     });
@@ -77,10 +77,33 @@ function UserServiceHealthCheck() {
     return null;
 }
 
+function ServerErrorToast() {
+    const [msg, setMsg] = useState('');
+
+    const show = useCallback((e) => {
+        setMsg(e.detail?.message || 'Serverska greška, pokušajte ponovo.');
+        setTimeout(() => setMsg(''), 4000);
+    }, []);
+
+    useEffect(() => {
+        window.addEventListener('api:server-error', show);
+        return () => window.removeEventListener('api:server-error', show);
+    }, [show]);
+
+    if (!msg) return null;
+
+    return (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-red-600 text-white text-sm px-5 py-3 rounded-2xl shadow-lg">
+            {msg}
+        </div>
+    );
+}
+
 export default function App() {
     return (
         <>
         <UserServiceHealthCheck />
+        <ServerErrorToast />
         <Routes>
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<Login />} />

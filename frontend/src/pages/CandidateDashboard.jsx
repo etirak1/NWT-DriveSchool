@@ -135,21 +135,55 @@ export default function CandidateDashboard() {
                             </div>
                         )}
 
-                        {/* Nije ispunjen uslov prisustva */}
-                        {theoryEligibility?.hasGroup && theoryEligibility?.groupFinished && !theoryEligibility?.eligible && !theoryPassed && (
-                            <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-3">
-                                <AlertTriangle size={18} className="text-red-500 shrink-0 mt-0.5" />
-                                <div>
-                                    <p className="font-semibold text-red-800 text-sm">Niste ispunili uslov za teorijski ispit</p>
-                                    <p className="text-red-700 text-sm mt-0.5">
-                                        Teorijska nastava za Vašu grupu je završena. Prisustvovali ste{' '}
-                                        <span className="font-bold">{theoryEligibility.attendedLessons} od {theoryEligibility.totalLessons}</span>{' '}
-                                        časova ({theoryEligibility.attendancePct}%), što je ispod minimalnog praga od 60%.
-                                        Za više informacija kontaktirajte administratora.
-                                    </p>
-                                </div>
-                            </div>
-                        )}
+                        {/* Prisustvo ispod 60% — koristimo timeline da znamo je li teorija završena */}
+                        {(() => {
+                            if (theoryPassed || theoryEligibility?.eligible !== false) return null;
+                            const attended = theoryEligibility.attendedLessons ?? theoryEligibility.attendedCount ?? null;
+                            const total    = theoryEligibility.totalLessons    ?? theoryEligibility.requiredCount ?? null;
+                            const pct      = theoryEligibility.attendancePct   ?? (attended != null && total ? Math.round(attended / total * 100) : null);
+                            const teorijaDone = timeline.find(p => p.key === 'TEORIJA')?.status === 'ZAVRŠENO';
+                            const groupDone   = theoryEligibility.groupFinished ?? teorijaDone;
+
+                            if (groupDone) {
+                                // Theory classes ended — candidate permanently blocked from exam
+                                return (
+                                    <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-3">
+                                        <AlertTriangle size={18} className="text-red-500 shrink-0 mt-0.5" />
+                                        <div>
+                                            <p className="font-semibold text-red-800 text-sm">Teorijska nastava je završena — niste ispunili uslov za ispit</p>
+                                            <p className="text-red-700 text-sm mt-0.5">
+                                                {attended != null && total != null
+                                                    ? <>Prisustvovali ste <span className="font-bold">{attended} od {total}</span> časova{pct != null ? ` (${pct}%)` : ''}, što je ispod minimalnog praga od 60%. </>
+                                                    : <>Vaše prisustvo je ispod minimalnog praga od 60%. </>
+                                                }
+                                                Kontaktirajte administratora za više informacija.
+                                            </p>
+                                        </div>
+                                    </div>
+                                );
+                            }
+
+                            // Theory still in progress — warn to come more often
+                            if (attended > 0 || total > 0) {
+                                return (
+                                    <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
+                                        <AlertTriangle size={18} className="text-amber-500 shrink-0 mt-0.5" />
+                                        <div>
+                                            <p className="font-semibold text-amber-800 text-sm">Nedovoljno prisustvo na teorijskim časovima</p>
+                                            <p className="text-amber-700 text-sm mt-0.5">
+                                                {attended != null && total != null
+                                                    ? <>Do sada ste prisustvovali <span className="font-bold">{attended} od {total}</span> časova{pct != null ? ` (${pct}%)` : ''}. </>
+                                                    : null
+                                                }
+                                                Za polaganje teorijskog ispita potrebno je minimum 60% prisustva. Potrudite se da redovnije dolazite na nastavu.
+                                            </p>
+                                        </div>
+                                    </div>
+                                );
+                            }
+
+                            return null;
+                        })()}
 
                         {/* Dugovanje */}
                         {financeStatus && remainingDebt > 0 && (
@@ -662,7 +696,7 @@ export default function CandidateDashboard() {
                 {activeSection === 'announcements' && (
                     <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6">
                         <h2 className="font-bold text-slate-800 mb-1">Obavještenja</h2>
-                        <p className="text-sm text-slate-400 mb-6">Budite u toku s najnovijim vijestima i važnim obavještenjima.</p>
+                        <p className="text-sm text-slate-400 italic mb-6">Budite u toku s najnovijim vijestima i važnim obavještenjima.</p>
                         {announcements.length === 0 ? (
                             <div className="flex flex-col items-center py-14 gap-3">
                                 <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center">
@@ -674,18 +708,30 @@ export default function CandidateDashboard() {
                                 </div>
                             </div>
                         ) : (
-                            <div className="divide-y divide-slate-50">
-                                {announcements.map((a) => (
-                                    <div key={a.id} className="py-4 first:pt-0">
-                                        <div className="flex items-start justify-between gap-3">
-                                            <p className="font-semibold text-slate-800 text-sm">{a.title}</p>
-                                            <span className="text-xs text-slate-400 whitespace-nowrap">
-                                                {a.dateCreated ? new Date(a.dateCreated).toLocaleDateString('en-GB') : ''}
-                                            </span>
+                            <div className="divide-y divide-slate-100">
+                                {announcements.map((a) => {
+                                    const isWelcome = !!a.targetUserId;
+                                    const badgeCls = isWelcome
+                                        ? 'bg-green-50 text-green-700 border-green-200'
+                                        : 'bg-blue-50 text-blue-700 border-blue-200';
+                                    const badgeLabel = isWelcome ? 'Dobrodošlica' : 'Obavještenje';
+                                    return (
+                                        <div key={a.id} className="py-4 first:pt-0">
+                                            <div className="flex items-start justify-between gap-3 mb-1">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <p className="font-semibold text-slate-800 text-sm">{a.title}</p>
+                                                    <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${badgeCls}`}>
+                                                        {badgeLabel}
+                                                    </span>
+                                                </div>
+                                                <span className="text-xs text-slate-400 whitespace-nowrap shrink-0">
+                                                    {a.dateCreated ? new Date(a.dateCreated).toLocaleDateString('en-GB') : ''}
+                                                </span>
+                                            </div>
+                                            <p className="text-sm text-slate-600">{a.content}</p>
                                         </div>
-                                        <p className="text-sm text-slate-600 mt-1">{a.content}</p>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
