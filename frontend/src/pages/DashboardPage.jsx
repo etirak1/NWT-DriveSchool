@@ -1,7 +1,7 @@
 import React from 'react';
 import { LayoutDashboard } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { vehicleApi, repairApi, instructorApi } from '../services/api';
+import { vehicleApi, repairApi, instructorApi } from '../api/client';
 import Dashboard from '../components/Dashboard';
 import { Spinner, ErrorState } from '../components/States';
 
