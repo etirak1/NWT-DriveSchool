@@ -46,14 +46,14 @@ function SmartDashboard() {
 function UserServiceHealthCheck() {
     const navigate = useNavigate();
     const location = useLocation();
+    const { isAuthenticated } = useAuth();
     const isLoginPage = location.pathname === '/login' ||
         location.pathname === '/register';
 
     useEffect(() => {
         if (isLoginPage) return;
 
-        const token = localStorage.getItem('token');
-        if (!token) return;
+        if (!isAuthenticated) return;
 
         const check = async () => {
             try {
@@ -72,7 +72,7 @@ function UserServiceHealthCheck() {
         check();
         const interval = setInterval(check, 30000);
         return () => clearInterval(interval);
-    }, [location.pathname]);
+    }, [location.pathname, isAuthenticated]);
 
     return null;
 }

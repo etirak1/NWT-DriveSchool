@@ -47,6 +47,7 @@ api.interceptors.response.use(
 
         if (!error.response || error.code === 'ECONNABORTED') {
             localStorage.removeItem('token');
+            window.dispatchEvent(new Event('auth:logout'));
             window.location.href = '/login?reason=service_offline';
             return new Promise(() => {});
         }
