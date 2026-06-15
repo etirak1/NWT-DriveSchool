@@ -26,6 +26,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -158,14 +160,16 @@ public class LessonService {
 
         lesson.setCandidate(candidate);
         lesson.setInstructor(instructor);
-        lesson.setStatus("ZAKAZANO");
+        lesson.setStatus("PENDING");
+        lesson.setSagaId(UUID.randomUUID());
 
         Lesson savedLesson = lessonRepository.save(lesson);
 
         LessonEvent event = new LessonEvent();
+        event.setSagaId(savedLesson.getSagaId());
         event.setLessonId(savedLesson.getLessonId());
         event.setCandidateId(candidate.getCandidateId());
-        event.setStatus("ZAKAZANO");
+        event.setStatus("PENDING");
 
         rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, "lesson.created", event);
 

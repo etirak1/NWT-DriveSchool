@@ -15,7 +15,8 @@ public class PaymentListener {
 
     @RabbitListener(queues = RabbitMQConfig.QUEUE_LESSON)
     public void handlePayment(LessonEvent event) {
-        System.out.println("Finance-service: Primljen zahtjev za plaćanje časa: " + event.getLessonId());
+        System.out.println("Finance-service: Primljen zahtjev za plaćanje časa: " + event.getLessonId()
+                + " (sagaId=" + event.getSagaId() + ")");
 
         try {
             boolean success = true;
