@@ -108,8 +108,6 @@ docker-compose down -v
 
 ## Opcija B — Lokalno pokretanje (IntelliJ + npm)
 
-Pogodno za razvoj — servisi se pokreću direktno iz IDE-a, a MySQL i RabbitMQ rade kroz Docker.
-
 ### Preduvjeti
 
 - [Java 17](https://adoptium.net/) instaliran
@@ -147,9 +145,6 @@ Pokreni svaki servis u ovom redoslijedu (svaki u posebnom run/debug prozoru):
 | 5 | `training-and-scheduling-service` → `TrainingServiceApplication` |
 | 6 | `gateway-service` → `GatewayServiceApplication` |
 
-> **Savjet:** U IntelliJ možeš desnim klikom na main klasu → **Run** ili koristiti **Run Configurations** da pokreneš sve odjednom.
-
-Svaki servis automatski kreira svoju bazu podataka pri prvom pokretanju.
 
 ### Korak 4 — Pokreni frontend
 
@@ -161,7 +156,6 @@ npm run dev
 
 Aplikacija će biti dostupna na **http://localhost:5173**.
 
-> Frontend u razvoju komunicira s gateway-om na `http://localhost:8080`. Provjeri da je gateway pokrenut.
 
 ### Zaustavljanje (lokalno)
 
@@ -203,8 +197,8 @@ docker-compose up -d
 
 | Rola | Email | Lozinka |
 |---|---|---|
-| Admin | admin@autoskola.ba | admin123 |
-| Instruktor | instruktor@autoskola.ba | instruktor123 |
-| Kandidat | kandidat@autoskola.ba | kandidat123 |
+| Admin | etirak1@etf.unsa.ba | 123456 |
+| Instruktor | tljubovic1@etf.unsa.ba|123456 |
+| Kandidat | kandidat1@etf.unsa.ba | 123456 |
 
 > Ako test nalozi ne postoje, dodaj ih kroz admin panel nakon prvog pokretanja.
