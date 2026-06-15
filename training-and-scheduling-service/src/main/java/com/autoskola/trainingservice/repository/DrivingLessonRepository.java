@@ -13,4 +13,5 @@ public interface DrivingLessonRepository extends JpaRepository<DrivingLesson, Lo
     Optional<DrivingLesson> findByCandidateCandidateIdAndLessonNumber(Long candidateId, Integer lessonNumber);
 
     long countByCandidateCandidateId(Long candidateId);
+    void deleteByCandidateCandidateId(Long candidateId);
 }

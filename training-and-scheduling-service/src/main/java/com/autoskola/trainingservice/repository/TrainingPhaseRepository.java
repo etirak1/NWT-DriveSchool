@@ -11,4 +11,5 @@ import java.util.List;
 public interface TrainingPhaseRepository extends JpaRepository<TrainingPhase, Long> {
     List<TrainingPhase> findByCandidateCandidateId(Long candidateId);
     List<TrainingPhase> findByCandidateCandidateIdAndPhaseTypeIgnoreCase(Long candidateId, String phaseType);
+    void deleteByCandidateCandidateId(Long candidateId);
 }

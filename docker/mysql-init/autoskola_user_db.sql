@@ -1,3 +1,5 @@
+USE autoskola_user_db;
+
 -- phpMyAdmin SQL Dump
 -- version 5.2.1
 -- https://www.phpmyadmin.net/
@@ -44,10 +46,10 @@ CREATE TABLE `announcements` (
 INSERT INTO `announcements` (`announcement_id`, `content`, `created_by`, `date_created`, `title`, `expiration_date`, `target_user_id`) VALUES
 (1, 'Novi termini za teoretski ispit su objavljeni.', 1, '2026-06-06 13:49:39.000000', 'Novi termini', NULL, NULL),
 (2, 'Auto-škola ne radi za nadolazeće praznike.', 1, '2026-06-06 13:49:39.000000', 'Praznici', NULL, NULL),
-(3, 'Novi korisnik Kandidat je dodat u sistem.', 17, '2026-06-09 13:01:08.000000', 'Dobrodošlica', NULL, NULL),
+(3, 'Novi korisnik Kandidat je dodat u sistem.', 17, '2026-06-09 13:01:08.000000', 'Dobrodošlica', NULL, 17),
 (4, 'Dana 10.06.2026. auto-škola neće raditi', 1, '2026-06-10 01:24:55.000000', 'Neradni dan', '2026-06-11', NULL),
-(5, 'Novi korisnik Kandidat je dodat u sistem.', 18, '2026-06-10 22:32:18.000000', 'Dobrodošlica', NULL, NULL),
-(6, 'Novi korisnik Kandidat je dodat u sistem.', 19, '2026-06-10 22:41:09.000000', 'Dobrodošlica', NULL, NULL),
+(5, 'Novi korisnik Kandidat je dodat u sistem.', 18, '2026-06-10 22:32:18.000000', 'Dobrodošlica', NULL, 18),
+(6, 'Novi korisnik Kandidat je dodat u sistem.', 19, '2026-06-10 22:41:09.000000', 'Dobrodošlica', NULL, 19),
 (7, 'Dobrodošli, k! Vaš nalog je uspješno kreiran. Možete pratiti napredak obuke, finansije i obavještenja putem ove platforme.', 21, '2026-06-13 00:22:20.000000', 'Dobrodošlica', NULL, 21);
 
 -- --------------------------------------------------------

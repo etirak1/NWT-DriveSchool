@@ -45,6 +45,7 @@ export default function InstructorsPage() {
             await instructorApi.updateAvailability(instructor.instructorId, newNote);
             addToast(`Status promenjen za ${instructor.firstName}`, 'success');
             queryClient.invalidateQueries({ queryKey: ['instructors-combined'] });
+            queryClient.invalidateQueries({ queryKey: ['instructors'] });
         } catch (e) {
             addToast(getErrorMessage(e), 'error');
         } finally {
@@ -60,6 +61,7 @@ export default function InstructorsPage() {
             addToast(`Vozilo ${vehicle?.brand} ${vehicle?.model} dodijeljeno instruktoru!`, 'success');
             setAssignTarget(null);
             queryClient.invalidateQueries({ queryKey: ['instructors-combined'] });
+            queryClient.invalidateQueries({ queryKey: ['instructors'] });
 
         } catch (e) {
             if (e.response?.status === 500) {

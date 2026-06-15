@@ -121,6 +121,14 @@ public class CandidateService {
 
     public List<CandidateDTO> getAllCandidates() {
         return candidateRepository.findAll().stream()
+                .filter(candidate -> {
+                    try {
+                        userClient.getUserById(candidate.getUserId());
+                        return true;
+                    } catch (Exception e) {
+                        return false;
+                    }
+                })
                 .map(this::buildDTO)
                 .collect(Collectors.toList());
     }

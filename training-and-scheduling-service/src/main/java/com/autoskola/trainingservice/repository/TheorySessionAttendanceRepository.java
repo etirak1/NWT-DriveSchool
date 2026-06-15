@@ -18,6 +18,7 @@ public interface TheorySessionAttendanceRepository extends JpaRepository<TheoryS
     @Query("SELECT a FROM TheorySessionAttendance a WHERE a.session.id = :sessionId AND a.candidate.candidateId = :candidateId")
     Optional<TheorySessionAttendance> findBySessionAndCandidate(@Param("sessionId") Long sessionId, @Param("candidateId") Long candidateId);
     void deleteBySessionId(Long sessionId);
+    void deleteByCandidateCandidateId(Long candidateId);
 
     @Query("SELECT COUNT(a) FROM TheorySessionAttendance a " +
            "WHERE a.session.plan.id = :planId AND a.candidate.candidateId = :candidateId AND a.present = true")

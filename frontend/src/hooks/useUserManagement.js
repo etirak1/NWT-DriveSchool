@@ -59,6 +59,10 @@ export function useUserManagement() {
             await api.delete(`/api/users/${u.userId}`);
             setDeletingUser(null);
             invalidate();
+            queryClient.invalidateQueries({ queryKey: ['candidates'] });
+            queryClient.invalidateQueries({ queryKey: ['instructors'] });
+            queryClient.invalidateQueries({ queryKey: ['instructors-combined'] });
+            queryClient.invalidateQueries({ queryKey: ['theoryPlans'] });
         } catch (err) {
             alert(parseApiError(err, {
                 fallback: 'Greška pri brisanju.',

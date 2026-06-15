@@ -42,10 +42,13 @@ Aplikacija se može pokrenuti na dva načina: **Docker** (preporučeno) ili **lo
 
 ### Postavljanje WSL2 memorije (samo Windows)
 
-Ako Docker koristi WSL2 backend (vidi Docker Desktop → Settings → Resources), napravi ili uredi fajl .wslconfig`:
+Ako Docker koristi WSL2 backend (vidi Docker Desktop → Settings → Resources), napravi ili uredi fajl `C:\Users\<tvoje_korisničko_ime>\.wslconfig`:
+
+```
 [wsl2]
 memory=6GB
 swap=2GB
+```
 
 Nakon toga restartuj WSL:
 
@@ -158,7 +161,7 @@ npm run dev
 
 Aplikacija će biti dostupna na **http://localhost:5173**.
 
-> Frontend u razvoju komunicira s gateway-om na `http://localhost:8080`. Provjeriti da je gateway pokrenut.
+> Frontend u razvoju komunicira s gateway-om na `http://localhost:8080`. Provjeri da je gateway pokrenut.
 
 ### Zaustavljanje (lokalno)
 
@@ -167,10 +170,29 @@ Aplikacija će biti dostupna na **http://localhost:5173**.
 
 ```bash
 docker-compose down
+```
+
+---
+
+## Česti problemi
+
+### Containeri se gase odmah nakon pokretanja (exit code 255)
+
+Docker Desktop nema dovoljno RAM-a. Provjeri `.wslconfig` — postavi `memory=6GB` i restartuj WSL (`wsl --shutdown`).
+
+### Port je već zauzet
+
+Provjeri je li neki stari container već zauzeo port:
+
+```bash
+docker ps -a
+docker stop <ime_containera>
+docker rm <ime_containera>
+```
 
 ### RabbitMQ je `unhealthy`
 
-RabbitMQ ponekad treba više od 60 sekundi da se pokrene. Pokušati ponovo:
+RabbitMQ ponekad treba više od 60 sekundi da se pokrene. Pokušaj ponovo:
 
 ```bash
 docker-compose down
@@ -181,7 +203,8 @@ docker-compose up -d
 
 | Rola | Email | Lozinka |
 |---|---|---|
-| Admin |etirak1@etf.unsa.ba| 123456 |
-| Instruktor | tljubovic@etf.unsa.ba | 123456 |
+| Admin | admin@autoskola.ba | admin123 |
+| Instruktor | instruktor@autoskola.ba | instruktor123 |
+| Kandidat | kandidat@autoskola.ba | kandidat123 |
 
-> Ako test nalozi ne postoje, dodati ih kroz admin panel nakon prvog pokretanja.
+> Ako test nalozi ne postoje, dodaj ih kroz admin panel nakon prvog pokretanja.

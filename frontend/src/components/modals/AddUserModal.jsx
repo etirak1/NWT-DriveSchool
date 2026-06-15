@@ -16,6 +16,7 @@ export default function AddUserModal({ onClose, onCreated }) {
     });
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
+    const [success, setSuccess] = useState(false);
     const [focused, setFocused] = useState(null);
 
     const update = (k) => (e) => setForm({ ...form, [k]: e.target.value });
@@ -43,7 +44,8 @@ export default function AddUserModal({ onClose, onCreated }) {
                 role: form.role,
                 status: 'ACTIVE',
             });
-            onCreated(form.role);
+            setSuccess(true);
+            setTimeout(() => onCreated(form.role), 1500);
         } catch (err) {
             setError(parseApiError(err, { fallback: 'Greška pri kreiranju.' }));
         } finally {
@@ -153,6 +155,15 @@ export default function AddUserModal({ onClose, onCreated }) {
                     {error && (
                         <div className="form-alert-error">
                             {error}
+                        </div>
+                    )}
+
+                    {success && (
+                        <div className="flex items-center gap-2 px-4 py-3 bg-green-50 border border-green-200 rounded-xl text-sm font-semibold text-green-700">
+                            <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                            Račun je uspješno kreiran!
                         </div>
                     )}
 

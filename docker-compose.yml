@@ -12,16 +12,17 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./docker/mysql-init/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./docker/mysql-init:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
       interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 20
+      start_period: 120s
     deploy:
       resources:
         limits:
-          memory: 512m
+          memory: 1g
 
   rabbitmq:
     image: rabbitmq:3.13-management-alpine

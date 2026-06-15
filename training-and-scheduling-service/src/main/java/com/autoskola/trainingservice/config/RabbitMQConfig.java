@@ -15,6 +15,7 @@ public class RabbitMQConfig {
     public static final String QUEUE_USER_REGISTERED = "user_registered_queue";
     public static final String QUEUE_VEHICLE_ASSIGNED = "training_vehicle_assigned_queue";
     public static final String QUEUE_INSTRUCTOR_AVAILABILITY = "training_instructor_availability_queue";
+    public static final String QUEUE_USER_DELETED = "training_user_deleted_queue";
 
     @Bean
     public TopicExchange exchange() {
@@ -65,6 +66,18 @@ public class RabbitMQConfig {
         return BindingBuilder.bind(instructorAvailabilityQueue())
                 .to(exchange)
                 .with("instructor.availability.updated");
+    }
+
+    @Bean
+    public Queue userDeletedQueue() {
+        return new Queue(QUEUE_USER_DELETED, true);
+    }
+
+    @Bean
+    public Binding userDeletedBinding(TopicExchange exchange) {
+        return BindingBuilder.bind(userDeletedQueue())
+                .to(exchange)
+                .with("user.deleted");
     }
 
     @Bean

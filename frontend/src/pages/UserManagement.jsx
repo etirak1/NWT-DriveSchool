@@ -270,6 +270,7 @@ export default function UserManagement() {
                 onCreated={(role) => {
                     setShowAdd(false);
                     loadUsers();
+                    queryClient.invalidateQueries({ queryKey: ['announcements'] });
                     if (role === 'INSTRUCTOR') {
                         queryClient.invalidateQueries({ queryKey: ['instructors-combined'] });
                     }
