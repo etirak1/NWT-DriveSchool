@@ -29,12 +29,24 @@ public class LessonResponseListener {
             return;
         }
 
+        if (lesson.getSagaId() == null || !lesson.getSagaId().equals(event.getSagaId())) {
+            log.warn("Ignorisana poruka - sagaId se ne poklapa za čas {}. Očekivano: {}, primljeno: {}",
+                    lesson.getLessonId(), lesson.getSagaId(), event.getSagaId());
+            return;
+        }
+
+        if (!"PENDING".equalsIgnoreCase(lesson.getStatus())) {
+            log.info("Poruka za čas {} (sagaId={}) ignorisana - već procesirano, status={}",
+                    lesson.getLessonId(), event.getSagaId(), lesson.getStatus());
+            return;
+        }
+
         if ("payment.success".equals(routingKey)) {
             lesson.setStatus("ZAKAZANO");
-            log.info("SAGA USPJEŠNA: Čas {} je potvrđen.", lesson.getLessonId());
+            log.info("SAGA USPJEŠNA: Čas {} je potvrđen (sagaId={}).", lesson.getLessonId(), event.getSagaId());
         } else {
             lesson.setStatus("OTKAZANO");
-            log.warn("SAGA ROLLBACK: Čas {} je otkazan.", lesson.getLessonId());
+            log.warn("SAGA ROLLBACK: Čas {} je otkazan (sagaId={}).", lesson.getLessonId(), event.getSagaId());
         }
 
         lessonRepository.save(lesson);

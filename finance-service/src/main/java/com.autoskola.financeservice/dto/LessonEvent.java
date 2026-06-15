@@ -2,9 +2,11 @@ package com.autoskola.financeservice.dto;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.UUID;
 
 public class LessonEvent implements Serializable {
 
+    private UUID       sagaId;
     private Integer    lessonId;
     private Integer    candidateId;
     private String     lessonType;
@@ -12,6 +14,9 @@ public class LessonEvent implements Serializable {
     private String     status;
 
     public LessonEvent() {}
+
+    public UUID getSagaId()             { return sagaId; }
+    public void setSagaId(UUID sagaId)                  { this.sagaId = sagaId; }
 
     public Integer getLessonId()        { return lessonId; }
     public void setLessonId(Integer lessonId)           { this.lessonId = lessonId; }

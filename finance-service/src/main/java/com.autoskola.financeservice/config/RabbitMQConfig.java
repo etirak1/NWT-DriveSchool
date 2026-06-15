@@ -18,7 +18,7 @@ public class RabbitMQConfig {
     public static final String QUEUE_VEHICLE   = "finance_vehicle_queue";
 
     public static final String KEY_CANDIDATE = "candidate.created";
-    public static final String KEY_LESSON    = "lesson.completed";
+    public static final String KEY_LESSON    = "lesson.created";
     public static final String KEY_VEHICLE   = "vehicle.serviced";
 
     @Bean
