@@ -121,7 +121,6 @@ public class UserService {
         user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
         User savedUser = userRepository.save(user);
 
-        // Admin-only notification — must NOT be visible to candidates/instructors
         Announcement adminNote = new Announcement();
         adminNote.setTitle("Novi korisnik dodan");
         adminNote.setContent("Korisnik " + savedUser.getFirstName() + " " + savedUser.getLastName()
@@ -146,11 +145,7 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Korisnik nije pronadjen"));
 
-        // Provjeravamo da li je korisnik instruktor
-        if ("INSTRUKTOR".equals(user.getRole())) { // Prilagodi polje role tvojoj bazi
-
-            // SINHRONI POZIV: Čekamo odgovor od training-service
-            // Ovo je tačka 1.a iz zadatka - Validacija podataka kao međukorak
+        if ("INSTRUKTOR".equals(user.getRole())) {
             Boolean imaCasove = trainingClient.hasActiveSessions(id);
 
             if (imaCasove) {
@@ -158,11 +153,14 @@ public class UserService {
             }
         }
 
-        // Ako nema časova ili nije instruktor, brišemo ga
         userRepository.deleteById(id);
-        rabbitTemplate.convertAndSend("skola_exchange", "user.deleted", id);
 
-        System.out.println("User Service: Poruka o brisanju poslana za ID: " + id);
+        try {
+            rabbitTemplate.convertAndSend("skola_exchange", "user.deleted", id);
+            System.out.println("User Service: Poruka o brisanju poslana za ID: " + id);
+        } catch (Exception e) {
+            System.out.println("User Service: RabbitMQ nije dostupan, brisanje nastavljeno bez poruke: " + e.getMessage());
+        }
     }
 
     public User findByEmail(String email) {
@@ -172,7 +170,11 @@ public class UserService {
 
     @EventListener(ApplicationReadyEvent.class)
     public void syncOnStartup() {
-        publishAllExistingUsers();
+        try {
+            publishAllExistingUsers();
+        } catch (Exception e) {
+            System.out.println("RabbitMQ nije dostupan pri startu, sync preskočen: " + e.getMessage());
+        }
     }
 
     public void publishAllExistingUsers() {

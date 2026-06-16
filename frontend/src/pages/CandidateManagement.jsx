@@ -169,12 +169,13 @@ export default function CandidateManagement() {
     const { data: candidates = [], isLoading: loading, isError: loadError, refetch: refetchCandidates } = useQuery({
         queryKey: ['candidates'],
         queryFn: () => api.get('/api/candidates').then(r => r.data),
+        staleTime: 0,
+        refetchOnMount: true,
     });
 
     const { data: instructors = [], isError: instructorsError } = useInstructors();
     const instructorsUnavailable = instructorsError;
 
-    // Clear pendingInstructor once server data catches up to the selected value
     useEffect(() => {
         setPendingInstructor(prev => {
             const updated = { ...prev };
@@ -206,7 +207,6 @@ export default function CandidateManagement() {
             setTimeout(() => setInlineSuccess(prev => ({ ...prev, [candidateId]: null })), 3000);
         } catch (err) {
             const msg = err.response?.data?.message || 'Greška pri dodjeljivanju instruktora.';
-            // Reset to server value so dropdown doesn't stay on failed selection
             setPendingInstructor(prev => { const n = { ...prev }; delete n[candidateId]; return n; });
             setInlineErrors(prev => ({ ...prev, [candidateId]: msg }));
             setTimeout(() => setInlineErrors(prev => ({ ...prev, [candidateId]: null })), 6000);

@@ -44,8 +44,16 @@ export default function InstructorsPage() {
         try {
             await instructorApi.updateAvailability(instructor.instructorId, newNote);
             addToast(`Status promenjen za ${instructor.firstName}`, 'success');
-            queryClient.invalidateQueries({ queryKey: ['instructors-combined'] });
-            queryClient.invalidateQueries({ queryKey: ['instructors'] });
+            const applyUpdate = (old) => {
+                if (!Array.isArray(old)) return old;
+                return old.map(i =>
+                    i.instructorId === instructor.instructorId
+                        ? { ...i, availabilityNote: newNote }
+                        : i
+                );
+            };
+            queryClient.setQueryData(['instructors-combined'], applyUpdate);
+            queryClient.setQueryData(['instructors'], applyUpdate);
         } catch (e) {
             addToast(getErrorMessage(e), 'error');
         } finally {

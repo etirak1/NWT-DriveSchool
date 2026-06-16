@@ -121,16 +121,44 @@ public class CandidateService {
 
     public List<CandidateDTO> getAllCandidates() {
         return candidateRepository.findAll().stream()
-                .filter(candidate -> {
-                    try {
-                        userClient.getUserById(candidate.getUserId());
-                        return true;
-                    } catch (Exception e) {
-                        return false;
-                    }
-                })
-                .map(this::buildDTO)
+                .map(this::buildDTOOrNull)
+                .filter(dto -> dto != null)
                 .collect(Collectors.toList());
+    }
+
+    private CandidateDTO buildDTOOrNull(Candidate candidate) {
+        UserDTO userDTO;
+        try {
+            userDTO = userClient.getUserById(candidate.getUserId());
+        } catch (Exception e) {
+            return null;
+        }
+
+        InstructorDTO instructorDetails = null;
+        if (candidate.getAssignedInstructor() != null) {
+            instructorDetails = instructorService.getInstructorFullDetails(
+                    candidate.getAssignedInstructor().getInstructorId());
+        }
+
+        TrainingRuleDTO ruleDTO = toRuleDTO(candidate.getRule());
+
+        boolean theoryPassed =
+                trainingPhaseRepository.findByCandidateCandidateIdAndPhaseTypeIgnoreCase(
+                                candidate.getCandidateId(), "TEORIJSKI ISPIT")
+                        .stream().anyMatch(p -> "POLOŽENO".equalsIgnoreCase(p.getStatus()))
+                || trainingPhaseRepository.findByCandidateCandidateIdAndPhaseTypeIgnoreCase(
+                                candidate.getCandidateId(), "TEORIJSKI DIO")
+                        .stream().anyMatch(p -> "POLOŽENO".equalsIgnoreCase(p.getStatus()));
+
+        CandidateDTO dto = new CandidateDTO();
+        dto.setCandidateId(candidate.getCandidateId());
+        dto.setEnrollmentDate(candidate.getEnrollmentDate());
+        dto.setProgressPercentage(candidate.getProgressPercentage());
+        dto.setUser(userDTO);
+        dto.setAssignedInstructor(instructorDetails);
+        dto.setRule(ruleDTO);
+        dto.setTheoryExamPassed(theoryPassed);
+        return dto;
     }
 
     public CandidateDTO assignInstructor(Long candidateId, Long instructorUserId) {

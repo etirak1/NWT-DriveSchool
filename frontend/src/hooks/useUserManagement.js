@@ -59,7 +59,25 @@ export function useUserManagement() {
             await api.delete(`/api/users/${u.userId}`);
             setDeletingUser(null);
             invalidate();
+
+
+            if (u.role === 'CANDIDATE') {
+                queryClient.setQueryData(['candidates'], (old) => {
+                    if (!Array.isArray(old)) return old;
+                    return old.filter(c => String(c.user?.userId) !== String(u.userId));
+                });
+            }
             queryClient.invalidateQueries({ queryKey: ['candidates'] });
+
+            if (u.role === 'INSTRUCTOR') {
+                const applyUpdate = (old) => {
+                    if (!Array.isArray(old)) return old;
+                    return old.filter(i => String(i.userId) !== String(u.userId)
+                        && String(i.user?.userId) !== String(u.userId));
+                };
+                queryClient.setQueryData(['instructors'], applyUpdate);
+                queryClient.setQueryData(['instructors-combined'], applyUpdate);
+            }
             queryClient.invalidateQueries({ queryKey: ['instructors'] });
             queryClient.invalidateQueries({ queryKey: ['instructors-combined'] });
             queryClient.invalidateQueries({ queryKey: ['theoryPlans'] });
