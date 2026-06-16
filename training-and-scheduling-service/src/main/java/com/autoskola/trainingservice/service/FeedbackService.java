@@ -12,9 +12,9 @@ import com.autoskola.trainingservice.repository.CandidateRepository;
 import com.autoskola.trainingservice.repository.FeedbackRepository;
 import com.autoskola.trainingservice.repository.InstructorNotificationRepository;
 import com.autoskola.trainingservice.repository.InstructorRepository;
+import com.autoskola.trainingservice.repository.TrainingPhaseRepository;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,6 +27,7 @@ public class FeedbackService {
     private final CandidateService candidateService;
     private final InstructorService instructorService;
     private final InstructorNotificationRepository notificationRepository;
+    private final TrainingPhaseRepository trainingPhaseRepository;
     private static final Logger log = LoggerFactory.getLogger(FeedbackService.class);
 
 
@@ -34,13 +35,15 @@ public class FeedbackService {
                            InstructorRepository instructorRepository,
                            CandidateService candidateService,
                            InstructorService instructorService,
-                           InstructorNotificationRepository notificationRepository) {
+                           InstructorNotificationRepository notificationRepository,
+                           TrainingPhaseRepository trainingPhaseRepository) {
         this.feedbackRepository = feedbackRepository;
         this.candidateRepository = candidateRepository;
         this.instructorRepository = instructorRepository;
         this.candidateService = candidateService;
         this.instructorService = instructorService;
         this.notificationRepository = notificationRepository;
+        this.trainingPhaseRepository = trainingPhaseRepository;
     }
 
     public FeedbackDTO getFeedbackDetails(Long id) {
@@ -63,8 +66,14 @@ public class FeedbackService {
         Candidate candidate = candidateRepository.findById(feedback.getCandidate().getCandidateId())
                 .orElseThrow(() -> new RuntimeException("Kandidat nije pronađen"));
 
-        if (candidate.getProgressPercentage() == null ||
-                candidate.getProgressPercentage().compareTo(new BigDecimal("100")) < 0) {
+        boolean practicalExamPassed = trainingPhaseRepository
+                .findByCandidateCandidateIdAndPhaseTypeIgnoreCase(candidate.getCandidateId(), "PRAKTICNI_ISPIT")
+                .stream().anyMatch(p -> "POLOŽENO".equalsIgnoreCase(p.getStatus()))
+            || trainingPhaseRepository
+                .findByCandidateCandidateIdAndPhaseTypeIgnoreCase(candidate.getCandidateId(), "PRAKTIČNI ISPIT")
+                .stream().anyMatch(p -> "POLOŽENO".equalsIgnoreCase(p.getStatus()));
+
+        if (!practicalExamPassed) {
             throw new IllegalArgumentException("Kandidat mora završiti obuku prije ocjenjivanja instruktora.");
         }
 

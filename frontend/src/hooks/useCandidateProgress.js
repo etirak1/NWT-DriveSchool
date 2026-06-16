@@ -28,7 +28,8 @@ export function useCandidateProgress(userId) {
             api.get(`/api/driving-lessons/candidate/${candidateId}/count`)
                .then(r => r.data?.completed || 0),
         enabled: !!candidateId,
-        refetchInterval: 30000,
+        staleTime: 0,
+        refetchInterval: 10000,
         refetchOnWindowFocus: true,
     });
 
@@ -44,7 +45,8 @@ export function useCandidateProgress(userId) {
         queryKey: ['timeline', candidateId],
         queryFn: () => api.get(`/api/phases/candidate/${candidateId}/timeline`).then(r => r.data),
         enabled: !!candidateId,
-        refetchInterval: 30000,
+        staleTime: 0,
+        refetchInterval: 10000,
         refetchOnWindowFocus: true,
     });
 

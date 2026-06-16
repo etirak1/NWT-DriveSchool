@@ -91,7 +91,9 @@ export default function RescheduleModal({ lesson, onClose, onRescheduled }) {
                             <input
                                 type="date"
                                 value={date}
+                                min={new Date(Date.now() + 86400000).toISOString().slice(0, 10)}
                                 onChange={e => { setDate(e.target.value); setTime(''); }}
+                                className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
                             />
 
                             {date && (
@@ -99,12 +101,20 @@ export default function RescheduleModal({ lesson, onClose, onRescheduled }) {
                                     {TIME_SLOTS.map(slot => {
                                         const isBusy = busySlots.includes(slot);
                                         const isSelected = time === slot;
-
                                         return (
                                             <button
                                                 key={slot}
+                                                type="button"
                                                 disabled={isBusy}
                                                 onClick={() => setTime(slot)}
+                                                className={
+                                                    'py-2 px-3 rounded-lg text-sm font-medium border transition ' +
+                                                    (isBusy
+                                                        ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed line-through'
+                                                        : isSelected
+                                                            ? 'bg-blue-600 text-white border-blue-600'
+                                                            : 'bg-white text-slate-700 border-slate-200 hover:border-blue-400')
+                                                }
                                             >
                                                 {slot}
                                             </button>
@@ -113,9 +123,15 @@ export default function RescheduleModal({ lesson, onClose, onRescheduled }) {
                                 </div>
                             )}
 
-                            {error && <p>{error}</p>}
+                            {error && (
+                                <p className="mt-3 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg border border-red-100">{error}</p>
+                            )}
 
-                            <button onClick={handleSubmit} disabled={submitting}>
+                            <button
+                                onClick={handleSubmit}
+                                disabled={submitting || !date || !time}
+                                className="mt-5 w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition"
+                            >
                                 {submitting ? 'Čuvanje...' : 'Potvrdi'}
                             </button>
                         </>

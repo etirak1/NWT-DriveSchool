@@ -30,7 +30,10 @@ export function useLessons() {
 
     const respondToLesson = (lessonId, action) => mutate({ lessonId, action });
 
-    const fetchLessons = (p = 0) => setPage(p);
+    const fetchLessons = (p = 0) => {
+        setPage(p);
+        queryClient.invalidateQueries({ queryKey: ['myLessons'] });
+    };
 
     return { pageData, pendingLessons, fetchLessons, respondToLesson };
 }
