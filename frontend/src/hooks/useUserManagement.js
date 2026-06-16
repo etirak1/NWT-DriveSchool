@@ -2,9 +2,11 @@ import { useState, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
 import { parseApiError } from '../utils/errorHandler';
+import { useToast } from '../context/ToastContext';
 
 export function useUserManagement() {
     const queryClient = useQueryClient();
+    const { addToast } = useToast();
 
     const [page, setPage] = useState(0);
     const [size] = useState(10);
@@ -55,11 +57,12 @@ export function useUserManagement() {
     const invalidate = () => queryClient.invalidateQueries({ queryKey: ['users'] });
 
     const handleDelete = async (u) => {
+        console.log('handleDelete pozvan za:', u);
         try {
             await api.delete(`/api/users/${u.userId}`);
+            console.log('delete uspio');
             setDeletingUser(null);
             invalidate();
-
 
             if (u.role === 'CANDIDATE') {
                 queryClient.setQueryData(['candidates'], (old) => {
@@ -81,11 +84,14 @@ export function useUserManagement() {
             queryClient.invalidateQueries({ queryKey: ['instructors'] });
             queryClient.invalidateQueries({ queryKey: ['instructors-combined'] });
             queryClient.invalidateQueries({ queryKey: ['theoryPlans'] });
+
+            addToast(`Korisnik ${u.firstName} ${u.lastName} je uspješno obrisan.`, 'success');
         } catch (err) {
-            alert(parseApiError(err, {
+            console.log('delete greška:', err?.response?.status, err?.response?.data);
+            addToast(parseApiError(err, {
                 fallback: 'Greška pri brisanju.',
                 conflictMessage: 'Korisnik se ne može obrisati jer ima aktivne termine.',
-            }));
+            }), 'error');
             setDeletingUser(null);
         }
     };

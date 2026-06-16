@@ -285,7 +285,7 @@ export default function UserManagement() {
             <ConfirmDeleteModal
                 user={deletingUser}
                 onCancel={() => setDeletingUser(null)}
-                onConfirm={() => handleDelete(deletingUser)}
+                onConfirm={() => { console.log('onConfirm kliknut', deletingUser); handleDelete(deletingUser); }}
             />
         )}
       </div>

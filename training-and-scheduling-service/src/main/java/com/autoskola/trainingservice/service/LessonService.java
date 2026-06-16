@@ -284,12 +284,16 @@ public class LessonService {
         Candidate candidate = candidateRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Kandidat ne postoji"));
 
-        List<com.autoskola.trainingservice.model.TrainingPhase> teorija =
+        List<com.autoskola.trainingservice.model.TrainingPhase> teorijaDio =
                 phaseRepository.findByCandidateCandidateIdAndPhaseTypeIgnoreCase(
                         candidate.getCandidateId(), "TEORIJSKI DIO");
 
-        boolean theoryPassed = teorija.stream()
-                .anyMatch(p -> "POLOŽENO".equalsIgnoreCase(p.getStatus()));
+        List<com.autoskola.trainingservice.model.TrainingPhase> teorijskiIspit =
+                phaseRepository.findByCandidateCandidateIdAndPhaseTypeIgnoreCase(
+                        candidate.getCandidateId(), "TEORIJSKI ISPIT");
+
+        boolean theoryPassed = teorijaDio.stream().anyMatch(p -> "POLOŽENO".equalsIgnoreCase(p.getStatus()))
+                || teorijskiIspit.stream().anyMatch(p -> "POLOŽENO".equalsIgnoreCase(p.getStatus()));
 
         Integer limit = (candidate.getRule() != null && candidate.getRule().getMaxLessonsPerWeek() != null)
                 ? candidate.getRule().getMaxLessonsPerWeek() : 4;

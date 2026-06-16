@@ -11,6 +11,8 @@ export function useLessons() {
         queryFn: () =>
             api.get(`/api/lessons/my-lessons?page=${page}&size=5&sortBy=dateTime&sortDir=desc`)
                .then(r => r.data),
+        staleTime: 0,
+        refetchOnMount: true,
     });
 
     const { data: pendingLessons = [] } = useQuery({
