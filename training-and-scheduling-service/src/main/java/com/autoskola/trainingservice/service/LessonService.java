@@ -9,7 +9,9 @@ import com.autoskola.trainingservice.model.Instructor;
 import com.autoskola.trainingservice.model.Lesson;
 import com.autoskola.trainingservice.model.DrivingLesson;
 import com.autoskola.trainingservice.config.TrainingConstants;
+import com.autoskola.trainingservice.model.CandidateNotification;
 import com.autoskola.trainingservice.model.InstructorNotification;
+import com.autoskola.trainingservice.repository.CandidateNotificationRepository;
 import com.autoskola.trainingservice.repository.CandidateRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +45,7 @@ public class LessonService {
     private final TrainingPhaseRepository phaseRepository;
     private final DrivingLessonRepository drivingLessonRepository;
     private final InstructorNotificationRepository notificationRepository;
+    private final CandidateNotificationRepository candidateNotificationRepository;
 
     public LessonService(LessonRepository lessonRepository,
                          UserClient userClient,
@@ -50,7 +53,8 @@ public class LessonService {
                          RabbitTemplate rabbitTemplate,
                          TrainingPhaseRepository phaseRepository,
                          DrivingLessonRepository drivingLessonRepository,
-                         InstructorNotificationRepository notificationRepository) {
+                         InstructorNotificationRepository notificationRepository,
+                         CandidateNotificationRepository candidateNotificationRepository) {
         this.lessonRepository = lessonRepository;
         this.userClient = userClient;
         this.candidateRepository = candidateRepository;
@@ -58,6 +62,7 @@ public class LessonService {
         this.phaseRepository = phaseRepository;
         this.drivingLessonRepository = drivingLessonRepository;
         this.notificationRepository = notificationRepository;
+        this.candidateNotificationRepository = candidateNotificationRepository;
     }
 
     private void sendNotification(Long instructorUserId, String type, String title, String body) {
@@ -393,6 +398,21 @@ public class LessonService {
             "Kandidat je potvrdio čas #" + lessonId + "."
         );
 
+        if (lesson.getCandidate() != null && lesson.getCandidate().getUserId() != null) {
+            String dateStr = lesson.getDateTime() != null
+                    ? lesson.getDateTime().toLocalDate().toString() : "nepoznat datum";
+            String timeStr = lesson.getDateTime() != null
+                    ? lesson.getDateTime().toLocalTime().toString().substring(0, 5) : "";
+            CandidateNotification cn = new CandidateNotification();
+            cn.setCandidateUserId(lesson.getCandidate().getUserId());
+            cn.setType("LESSON_CONFIRMED");
+            cn.setTitle("Čas potvrđen");
+            cn.setBody("Vaš čas vožnje zakazan za " + dateStr + " u " + timeStr + "h je uspješno potvrđen.");
+            candidateNotificationRepository.save(cn);
+            log.info("Notifikacija (potvrda) poslana kandidatu userId={} za čas {}.",
+                    lesson.getCandidate().getUserId(), lessonId);
+        }
+
         return getLessonDetails(lessonId);
     }
 
@@ -417,6 +437,19 @@ public class LessonService {
             "Čas odbijen",
             "Kandidat je odbio čas #" + lessonId + "."
         );
+
+        if (lesson.getCandidate() != null && lesson.getCandidate().getUserId() != null) {
+            String dateStr = lesson.getDateTime() != null
+                    ? lesson.getDateTime().toLocalDate().toString() : "nepoznat datum";
+            String timeStr = lesson.getDateTime() != null
+                    ? lesson.getDateTime().toLocalTime().toString().substring(0, 5) : "";
+            CandidateNotification cn = new CandidateNotification();
+            cn.setCandidateUserId(lesson.getCandidate().getUserId());
+            cn.setType("LESSON_CANCELLED");
+            cn.setTitle("Čas odbijen");
+            cn.setBody("Odbili ste čas vožnje predložen za " + dateStr + " u " + timeStr + "h.");
+            candidateNotificationRepository.save(cn);
+        }
 
         return getLessonDetails(lessonId);
     }

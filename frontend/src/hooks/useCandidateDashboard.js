@@ -5,6 +5,7 @@ import { useCandidateProgress } from './useCandidateProgress';
 import { useFinance } from './useFinance';
 import { useLessons } from './useLessons';
 import { useAnnouncements } from './useAnnouncements';
+import { useCandidateNotifications } from './useCandidateNotifications';
 import { TOTAL_THEORY_LESSONS, TOTAL_DRIVING_LESSONS } from '../constants';
 
 export function useCandidateDashboard() {
@@ -28,6 +29,9 @@ export function useCandidateDashboard() {
     const { financeStatus, payments } = useFinance(candidate?.candidateId);
     const { pageData, pendingLessons, fetchLessons, respondToLesson } = useLessons();
     const { announcements } = useAnnouncements(userId, role);
+    const { notifications, unreadCount, markAllRead, clearAll: clearNotifications } = useCandidateNotifications(userId);
+
+    const [notifOpen, setNotifOpen] = useState(false);
 
     const handleLogout = () => {
         logout();
@@ -69,5 +73,7 @@ export function useCandidateDashboard() {
         allDone,
         totalAmount, amountPaid, remainingDebt, paymentPct,
         enrollmentPaid, examEligible, obligations,
+        notifications, unreadCount, markAllRead, clearNotifications,
+        notifOpen, setNotifOpen,
     };
 }

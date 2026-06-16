@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import {
     GraduationCap, LogOut, CheckCircle, Clock, BookOpen,
     MessageSquare, TrendingUp, DollarSign, AlertCircle,
-    Car, XCircle, AlertTriangle, Info, Calendar
+    Car, XCircle, AlertTriangle, Info, Calendar, Bell, X
 } from 'lucide-react';
 import FeedbackModal from '../components/FeedbackModal';
 import RescheduleModal from '../components/RescheduleModal';
@@ -24,6 +24,8 @@ export default function CandidateDashboard() {
         allDone,
         totalAmount, amountPaid, remainingDebt, paymentPct,
         enrollmentPaid, examEligible, obligations,
+        notifications, unreadCount, markAllRead, clearNotifications,
+        notifOpen, setNotifOpen,
     } = useCandidateDashboard();
 
     const navItems = [
@@ -87,6 +89,47 @@ export default function CandidateDashboard() {
                                     {role || 'CANDIDATE'}
                                 </span>
                             </div>
+
+                            {/* Bell */}
+                            <div className="relative">
+                                <button
+                                    onClick={() => { setNotifOpen(o => !o); if (!notifOpen) markAllRead(); }}
+                                    className="relative flex items-center justify-center w-9 h-9 rounded-lg text-white hover:bg-white/15 transition-colors"
+                                >
+                                    <Bell size={18} />
+                                    {unreadCount > 0 && (
+                                        <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                                            {unreadCount}
+                                        </span>
+                                    )}
+                                </button>
+                                {notifOpen && (
+                                    <div className="absolute right-0 top-11 w-80 bg-white rounded-xl shadow-2xl border border-slate-200 z-50">
+                                        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+                                            <span className="font-semibold text-sm text-slate-800">Notifikacije</span>
+                                            <div className="flex items-center gap-2">
+                                                {notifications.length > 0 && (
+                                                    <button onClick={clearNotifications} className="text-xs text-slate-400 hover:text-slate-600 transition-colors">Obriši sve</button>
+                                                )}
+                                                <button onClick={() => setNotifOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors"><X size={14} /></button>
+                                            </div>
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 px-4 pt-2">Ažurira se svakih 15s</p>
+                                        <div className="max-h-72 overflow-y-auto">
+                                            {notifications.length === 0
+                                                ? <p className="text-sm text-slate-400 text-center py-8">Nema novih notifikacija</p>
+                                                : notifications.map(n => (
+                                                    <div key={n.id} className={`px-4 py-3 border-b border-slate-50 ${!n.read ? 'bg-blue-50' : ''}`}>
+                                                        <p className="text-sm font-semibold text-slate-800">{n.title}</p>
+                                                        <p className="text-xs text-slate-500 mt-0.5">{n.body}</p>
+                                                    </div>
+                                                ))
+                                            }
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
                             <button
                                 onClick={handleLogout}
                                 className="flex items-center gap-1.5 px-3 py-2 text-sm text-blue-100 hover:bg-white/15 hover:text-white rounded-lg transition-colors"
@@ -163,7 +206,6 @@ export default function CandidateDashboard() {
                                 );
                             }
 
-                            // Theory still in progress — warn to come more often
                             if (attended > 0 || total > 0) {
                                 return (
                                     <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">

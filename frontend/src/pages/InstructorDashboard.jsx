@@ -674,12 +674,30 @@ export default function InstructorDashboard() {
                                        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 bg-white" />
                             </div>
                         </div>
-                        <div className="flex justify-end gap-2 mt-6">
-                            <button onClick={() => setProposing(null)} className="px-4 py-2 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl font-medium transition-colors">Odustani</button>
-                            <button onClick={submitProposal} className="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-xl font-semibold flex items-center gap-1.5 shadow-sm transition-colors">
-                                <Send size={14} /> Pošalji prijedlog
-                            </button>
-                        </div>
+                        {(() => {
+                            const isPast = proposing?.date && proposing?.time
+                                ? new Date(`${proposing.date}T${proposing.time}:00`) < new Date()
+                                : false;
+                            return (
+                                <>
+                                    {isPast && (
+                                        <p className="text-xs text-red-500 font-medium mt-3 flex items-center gap-1.5">
+                                            ⚠️ Nije moguće zakazati čas u prošlosti. Odaberite budući termin.
+                                        </p>
+                                    )}
+                                    <div className="flex justify-end gap-2 mt-4">
+                                        <button onClick={() => setProposing(null)} className="px-4 py-2 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl font-medium transition-colors">Odustani</button>
+                                        <button
+                                            onClick={isPast ? undefined : submitProposal}
+                                            disabled={isPast}
+                                            className={`px-4 py-2 text-sm text-white rounded-xl font-semibold flex items-center gap-1.5 shadow-sm transition-colors ${isPast ? 'bg-slate-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+                                        >
+                                            <Send size={14} /> Pošalji prijedlog
+                                        </button>
+                                    </div>
+                                </>
+                            );
+                        })()}
                     </div>
                 </div>
             )}
