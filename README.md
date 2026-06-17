@@ -203,5 +203,6 @@ docker-compose up -d
 
 > Ako test nalozi ne postoje, dodaj ih kroz admin panel nakon prvog pokretanja.
 
-##Demo video aplikacije
+## Demo video aplikacije
+
 Demo video možete pogledati na sljedećem linku: https://drive.google.com/drive/folders/19_AZkUi6-Q-R33c87XQ8DNQvr3q4mOsx
