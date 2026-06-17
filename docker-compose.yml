@@ -30,6 +30,10 @@ services:
     hostname: rabbitmq
     environment:
       RABBITMQ_ERLANG_COOKIE: "autoskola_cookie"
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -190,3 +194,4 @@ services:
 
 volumes:
   mysql_data:
+  rabbitmq_data:
