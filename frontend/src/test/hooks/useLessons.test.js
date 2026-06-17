@@ -1,12 +1,21 @@
+import React from 'react'
 import { renderHook, waitFor, act } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
 import { http, HttpResponse } from 'msw'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { server } from '../setup'
 import { useLessons } from '../../hooks/useLessons'
 
+const createWrapper = () => {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
+  return ({ children }) => React.createElement(QueryClientProvider, { client: queryClient }, children)
+}
+
 describe('useLessons', () => {
   it('vraća prazne početne vrijednosti', () => {
-    const { result } = renderHook(() => useLessons())
+    const { result } = renderHook(() => useLessons(), { wrapper: createWrapper() })
     expect(result.current.pageData.content).toEqual([])
     expect(result.current.pageData.totalPages).toBe(0)
     expect(result.current.pendingLessons).toEqual([])
@@ -26,7 +35,7 @@ describe('useLessons', () => {
       )
     )
 
-    const { result } = renderHook(() => useLessons())
+    const { result } = renderHook(() => useLessons(), { wrapper: createWrapper() })
 
     await waitFor(() => {
       expect(result.current.pageData.content).toHaveLength(2)
@@ -45,7 +54,7 @@ describe('useLessons', () => {
       )
     )
 
-    const { result } = renderHook(() => useLessons())
+    const { result } = renderHook(() => useLessons(), { wrapper: createWrapper() })
 
     await waitFor(() => {
       expect(result.current.pendingLessons).toHaveLength(1)
@@ -55,12 +64,12 @@ describe('useLessons', () => {
   })
 
   it('eksponira fetchLessons funkciju', () => {
-    const { result } = renderHook(() => useLessons())
+    const { result } = renderHook(() => useLessons(), { wrapper: createWrapper() })
     expect(typeof result.current.fetchLessons).toBe('function')
   })
 
   it('eksponira respondToLesson funkciju', () => {
-    const { result } = renderHook(() => useLessons())
+    const { result } = renderHook(() => useLessons(), { wrapper: createWrapper() })
     expect(typeof result.current.respondToLesson).toBe('function')
   })
 
@@ -71,9 +80,8 @@ describe('useLessons', () => {
       )
     )
 
-    const { result } = renderHook(() => useLessons())
+    const { result } = renderHook(() => useLessons(), { wrapper: createWrapper() })
 
-    // hook ne pada, ostaje na default vrijednosti
     await waitFor(() => {
       expect(result.current.pageData.content).toEqual([])
     })

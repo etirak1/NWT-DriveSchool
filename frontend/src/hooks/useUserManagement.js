@@ -58,10 +58,10 @@ export function useUserManagement() {
 
     const handleDelete = async (u) => {
         console.log('handleDelete pozvan za:', u);
+        setDeletingUser(null); // zatvori modal odmah da spriječimo dvostruki klik
         try {
             await api.delete(`/api/users/${u.userId}`);
             console.log('delete uspio');
-            setDeletingUser(null);
             invalidate();
 
             if (u.role === 'CANDIDATE') {
@@ -92,7 +92,6 @@ export function useUserManagement() {
                 fallback: 'Greška pri brisanju.',
                 conflictMessage: 'Korisnik se ne može obrisati jer ima aktivne termine.',
             }), 'error');
-            setDeletingUser(null);
         }
     };
 

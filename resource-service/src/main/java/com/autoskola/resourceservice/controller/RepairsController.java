@@ -98,6 +98,7 @@ public class RepairsController {
         repair.setRepairDate(updatedRepair.getRepairDate());
         repair.setDescription(updatedRepair.getDescription());
         repair.setCost(updatedRepair.getCost());
+        if (updatedRepair.getStatus() != null) repair.setStatus(updatedRepair.getStatus());
 
         Repairs saved = repairsRepository.save(repair);
         eventPublisher.publishRepairUpdated(saved);
@@ -116,6 +117,7 @@ public class RepairsController {
         if (dto.getDescription() != null) repair.setDescription(dto.getDescription());
         if (dto.getCost() != null) repair.setCost(dto.getCost());
         if (dto.getRepairDate() != null) repair.setRepairDate(dto.getRepairDate());
+        if (dto.getStatus() != null) repair.setStatus(dto.getStatus());
 
         Repairs saved = repairsRepository.save(repair);
         eventPublisher.publishRepairUpdated(saved);

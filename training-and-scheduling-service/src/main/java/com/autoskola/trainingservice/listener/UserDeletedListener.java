@@ -61,9 +61,12 @@ public class UserDeletedListener {
             });
 
             instructorRepository.findByUserId(userId).ifPresent(instructor -> {
+                Long instructorId = instructor.getInstructorId();
                 candidateRepository.unassignInstructor(instructor);
+                feedbackRepository.deleteByInstructorInstructorId(instructorId);
+                lessonRepository.deleteByInstructorInstructorId(instructorId);
                 instructorRepository.delete(instructor);
-                log.info("Instruktor odspojen od kandidata i obrisan za userId: {}", userId);
+                log.info("Instruktor, časovi i feedback obrisani za userId: {}", userId);
             });
         } catch (Exception e) {
             log.error("Greška pri brisanju podataka za userId {}: {}", userId, e.getMessage());

@@ -145,11 +145,12 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Korisnik nije pronadjen"));
 
-        if ("INSTRUKTOR".equals(user.getRole())) {
+        String role = user.getRole();
+        if ("INSTRUCTOR".equalsIgnoreCase(role) || "INSTRUKTOR".equalsIgnoreCase(role)) {
             Boolean imaCasove = trainingClient.hasActiveSessions(id);
 
-            if (imaCasove) {
-                throw new RuntimeException("Ne možete obrisati instruktora jer ima aktivne termine vožnje u training-servisu!");
+            if (Boolean.TRUE.equals(imaCasove)) {
+                throw new RuntimeException("Instruktor " + user.getFirstName() + " " + user.getLastName() + " ima zakazane časove vožnje i ne može biti obrisan.");
             }
         }
 

@@ -27,6 +27,9 @@ services:
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
     container_name: autoskola-rabbitmq
+    hostname: rabbitmq
+    environment:
+      RABBITMQ_ERLANG_COOKIE: "autoskola_cookie"
     ports:
       - "5672:5672"
       - "15672:15672"

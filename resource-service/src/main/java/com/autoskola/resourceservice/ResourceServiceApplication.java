@@ -112,7 +112,7 @@ public class ResourceServiceApplication {
 					}
 					int synced = 0;
 					for (UserDTO dto : instructors) {
-						if (!userRepository.existsById(dto.getUserId())) {
+						if (!userRepository.existsById(dto.getUserId()) && !userRepository.existsByEmail(dto.getEmail())) {
 							User u = new User();
 							u.setUserId(dto.getUserId());
 							u.setFirstName(dto.getFirstName());

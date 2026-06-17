@@ -8,6 +8,7 @@ public class RepairRequestDTO {
     private String description;
     private Double cost;
     private LocalDateTime repairDate;
+    private String status;
 
     public RepairRequestDTO() {}
 
@@ -41,5 +42,13 @@ public class RepairRequestDTO {
 
     public void setRepairDate(LocalDateTime repairDate) {
         this.repairDate = repairDate;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

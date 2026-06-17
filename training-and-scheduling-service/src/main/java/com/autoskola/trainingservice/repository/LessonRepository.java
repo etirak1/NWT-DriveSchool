@@ -56,6 +56,7 @@ public interface LessonRepository extends JpaRepository<Lesson, Long> {
 
     List<Lesson> findByCandidateCandidateIdAndLessonTypeIgnoreCase(Long candidateId, String lessonType);
     void deleteByCandidateCandidateId(Long candidateId);
+    void deleteByInstructorInstructorId(Long instructorId);
 
     @Modifying
     @Transactional
